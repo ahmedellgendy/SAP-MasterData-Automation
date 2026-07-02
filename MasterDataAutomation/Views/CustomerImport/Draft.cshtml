@@ -1,0 +1,426 @@
+﻿@model List<MasterDataAutomation.Application.Dtos.CustomerImportDto>
+
+@{
+    ViewData["Title"] = "Draft Customers";
+
+    var totalRecords = Model?.Count ?? 0;
+    var branchCount = Model != null && Model.Any()
+        ? Model.Select(x => x.Branch).Distinct().Count()
+        : 0;
+
+    var marketCount = Model != null && Model.Any()
+        ? Model.Select(x => x.Market).Distinct().Count()
+        : 0;
+
+    var typeCount = Model != null && Model.Any()
+        ? Model.Select(x => x.CustomerType).Distinct().Count()
+        : 0;
+}
+
+<div class="container-fluid mt-4 mb-4">
+
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h1 class="mb-1 fw-bold" style="color:#2c3e50;">
+                    <i class="bi bi-graph-up"></i>
+                    Sales Distribution Network
+                </h1>
+
+                <p class="text-muted small mb-0">
+                    <i class="bi bi-calendar-check"></i>
+                    Total Records:
+                    <strong class="text-dark">@totalRecords</strong>
+                </p>
+            </div>
+
+            @if (totalRecords > 0)
+            {
+                
+            }
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-action="Create" class="btn btn-primary shadow-sm">
+                <i class="bi bi-plus-circle"></i>
+                Add Customer
+            </a>
+
+            <a asp-action="UploadToDraft" class="btn btn-success shadow-sm">
+                <i class="bi bi-file-earmark-arrow-up"></i>
+                Upload Excel To Draft
+            </a>
+
+            @if (totalRecords > 0)
+            {
+                <form asp-action="ClearDraft"
+                      method="post"
+                      class="d-inline"
+                      onsubmit="return confirm('Clear all draft customers?');">
+                    <button type="submit" class="btn btn-outline-danger shadow-sm">
+                        <i class="bi bi-x-circle"></i>
+                        Clear Draft
+                    </button>
+                </form>
+                <form asp-action="SubmitDraft"
+                      method="post"
+                      class="d-inline"
+                      onsubmit="return confirm('Submit draft customers to manager?');">
+                    <button type="submit" class="btn btn-warning shadow-sm">
+                        <i class="bi bi-send-check"></i>
+                        Submit To Manager
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success shadow-sm">
+            <i class="bi bi-check-circle"></i>
+            @TempData["Success"]
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger shadow-sm">
+            <i class="bi bi-exclamation-triangle"></i>
+            @TempData["Error"]
+        </div>
+    }
+
+    <div class="card shadow" style="border:none; border-radius:0.75rem; overflow:hidden;">
+
+        <div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); padding:1.5rem; color:white;">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-table"></i>
+                    Customer Records
+                </h5>
+
+                <span class="badge bg-white text-dark" style="font-size:0.9rem;">
+                    @totalRecords Records
+                </span>
+            </div>
+        </div>
+
+        @if (Model != null && Model.Any())
+        {
+            <div class="p-3 bg-light border-bottom">
+                <div class="row g-2 align-items-center">
+
+                    <div class="col-md-6">
+                        <input type="text"
+                               id="draftSearchInput"
+                               class="form-control"
+                               placeholder="Search by line, market, branch, district, or type..." />
+                    </div>
+
+                    <div class="col-md-3">
+                        <select id="branchFilter" class="form-select">
+                            <option value="">All Branches</option>
+
+                            @foreach (var branch in Model.Select(x => x.Branch).Distinct())
+                            {
+                                <option value="@branch">@branch</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 text-end">
+                        <span class="text-muted small">
+                            Showing
+                            <strong id="visibleRowsCount">@totalRecords</strong>
+                            of
+                            <strong>@totalRecords</strong>
+                            records
+                        </span>
+                    </div>
+
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" style="font-size:0.95rem;">
+                    <thead style="background-color:#f8f9fa; border-bottom:2px solid #dee2e6;">
+                        <tr>
+                            <th style="width:5%; color:#667eea; font-weight:600;">
+                                <i class="bi bi-list-ol"></i>
+                            </th>
+
+                            <th style="width:12%; color:#667eea; font-weight:600;">
+                                <i class="bi bi-text-left"></i>
+                                Line
+                            </th>
+
+                            <th style="width:17%; color:#667eea; font-weight:600;">
+                                <i class="bi bi-geo-alt"></i>
+                                Market
+                            </th>
+
+                            <th style="width:17%; color:#667eea; font-weight:600;">
+                                <i class="bi bi-building"></i>
+                                Branch
+                            </th>
+
+                            <th style="width:17%; color:#667eea; font-weight:600;">
+                                <i class="bi bi-map"></i>
+                                Sales District
+                            </th>
+
+                            <th style="width:17%; color:#667eea; font-weight:600;">
+                                <i class="bi bi-tag"></i>
+                                Customer Type
+                            </th>
+
+                            <th style="width:25%; color:#667eea; font-weight:600; text-align:center;">
+                                <i class="bi bi-gear"></i>
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @for (int i = 0; i < Model.Count; i++)
+                        {
+                            <tr style="border-bottom:1px solid #f0f0f0;" data-branch="@Model[i].Branch">
+                                <td class="fw-bold" style="color:#667eea; vertical-align:middle;">
+                                    @(i + 1)
+                                </td>
+
+                                <td style="vertical-align:middle;">
+                                    <span style="color:#2c3e50; font-weight:500;">
+                                        @Model[i].Line
+                                    </span>
+                                </td>
+
+                                <td style="vertical-align:middle;">
+                                    <span style="color:#2c3e50; font-weight:500;">
+                                        @Model[i].Market
+                                    </span>
+                                </td>
+
+                                <td style="vertical-align:middle;">
+                                    <span style="background-color:#e8f4f8; padding:0.4rem 0.8rem; border-radius:0.25rem; color:#0288d1; font-weight:500;">
+                                        @Model[i].Branch
+                                    </span>
+                                </td>
+
+                                <td style="vertical-align:middle;">
+                                    <span style="color:#2c3e50;">
+                                        @Model[i].SalesDistrict
+                                    </span>
+                                </td>
+
+                                <td style="vertical-align:middle;">
+                                    <span class="badge" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); padding:0.5rem 0.8rem; font-size:0.85rem;">
+                                        @Model[i].CustomerType
+                                    </span>
+                                </td>
+
+                                <td style="vertical-align:middle; text-align:center;">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a asp-action="Edit"
+                                           asp-route-index="@i"
+                                           class="btn btn-outline-primary"
+                                           title="Edit this record">
+                                            <i class="bi bi-pencil-square"></i>
+                                            Edit
+                                        </a>
+
+                                        <form asp-action="Delete"
+                                              method="post"
+                                              class="d-inline"
+                                              onsubmit="return confirm('Delete this customer?');">
+                                            <input type="hidden" name="index" value="@i" />
+
+                                            <button type="submit"
+                                                    class="btn btn-outline-danger"
+                                                    title="Delete this record">
+                                                <i class="bi bi-trash2"></i>
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="background-color:#f8f9fa; padding:1.5rem; border-top:1px solid #dee2e6;">
+                <div class="row g-3">
+
+                    <div class="col-md-3">
+                        <div class="stats-card" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                            <i class="bi bi-graph-up"></i>
+                            <p>Total Records</p>
+                            <h3>@totalRecords</h3>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="stats-card" style="background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);">
+                            <i class="bi bi-building"></i>
+                            <p>Branches</p>
+                            <h3>@branchCount</h3>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="stats-card" style="background:linear-gradient(135deg,#4facfe 0%,#00f2fe 100%);">
+                            <i class="bi bi-geo-alt"></i>
+                            <p>Markets</p>
+                            <h3>@marketCount</h3>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="stats-card" style="background:linear-gradient(135deg,#43e97b 0%,#38f9d7 100%);">
+                            <i class="bi bi-tag"></i>
+                            <p>Customer Types</p>
+                            <h3>@typeCount</h3>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        }
+        else
+        {
+            <div style="padding:4rem 2rem; text-align:center; background-color:#f8f9fa;">
+                <div style="opacity:0.5; margin-bottom:1rem;">
+                    <i class="bi bi-inbox" style="font-size:3rem; color:#667eea;"></i>
+                </div>
+
+                <h4 style="color:#2c3e50; font-weight:600; margin-bottom:0.5rem;">
+                    No Records Yet
+                </h4>
+
+                <p class="text-muted mb-3">
+                    Start by adding a new customer or uploading an Excel file.
+                </p>
+
+                <div class="d-flex gap-2 justify-content-center">
+                    <a asp-action="Create" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i>
+                        Add Customer
+                    </a>
+
+                    <a asp-action="UploadToDraft" class="btn btn-success">
+                        <i class="bi bi-file-earmark-arrow-up"></i>
+                        Upload Excel To Draft
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .table tbody tr {
+        transition: all 0.3s ease;
+    }
+
+        .table tbody tr:hover {
+            background-color: rgba(102, 126, 234, 0.08);
+            transform: translateY(-1px);
+            box-shadow: inset 0 0 10px rgba(102, 126, 234, 0.1);
+        }
+
+    .btn-outline-primary:hover {
+        background-color: #0d6efd;
+        color: white !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+    }
+
+    .btn-outline-danger:hover {
+        background-color: #dc3545;
+        color: white !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+    }
+
+    .btn-success:hover,
+    .btn-primary:hover,
+    .btn-info:hover,
+    .btn-warning:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .stats-card {
+        color: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        text-align: center;
+    }
+
+        .stats-card i {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .stats-card p {
+            margin: 0;
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .stats-card h3 {
+            margin: 0;
+            font-size: 1.75rem;
+            font-weight: bold;
+        }
+
+    .card {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .btn-group .btn {
+        flex: 1;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const searchInput = document.getElementById("draftSearchInput");
+        const branchFilter = document.getElementById("branchFilter");
+        const visibleRowsCount = document.getElementById("visibleRowsCount");
+
+        function applyFilters() {
+            const searchValue = searchInput.value.toLowerCase().trim();
+            const selectedBranch = branchFilter.value.toLowerCase().trim();
+            const rows = document.querySelectorAll("tbody tr");
+
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const rowText = row.innerText.toLowerCase();
+                const rowBranch = row.getAttribute("data-branch").toLowerCase();
+
+                const matchesSearch = rowText.includes(searchValue);
+                const matchesBranch = selectedBranch === "" || rowBranch === selectedBranch;
+
+                if (matchesSearch && matchesBranch) {
+                    row.style.display = "";
+                    visibleCount++;
+                } else {
+                    row.style.display = "none";
+                }
+            });
+
+            visibleRowsCount.innerText = visibleCount;
+        }
+
+        if (searchInput && branchFilter) {
+            searchInput.addEventListener("keyup", applyFilters);
+            branchFilter.addEventListener("change", applyFilters);
+        }
+    });
+</script>

@@ -1,0 +1,45 @@
+# Build results
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider / VS Code
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# NuGet
+*.nupkg
+packages/
+
+# ASP.NET / .NET
+appsettings.Development.json
+
+# Generated / uploaded files
+GeneratedFiles/
+UploadedFiles/
+
+# Database local files
+*.db
+*.sqlite
+*.sqlite3
+
+# Excel temp files
+~$*.xlsx
+~$*.xls
+
+# Publish output
+publish/
+wwwroot/uploads/

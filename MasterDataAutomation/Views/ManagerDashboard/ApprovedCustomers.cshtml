@@ -1,0 +1,123 @@
+﻿@model List<MasterDataAutomation.Application.Dtos.CustomerReviewDto>
+@{
+    ViewData["Title"] = "Approved Customers";
+    var totalRecords = Model?.Count ?? 0;
+}
+
+<div class="container-fluid mt-4 mb-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold mb-1" style="color:#2c3e50;">
+                <i class="bi bi-check-circle"></i>
+                Approved Customers
+            </h1>
+
+            <p class="text-muted mb-0">
+                Customers approved by manager and ready for SAP generation.
+            </p>
+        </div>
+
+        <a asp-controller="ManagerDashboard"
+           asp-action="Index"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger shadow-sm">
+            <i class="bi bi-exclamation-triangle"></i>
+            @TempData["Error"]
+        </div>
+    }
+
+    <div class="card shadow border-0" style="border-radius:0.75rem; overflow:hidden;">
+
+        <div class="card-header bg-light py-3 d-flex justify-content-between align-items-center">
+            <span class="fw-bold">
+                <i class="bi bi-table"></i>
+                Approved Records
+                <span class="badge bg-success ms-2">@totalRecords</span>
+            </span>
+
+            @if (totalRecords > 0)
+            {
+                <form asp-action="GenerateApproved"
+                      method="post"
+                      onsubmit="return confirm('Generate SAP file from approved customers?');">
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="bi bi-file-earmark-spreadsheet"></i>
+                        Generate SAP File
+                    </button>
+                </form>
+            }
+        </div>
+
+        @if (Model != null && Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Line</th>
+                            <th>Market</th>
+                            <th>Branch</th>
+                            <th>Sales District</th>
+                            <th>Customer Type</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @for (int i = 0; i < Model.Count; i++)
+                        {
+                            <tr>
+                                <td class="fw-bold">@(i + 1)</td>
+                                <td>@Model[i].Line</td>
+                                <td>@Model[i].Market</td>
+                                <td>
+                                    <span class="badge bg-info text-dark">
+                                        @Model[i].Branch
+                                    </span>
+                                </td>
+                                <td>@Model[i].SalesDistrict</td>
+                                <td>
+                                    <span class="badge bg-secondary">
+                                        @Model[i].CustomerType
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <form asp-action="DeleteApprovedCustomer"
+                                          method="post"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Delete this approved customer before SAP generation?');">
+                                        <input type="hidden" name="id" value="@Model[i].Id" />
+
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="bi bi-trash"></i>
+                                            Delete
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="card-body text-center text-muted py-5">
+                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                <h5>No approved customers</h5>
+                <p class="mb-0">Approved customers will appear here after manager approval.</p>
+            </div>
+        }
+
+    </div>
+
+</div>

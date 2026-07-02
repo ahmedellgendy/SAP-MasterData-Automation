@@ -1,0 +1,79 @@
+﻿@model MasterDataAutomation.Web.ViewModels.SystemSettingsViewModel
+
+@{
+    ViewData["Title"] = "System Settings";
+}
+
+<div class="container-fluid mt-4 mb-4">
+
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+
+            <div class="card shadow border-0" style="border-radius:0.75rem; overflow:hidden;">
+
+                <div class="card-header bg-light fw-bold py-3">
+                    <i class="bi bi-gear"></i>
+                    System Settings
+                </div>
+
+                <form asp-action="Index" method="post">
+
+                    <div class="card-body">
+
+                        @if (TempData["Success"] != null)
+                        {
+                            <div class="alert alert-success shadow-sm">
+                                <i class="bi bi-check-circle"></i>
+                                @TempData["Success"]
+                            </div>
+                        }
+
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="LastBpCode" class="form-label fw-bold">
+                                Last BP Code
+                            </label>
+
+                            <input asp-for="LastBpCode"
+                                   type="number"
+                                   class="form-control" />
+
+                            <span asp-validation-for="LastBpCode"
+                                  class="text-danger small"></span>
+
+                            <small class="text-muted">
+                                Next generated customer will start from this number + 1.
+                            </small>
+                        </div>
+
+                    </div>
+
+                    <div class="card-footer bg-white d-flex justify-content-between">
+
+                        <a asp-controller="ManagerDashboard"
+                           asp-action="Index"
+                           class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i>
+                            Back
+                        </a>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i>
+                            Save Settings
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

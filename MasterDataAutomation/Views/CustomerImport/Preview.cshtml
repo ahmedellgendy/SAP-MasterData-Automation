@@ -1,0 +1,35 @@
+﻿@model List<MasterDataAutomation.Application.Dtos.CustomerImportDto>
+
+<h2>Customers Preview</h2>
+
+<h3>Total Customers: @ViewBag.Count</h3>
+
+<table class="table table-bordered">
+
+    <thead>
+        <tr>
+            <th>Line</th>
+            <th>Market</th>
+            <th>Sales Office</th>
+            <th>Branch</th>
+            <th>Sales District</th>
+            <th>Customer Type</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Line</td>
+                <td>@item.Market</td>
+                <td>@item.Branch</td>
+                <td>@item.SalesDistrict</td>
+                <td>@item.CustomerType</td>
+            </tr>
+        }
+
+    </tbody>
+
+</table>

@@ -1,0 +1,184 @@
+﻿@model List<MasterDataAutomation.Application.Dtos.CustomerReviewDto>
+
+@{
+    ViewData["Title"] = "Submitted Customers";
+    var totalRecords = Model?.Count ?? 0;
+}
+
+<div class="container-fluid mt-4 mb-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold mb-1" style="color:#2c3e50;">
+                <i class="bi bi-send-check"></i>
+                Submitted Customers
+            </h1>
+
+            <p class="text-muted mb-0">
+                Review each submitted customer and approve or reject individually.
+            </p>
+        </div>
+
+        <a asp-controller="ManagerDashboard"
+           asp-action="Index"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success shadow-sm">
+            <i class="bi bi-check-circle"></i>
+            @TempData["Success"]
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger shadow-sm">
+            <i class="bi bi-exclamation-triangle"></i>
+            @TempData["Error"]
+        </div>
+    }
+
+    <div class="card shadow border-0" style="border-radius:0.75rem; overflow:hidden;">
+
+        <div class="card-header bg-light py-3 d-flex justify-content-between align-items-center">
+            <span class="fw-bold">
+                <i class="bi bi-table"></i>
+                Submitted Records
+                <span class="badge bg-primary ms-2">@totalRecords</span>
+            </span>
+
+            <div class="d-flex gap-2">
+
+                @if (Model != null && Model.Any())
+                {
+                    <form asp-controller="ManagerDashboard"
+                          asp-action="ApproveAllSubmitted"
+                          method="post"
+                          class="d-inline"
+                          onsubmit="return confirm('Approve all submitted customers?');">
+
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="bi bi-check2-all"></i>
+                            Approve All
+                        </button>
+                    </form>
+                }
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="ApprovedCustomers"
+                   class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-check-circle"></i>
+                    Go To Approved
+                </a>
+
+            </div>
+        </div>
+
+        @if (Model != null && Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Line</th>
+                            <th>Market</th>
+                            <th>Branch</th>
+                            <th>Sales District</th>
+                            <th>Customer Type</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @for (int i = 0; i < Model.Count; i++)
+                        {
+                            <tr>
+                                <td class="fw-bold">@(i + 1)</td>
+
+                                <td>@Model[i].Line</td>
+
+                                <td class="fw-semibold">@Model[i].Market</td>
+
+                                <td>
+                                    <span class="badge bg-info text-dark">
+                                        @Model[i].Branch
+                                    </span>
+                                </td>
+
+                                <td>@Model[i].SalesDistrict</td>
+
+                                <td>
+                                    <span class="badge bg-secondary">
+                                        @Model[i].CustomerType
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-warning text-dark">
+                                        @Model[i].Status
+                                    </span>
+                                </td>
+
+                                <td class="text-end">
+
+                                    <form asp-controller="ManagerDashboard"
+                                          asp-action="ApproveCustomer"
+                                          method="post"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Approve this customer?');">
+
+                                        <input type="hidden" name="id" value="@Model[i].Id" />
+
+                                        <button type="submit" class="btn btn-success btn-sm">
+                                            <i class="bi bi-check-circle"></i>
+                                            Approve
+                                        </button>
+                                    </form>
+
+                                    <form asp-controller="ManagerDashboard"
+                                          asp-action="RejectCustomer"
+                                          method="post"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Reject this customer?');">
+
+                                        <input type="hidden" name="id" value="@Model[i].Id" />
+
+                                        <input type="text"
+                                               name="rejectionReason"
+                                               class="form-control form-control-sm d-inline-block"
+                                               style="width:220px;"
+                                               placeholder="Reason"
+                                               required />
+
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="bi bi-x-circle"></i>
+                                            Reject
+                                        </button>
+                                    </form>
+
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="card-body text-center text-muted py-5">
+                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                <h5>No submitted customers</h5>
+                <p class="mb-0">Submitted customers will appear here after sales submit drafts.</p>
+            </div>
+        }
+
+    </div>
+
+</div>

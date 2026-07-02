@@ -1,0 +1,308 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] - MasterDataAutomation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+
+    <style>
+        body {
+            background-color: #f4f6f9;
+        }
+
+        .sidebar {
+            width: 260px;
+            min-height: 100vh;
+            background: #1f2937;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 20px;
+        }
+
+        .sidebar-title {
+            color: white;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
+
+        .sidebar a {
+            display: block;
+            color: #d1d5db;
+            text-decoration: none;
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+            .sidebar a:hover {
+                background: #374151;
+                color: white;
+            }
+
+            .sidebar a i {
+                margin-right: 10px;
+            }
+
+        .sidebar .text-secondary {
+            color: #9ca3af !important;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: 25px;
+        }
+
+        .topbar {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .collapse a {
+            font-size: 14px;
+            padding-left: 35px !important;
+        }
+
+        .sidebar a[data-bs-toggle] {
+            cursor: pointer;
+        }
+
+        .action-card {
+            transition: .25s;
+            cursor: pointer;
+        }
+
+            .action-card:hover {
+                transform: translateY(-6px);
+                box-shadow: 0 15px 30px rgba(0,0,0,.12) !important;
+            }
+
+            .action-card .card-body {
+                min-height: 180px;
+            }
+
+            .action-card i {
+                transition: .25s;
+            }
+
+            .action-card:hover i {
+                transform: scale(1.2);
+            }
+
+        .sidebar a.active {
+            background: #2563eb;
+            color: #fff;
+        }
+
+            .sidebar a.active i {
+                color: #fff;
+            }
+    </style>
+</head>
+
+<body>
+
+    <div class="sidebar">
+
+        <div class="sidebar-title">
+            <i class="bi bi-box-seam"></i>
+            Master Data
+        </div>
+
+        <div class="text-uppercase text-secondary small mb-2">
+            Main
+        </div>
+
+        @if (User.IsInRole("Sales") || User.IsInRole("Admin"))
+        {
+            <a asp-controller="SalesDashboard" asp-action="Index">
+                <i class="bi bi-speedometer2"></i>
+                Sales Dashboard
+            </a>
+        }
+
+        @if (User.IsInRole("Manager") || User.IsInRole("Admin"))
+        {
+            <a asp-controller="ManagerDashboard" asp-action="Index">
+                <i class="bi bi-speedometer2"></i>
+                Manager Dashboard
+            </a>
+
+            <a asp-controller="ManagerDashboard" asp-action="SubmittedCustomers">
+                <i class="bi bi-send-check"></i>
+                Submitted Customers
+            </a>
+
+            <a asp-controller="ManagerDashboard" asp-action="ApprovedCustomers">
+                <i class="bi bi-check-circle"></i>
+                Approved Customers
+            </a>
+
+            <a asp-controller="ManagerDashboard" asp-action="RejectedCustomers">
+                <i class="bi bi-x-circle"></i>
+                Rejected Customers
+            </a>
+
+            <a asp-controller="CustomerImport" asp-action="History">
+                <i class="bi bi-clock-history"></i>
+                History
+            </a>
+
+         
+        }
+
+        @if (User.IsInRole("Sales") || User.IsInRole("Admin"))
+        {
+            <div class="text-uppercase text-secondary small mt-4 mb-2">
+                Customer Management
+            </div>
+
+            <a class="d-flex justify-content-between align-items-center"
+               data-bs-toggle="collapse"
+               href="#customerMenu"
+               role="button"
+               aria-expanded="true"
+               aria-controls="customerMenu">
+
+                <span>
+                    <i class="bi bi-people"></i>
+                    Customers
+                </span>
+
+                <i class="bi bi-chevron-down"></i>
+            </a>
+
+            <div class="collapse show" id="customerMenu">
+
+                <a class="ps-4"
+                   asp-controller="CustomerImport"
+                   asp-action="Create">
+                    <i class="bi bi-person-plus"></i>
+                    Create Customer
+                </a>
+
+                <a class="ps-4"
+                   asp-controller="CustomerImport"
+                   asp-action="UploadToDraft">
+                    <i class="bi bi-file-earmark-excel"></i>
+                    Upload Excel
+                </a>
+
+                <a class="ps-4"
+                   asp-controller="CustomerImport"
+                   asp-action="Draft">
+                    <i class="bi bi-list-check"></i>
+                    Draft Customers
+                </a>
+
+                <a class="ps-4"
+                   asp-controller="CustomerImport"
+                   asp-action="RejectedForReview">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    Rejected For Review
+                </a>
+
+            </div>
+        }
+
+        @if (User.IsInRole("Admin"))
+        {
+            <div class="text-uppercase text-secondary small mt-4 mb-2">
+                Admin
+            </div>
+
+            <a asp-controller="AdminUsers" asp-action="Index">
+                <i class="bi bi-people"></i>
+                Users Management
+            </a>
+
+            <a asp-controller="SystemSettings" asp-action="Index">
+                <i class="bi bi-gear"></i>
+                Settings
+            </a>
+        }
+
+    </div>
+
+    <div class="main-content">
+
+        <div class="topbar d-flex justify-content-between align-items-center">
+
+            <div>
+                <h5 class="mb-0">@ViewData["Title"]</h5>
+                <small class="text-muted">Sales Master Data Automation</small>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+
+                <span class="text-muted small">
+                    <i class="bi bi-person-circle"></i>
+                    @User.FindFirst("FullName")?.Value
+                    -
+                    @User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                </span>
+
+                <form asp-controller="Account"
+                      asp-action="Logout"
+                      method="post"
+                      class="m-0">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-box-arrow-right"></i>
+                        Logout
+                    </button>
+                </form>
+
+            </div>
+
+        </div>
+
+        @RenderBody()
+
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const currentPath = window.location.pathname.toLowerCase();
+
+            document.querySelectorAll(".sidebar a[href]").forEach(link => {
+                const linkPath = link.getAttribute("href")?.toLowerCase();
+
+                if (!linkPath || linkPath === "#") {
+                    return;
+                }
+
+                if (currentPath === linkPath || currentPath.startsWith(linkPath + "/")) {
+                    link.classList.add("active");
+
+                    const collapseParent = link.closest(".collapse");
+                    if (collapseParent) {
+                        collapseParent.classList.add("show");
+                    }
+                }
+            });
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>

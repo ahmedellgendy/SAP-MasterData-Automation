@@ -1,0 +1,393 @@
+﻿@model MasterDataAutomation.Web.ViewModels.ManagerDashboardViewModel
+
+@{
+    ViewData["Title"] = "Manager Dashboard";
+}
+
+<div class="container-fluid mt-4 mb-4">
+
+    <!-- Header -->
+    <div class="mb-4">
+        <h1 class="fw-bold mb-1" style="color:#2c3e50;">
+            <i class="bi bi-shield-check"></i>
+            Approval Center
+        </h1>
+
+        <p class="text-muted mb-0">
+            Review submitted customers, approve or reject records, and generate SAP files.
+        </p>
+
+        <div class="d-flex flex-wrap gap-2 mt-3">
+
+            <a asp-controller="ManagerDashboard"
+               asp-action="SubmittedCustomers"
+               class="btn btn-warning">
+                <i class="bi bi-send-check"></i>
+                Review Submitted
+            </a>
+
+            <a asp-controller="ManagerDashboard"
+               asp-action="ApprovedCustomers"
+               class="btn btn-success">
+                <i class="bi bi-file-earmark-spreadsheet"></i>
+                Generate SAP
+            </a>
+
+            <a asp-controller="CustomerImport"
+               asp-action="History"
+               class="btn btn-outline-info">
+                <i class="bi bi-clock-history"></i>
+                History
+            </a>
+
+            <a asp-controller="ManagerDashboard"
+               asp-action="ExportHistoryReport"
+               class="btn btn-outline-success">
+                <i class="bi bi-file-earmark-excel"></i>
+                Export Report
+            </a>
+
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100 manager-kpi-card">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-2">
+                        <i class="bi bi-hourglass-split"></i>
+                        Pending Approval
+                    </small>
+
+                    <h2 class="text-warning mb-0">@Model.SubmittedCount</h2>
+                    <small class="text-muted">Waiting for manager decision</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100 manager-kpi-card">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-2">
+                        <i class="bi bi-check-circle"></i>
+                        Approved
+                    </small>
+
+                    <h2 class="text-success mb-0">@Model.ApprovedCount</h2>
+                    <small class="text-muted">Ready for SAP generation</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100 manager-kpi-card">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-2">
+                        <i class="bi bi-x-circle"></i>
+                        Rejected
+                    </small>
+
+                    <h2 class="text-danger mb-0">@Model.RejectedCount</h2>
+                    <small class="text-muted">Needs sales review</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100 manager-kpi-card">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-2">
+                        <i class="bi bi-clock-history"></i>
+                        Generated Files
+                    </small>
+
+                    <h2 class="text-info mb-0">@Model.HistoryCount</h2>
+                    <small class="text-muted">SAP files generated</small>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    @if (Model.ApprovedCount > 0)
+    {
+        <div class="alert alert-success shadow-sm d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <i class="bi bi-check-circle-fill"></i>
+                There are
+                <strong>@Model.ApprovedCount</strong>
+                approved customers ready for SAP generation.
+            </div>
+
+            <a asp-controller="ManagerDashboard"
+               asp-action="ApprovedCustomers"
+               class="btn btn-success btn-sm">
+                <i class="bi bi-file-earmark-spreadsheet"></i>
+                Generate Now
+            </a>
+        </div>
+    }
+
+    <!-- Pending Approval -->
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-header bg-light fw-bold py-3 d-flex justify-content-between align-items-center">
+            <span>
+                <i class="bi bi-hourglass-split"></i>
+                Pending Approval
+                <span class="badge bg-warning text-dark ms-2">
+                    @Model.SubmittedCount
+                </span>
+            </span>
+
+            <div class="d-flex gap-2">
+                <form asp-controller="ManagerDashboard"
+                      asp-action="ApproveAllSubmitted"
+                      method="post"
+                      class="d-inline"
+                      onsubmit="return confirm('Approve all submitted customers?');">
+
+                    <button type="submit"
+                            class="btn btn-success btn-sm"
+                            @(Model.SubmittedCount == 0 ? "disabled" : "")>
+                        <i class="bi bi-check2-all"></i>
+                        Approve All
+                    </button>
+                </form>
+
+                <a asp-controller="ManagerDashboard"
+                   asp-action="SubmittedCustomers"
+                   class="btn btn-outline-primary btn-sm">
+                    View All
+                </a>
+            </div>
+        </div>
+
+        @if (Model.PendingSubmittedCustomers != null && Model.PendingSubmittedCustomers.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Market</th>
+                            <th>Branch</th>
+                            <th>Line</th>
+                            <th>Sales District</th>
+                            <th>Type</th>
+                            <th class="text-end">Decision</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var item in Model.PendingSubmittedCustomers)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@item.Market</td>
+
+                                <td>
+                                    <span class="badge bg-info text-dark">
+                                        @item.Branch
+                                    </span>
+                                </td>
+
+                                <td>@item.Line</td>
+
+                                <td>@item.SalesDistrict</td>
+
+                                <td>
+                                    <span class="badge bg-secondary">
+                                        @item.CustomerType
+                                    </span>
+                                </td>
+
+                                <td class="text-end">
+                                    <form asp-action="ApproveCustomer"
+                                          method="post"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Approve this customer?');">
+                                        <input type="hidden" name="id" value="@item.Id" />
+
+                                        <button type="submit" class="btn btn-success btn-sm">
+                                            <i class="bi bi-check-circle"></i>
+                                            Approve
+                                        </button>
+                                    </form>
+
+                                    <form asp-action="RejectCustomer"
+                                          method="post"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Reject this customer?');">
+                                        <input type="hidden" name="id" value="@item.Id" />
+
+                                        <input type="hidden"
+                                               name="rejectionReason"
+                                               value="Rejected by manager from dashboard" />
+
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="bi bi-x-circle"></i>
+                                            Reject
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="card-body text-center text-muted py-4">
+                <i class="bi bi-check2-circle fs-2 d-block mb-2 text-success"></i>
+                <h6 class="mb-1">No pending approvals</h6>
+                <small>All submitted customers have been reviewed.</small>
+            </div>
+        }
+
+    </div>
+
+    <!-- Bottom Section -->
+    <div class="row g-4">
+
+        <!-- Recent Generated Files -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 h-100">
+
+                <div class="card-header bg-light fw-bold py-3 d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="bi bi-clock-history"></i>
+                        Recent Generated Files
+                    </span>
+
+                    <a asp-controller="CustomerImport"
+                       asp-action="History"
+                       class="btn btn-outline-primary btn-sm">
+                        View All
+                    </a>
+                </div>
+
+                @if (Model.RecentHistory != null && Model.RecentHistory.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>File</th>
+                                    <th class="text-center">Customers</th>
+                                    <th class="text-center">First BP</th>
+                                    <th class="text-center">Last BP</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @foreach (var item in Model.RecentHistory)
+                                {
+                                    <tr>
+                                        <td>@item.Date.ToString("yyyy-MM-dd HH:mm")</td>
+
+                                        <td>
+                                            <i class="bi bi-file-earmark-excel text-success"></i>
+                                            @item.FileName
+                                        </td>
+
+                                        <td class="text-center">@item.CustomersCount</td>
+
+                                        <td class="text-center">@item.FirstBpCode</td>
+
+                                        <td class="text-center">@item.LastBpCode</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="card-body text-center text-muted py-5">
+                        <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                        <h6>No generated files yet</h6>
+                    </div>
+                }
+
+            </div>
+        </div>
+
+        <!-- System Snapshot -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 h-100">
+
+                <div class="card-header bg-light fw-bold py-3">
+                    <i class="bi bi-info-circle"></i>
+                    System Snapshot
+                </div>
+
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+                        <div>
+                            <small class="text-muted d-block">Last BP Code</small>
+                            <strong class="fs-5 text-info">@Model.LastBpCode</strong>
+                        </div>
+
+                        <i class="bi bi-code-square fs-2 text-info"></i>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+                        <div>
+                            <small class="text-muted d-block">Approved Waiting</small>
+                            <strong class="fs-5 text-success">@Model.ApprovedCount</strong>
+                        </div>
+
+                        <i class="bi bi-check-circle fs-2 text-success"></i>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted d-block">Rejected Records</small>
+                            <strong class="fs-5 text-danger">@Model.RejectedCount</strong>
+                        </div>
+
+                        <i class="bi bi-x-circle fs-2 text-danger"></i>
+                    </div>
+
+                </div>
+
+                <div class="card-footer bg-white">
+                    <a asp-controller="SystemSettings"
+                       asp-action="Index"
+                       class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-gear"></i>
+                        System Settings
+                    </a>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<style>
+    .manager-kpi-card {
+        transition: .25s;
+        border-left: 4px solid #e5e7eb !important;
+    }
+
+        .manager-kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,.10) !important;
+        }
+
+    .table th {
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+</style>

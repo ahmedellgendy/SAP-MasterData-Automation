@@ -1,0 +1,280 @@
+﻿@model MasterDataAutomation.Web.ViewModels.SalesDashboardViewModel
+
+@{
+    ViewData["Title"] = "Sales Dashboard";
+}
+
+<div class="container-fluid mt-4 mb-4">
+
+    <!-- Header -->
+    <div class="mb-4">
+        <h2 class="fw-bold mb-1" style="color:#2c3e50;">
+            <i class="bi bi-person-workspace"></i>
+            Sales Workspace
+        </h2>
+
+        <p class="text-muted mb-0">
+            Create customers, submit them to manager, and follow approval status.
+        </p>
+    </div>
+
+    <!-- Main Sales Status -->
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100 status-card">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-2">
+                        <i class="bi bi-pencil-square"></i>
+                        Draft Customers
+                    </small>
+
+                    <h2 class="text-primary mb-0">@Model.DraftCustomersCount</h2>
+                    <small class="text-muted">Still editable before submit</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100 status-card">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-2">
+                        <i class="bi bi-send-check"></i>
+                        Submitted
+                    </small>
+
+                    <h2 class="text-warning mb-0">@Model.SubmittedCount</h2>
+                    <small class="text-muted">Waiting for manager approval</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100 status-card">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-2">
+                        <i class="bi bi-check-circle"></i>
+                        Approved
+                    </small>
+
+                    <h2 class="text-success mb-0">@Model.ApprovedCount</h2>
+                    <small class="text-muted">Accepted by manager</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100 status-card">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-2">
+                        <i class="bi bi-x-circle"></i>
+                        Rejected
+                    </small>
+
+                    <h2 class="text-danger mb-0">@Model.RejectedCount</h2>
+                    <small class="text-muted">Needs review and resubmit</small>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Rejected Alert -->
+    @if (Model.RejectedCount > 0)
+    {
+        <div class="alert alert-warning shadow-sm d-flex justify-content-between align-items-center">
+            <div>
+                <i class="bi bi-exclamation-triangle"></i>
+                You have rejected customers that need review.
+            </div>
+
+            <a asp-controller="CustomerImport"
+               asp-action="RejectedForReview"
+               class="btn btn-warning btn-sm">
+                Review Now
+            </a>
+        </div>
+    }
+
+    <!-- Quick Actions -->
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-4">
+            <a asp-controller="CustomerImport"
+               asp-action="Create"
+               class="card shadow-sm border-0 text-decoration-none h-100 action-card">
+                <div class="card-body text-center">
+                    <i class="bi bi-person-plus fs-1 text-primary mb-3 d-block"></i>
+                    <h5 class="text-dark mb-2">Create Customer</h5>
+                    <small class="text-muted">Add one customer manually</small>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a asp-controller="CustomerImport"
+               asp-action="UploadToDraft"
+               class="card shadow-sm border-0 text-decoration-none h-100 action-card">
+                <div class="card-body text-center">
+                    <i class="bi bi-file-earmark-excel fs-1 text-success mb-3 d-block"></i>
+                    <h5 class="text-dark mb-2">Upload Excel</h5>
+                    <small class="text-muted">Import multiple customers to draft</small>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a asp-controller="CustomerImport"
+               asp-action="Draft"
+               class="card shadow-sm border-0 text-decoration-none h-100 action-card">
+                <div class="card-body text-center">
+                    <i class="bi bi-list-check fs-1 text-warning mb-3 d-block"></i>
+                    <h5 class="text-dark mb-2">Open Draft</h5>
+                    <small class="text-muted">Edit, delete, or submit customers</small>
+                </div>
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Workflow Guide -->
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-header bg-light fw-bold py-3">
+            <i class="bi bi-diagram-3"></i>
+            Sales Workflow
+        </div>
+
+        <div class="card-body">
+            <div class="row g-3 text-center">
+
+                <div class="col-md-3">
+                    <div class="p-3 border rounded h-100">
+                        <i class="bi bi-pencil-square fs-2 text-primary"></i>
+                        <h6 class="mt-2 mb-1">1. Draft</h6>
+                        <small class="text-muted">Create or upload customers</small>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="p-3 border rounded h-100">
+                        <i class="bi bi-send-check fs-2 text-warning"></i>
+                        <h6 class="mt-2 mb-1">2. Submit</h6>
+                        <small class="text-muted">Send draft to manager</small>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="p-3 border rounded h-100">
+                        <i class="bi bi-hourglass-split fs-2 text-info"></i>
+                        <h6 class="mt-2 mb-1">3. Waiting</h6>
+                        <small class="text-muted">Manager reviews records</small>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="p-3 border rounded h-100">
+                        <i class="bi bi-check-circle fs-2 text-success"></i>
+                        <h6 class="mt-2 mb-1">4. Approved</h6>
+                        <small class="text-muted">Ready for SAP generation</small>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Recent Draft Customers -->
+    <div class="card shadow-sm border-0">
+
+        <div class="card-header bg-light fw-bold py-3 d-flex justify-content-between align-items-center">
+            <span>
+                <i class="bi bi-people"></i>
+                Recent Draft Customers
+            </span>
+
+            <a asp-controller="CustomerImport"
+               asp-action="Draft"
+               class="btn btn-outline-primary btn-sm">
+                View Draft
+            </a>
+        </div>
+
+        @if (Model.RecentCustomers != null && Model.RecentCustomers.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Market</th>
+                            <th>Branch</th>
+                            <th>Line</th>
+                            <th>Sales District</th>
+                            <th>Type</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var item in Model.RecentCustomers)
+                        {
+                            <tr>
+                                <td>@item.Market</td>
+                                <td>
+                                    <span class="badge bg-info text-dark">
+                                        @item.Branch
+                                    </span>
+                                </td>
+                                <td>@item.Line</td>
+                                <td>@item.SalesDistrict</td>
+                                <td>
+                                    <span class="badge bg-secondary">
+                                        @item.CustomerType
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="card-body text-center text-muted py-4">
+                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                <h5>No draft customers yet</h5>
+                <p class="mb-0">
+                    Start by creating a customer or uploading an Excel file.
+                </p>
+            </div>
+        }
+
+    </div>
+
+</div>
+
+<style>
+    .status-card {
+        transition: .25s;
+        border-left: 4px solid #e5e7eb !important;
+    }
+
+        .status-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,.10) !important;
+        }
+
+    .action-card {
+        min-height: 165px;
+    }
+
+        .action-card .card-body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .action-card:hover {
+            transform: translateY(-5px);
+        }
+</style>

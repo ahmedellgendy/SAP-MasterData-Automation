@@ -1,0 +1,412 @@
+﻿@* @model MasterDataAutomation.Web.ViewModels.UploadViewModel
+
+@{
+    ViewData["Title"] = "Upload Customers";
+}
+
+<h2>Upload Customer Excel</h2>
+
+<form asp-action="Upload" method="post" enctype="multipart/form-data">
+
+    <div class="mb-3">
+        <label asp-for="File" class="form-label"></label>
+        <input asp-for="File" class="form-control" accept=".xlsx" />
+        <span asp-validation-for="File" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="LastBpCode" class="form-label">
+            Last BP Code
+        </label>
+
+        <input asp-for="LastBpCode" class="form-control" />
+
+        <span asp-validation-for="LastBpCode"
+              class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        Generate SAP File
+    </button>
+
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+} *@
+
+@model MasterDataAutomation.Web.ViewModels.UploadViewModel
+@{
+    ViewData["Title"] = "Upload Customers";
+}
+
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header Card -->
+            <div class="card mb-4 border-primary border-top border-5">
+                <div class="card-body pb-3">
+                    <h1 class="card-title mb-2" style="color: #2c3e50; font-weight: 600;">
+                        <i class="bi bi-cloud-upload"></i> Upload Customer Excel
+                    </h1>
+                    <p class="text-muted mb-0 small">Import customer data from Excel file and generate SAP file</p>
+                </div>
+            </div>
+
+            <!-- Form Card -->
+            <div class="card shadow">
+                <form asp-action="Upload" method="post" enctype="multipart/form-data" novalidate>
+                    <div class="card-body p-4">
+
+                        <!-- File Upload Section -->
+                        <div class="mb-4">
+                            <label asp-for="File" class="form-label fw-bold mb-3">
+                                <i class="bi bi-file-earmark-excel"></i> Excel File <span class="text-danger">*</span>
+                            </label>
+
+                            <!-- Custom File Input with Drag & Drop -->
+                            <div class="position-relative">
+                                <div id="dropZone"
+                                     class="border-2 border-dashed rounded-3 p-5 text-center"
+                                     style="border-color: #dee2e6; cursor: pointer; transition: all 0.3s ease; background-color: #f8f9fa;">
+
+                                    <div class="mb-3">
+                                        <i class="bi bi-file-earmark-arrow-up" style="font-size: 3rem; color: #007bff;"></i>
+                                    </div>
+
+                                    <p class="mb-2 fw-bold" style="color: #2c3e50;">
+                                        Drag & drop your Excel file here
+                                    </p>
+                                    <p class="mb-3 small text-muted">
+                                        or click to browse
+                                    </p>
+                                    <p class="small" style="color: #6c757d;">
+                                        <i class="bi bi-info-circle"></i> Only .xlsx files are accepted
+                                    </p>
+
+                                    <input asp-for="File"
+                                           type="file"
+                                           accept=".xlsx"
+                                           id="fileInput"
+                                           class="position-absolute top-0 start-0 w-100 h-100"
+                                           style="opacity: 0; cursor: pointer;" />
+                                </div>
+
+                                <!-- File Preview -->
+                                <div id="filePreview" class="mt-3" style="display: none;">
+                                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                        <i class="bi bi-check-circle"></i>
+                                        <strong id="fileName"></strong>
+                                        <button type="button" class="btn-close" id="clearFile"></button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <span asp-validation-for="File" class="d-block mt-2 small text-danger fw-bold"></span>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Last BP Code Section -->
+                        <div class="mb-4">
+                            <label asp-for="LastBpCode" class="form-label fw-bold mb-2">
+                                <i class="bi bi-key"></i> Last BP Code <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="LastBpCode"
+                                   class="form-control form-control-lg border-2"
+                                   placeholder="e.g., BP-12345"
+                                   style="border-color: #e0e0e0;" />
+                            <small class="d-block mt-2 text-muted">
+                                <i class="bi bi-info-circle"></i> Enter the last business partner code used in your system
+                            </small>
+                            <span asp-validation-for="LastBpCode" class="d-block mt-2 small text-danger fw-bold"></span>
+                        </div>
+                    </div>
+
+                    <!-- Footer with Buttons -->
+                    <div class="card-footer bg-light p-4 border-0">
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-primary btn-lg flex-grow-1 fw-bold">
+                                <i class="bi bi-arrow-right-circle"></i> Generate SAP File
+                            </button>
+                            <a asp-action="Index" class="btn btn-outline-secondary btn-lg">
+                                <i class="bi bi-arrow-left"></i> Back
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Help Section -->
+            <div class="row mt-4 g-4">
+                <div class="col-12">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Important:</strong> Make sure your Excel file has the correct structure with columns: Line, Market, Branch, Sales District, Customer Type.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .border-5 {
+        border-top-width: 5px !important;
+    }
+
+    .border-2 {
+        border-width: 2px !important;
+    }
+
+    .border-dashed {
+        border-style: dashed !important;
+    }
+
+    .rounded-3 {
+        border-radius: 0.75rem;
+    }
+
+    #dropZone {
+        transition: all 0.3s ease;
+    }
+
+        #dropZone:hover,
+        #dropZone.dragover {
+            background-color: #e7f3ff;
+            border-color: #007bff !important;
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+        }
+
+    .form-control-lg {
+        font-size: 1rem;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+        .form-control-lg:focus {
+            border-color: #0d6efd !important;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+            transform: translateY(-1px);
+        }
+
+    .form-control.is-invalid,
+    .form-select.is-invalid {
+        border-color: #dc3545 !important;
+        background-image: none;
+    }
+
+    .form-control.is-valid,
+    .form-select.is-valid {
+        border-color: #28a745 !important;
+        background-image: none;
+    }
+
+    .form-label {
+        color: #2c3e50;
+        font-size: 0.95rem;
+        letter-spacing: 0.3px;
+    }
+
+        .form-label i {
+            margin-right: 0.5rem;
+            color: #0d6efd;
+        }
+
+    .card {
+        border-radius: 0.75rem;
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+    }
+
+    .btn-outline-secondary:hover {
+        transform: translateY(-2px);
+    }
+
+    .alert {
+        border-radius: 0.5rem;
+        border: none;
+        border-left: 4px solid;
+    }
+
+    .alert-warning {
+        border-left-color: #ffc107;
+    }
+
+    .alert-success {
+        border-left-color: #28a745;
+    }
+
+    .alert i {
+        margin-right: 0.5rem;
+    }
+
+
+    {
+        font-size: 0.95rem;
+        padding: 0.6rem 1rem;
+    }
+
+    #dropZone {
+        padding: 2rem 1rem !important;
+    }
+
+        #dropZone i {
+            font-size: 2rem !important;
+        }
+
+    }
+</style>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const fileInput = document.getElementById('fileInput');
+            const dropZone = document.getElementById('dropZone');
+            const filePreview = document.getElementById('filePreview');
+            const fileName = document.getElementById('fileName');
+            const clearFileBtn = document.getElementById('clearFile');
+            const form = document.querySelector('form');
+
+            // Drag and Drop Events
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.add('dragover');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.remove('dragover');
+                });
+            });
+
+            // Handle drop
+            dropZone.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const files = e.dataTransfer.files;
+                fileInput.files = files;
+                handleFileSelect();
+            }
+
+            // Click to browse
+            // dropZone.addEventListener('click', () => {
+            //     fileInput.click();
+            // });
+
+            // Handle file selection
+            fileInput.addEventListener('change', handleFileSelect);
+
+            function handleFileSelect() {
+                const files = fileInput.files;
+
+                if (files.length === 0) {
+                    filePreview.style.display = 'none';
+                    return;
+                }
+
+                const file = files[0];
+
+                // Validate file type
+                if (!file.name.endsWith('.xlsx')) {
+                    alert('Only .xlsx files are allowed');
+                    fileInput.value = '';
+                    filePreview.style.display = 'none';
+                    return;
+                }
+
+                // Show file preview
+                fileName.textContent = file.name;
+                filePreview.style.display = 'block';
+
+                // Validate on form submit
+                validateField(document.querySelector('[asp-for="File"]'));
+            }
+
+            // Clear file
+            clearFileBtn.addEventListener('click', () => {
+                fileInput.value = '';
+                filePreview.style.display = 'none';
+            });
+
+            // Form validation
+            const lastBpCodeInput = document.querySelector('[asp-for="LastBpCode"]');
+
+            [fileInput, lastBpCodeInput].forEach(field => {
+                if (field) {
+                    field.addEventListener('blur', function () {
+                        validateField(this);
+                    });
+
+                    field.addEventListener('change', function () {
+                        validateField(this);
+                    });
+                }
+            });
+
+            function validateField(field) {
+                if (field.id === 'fileInput') {
+                    if (fileInput.files.length === 0) {
+                        field.classList.add('is-invalid');
+                        field.classList.remove('is-valid');
+                    } else {
+                        field.classList.remove('is-invalid');
+                        field.classList.add('is-valid');
+                    }
+                } else if (field.value.trim()) {
+                    field.classList.remove('is-invalid');
+                    field.classList.add('is-valid');
+                } else {
+                    field.classList.add('is-invalid');
+                    field.classList.remove('is-valid');
+                }
+            }
+
+            form.addEventListener('submit', function (e) {
+                let isValid = true;
+
+                if (fileInput.files.length === 0) {
+                    fileInput.classList.add('is-invalid');
+                    isValid = false;
+                }
+
+                if (!lastBpCodeInput.value.trim()) {
+                    lastBpCodeInput.classList.add('is-invalid');
+                    isValid = false;
+                }
+
+                if (!isValid) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            });
+        });
+    </script>
+}
