@@ -14,6 +14,9 @@ using MasterDataAutomation.Infrastructure.Validators;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
+using MasterDataAutomation.Application.Modules.ProductMaster.Interfaces;
+using MasterDataAutomation.Infrastructure.Modules.ProductMaster.Persistence;
+
 
 namespace MasterDataAutomation
 {
@@ -53,7 +56,7 @@ namespace MasterDataAutomation
             builder.Services.AddScoped<IHistoryService, SqlHistoryService>();
             builder.Services.AddScoped<ICustomerDraftRepository, SqlCustomerDraftRepository>();
             builder.Services.AddHttpContextAccessor();
-
+            builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
             builder.Services.AddDistributedMemoryCache();
             builder.Services.AddSession();

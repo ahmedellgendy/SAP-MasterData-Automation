@@ -1,0 +1,125 @@
+﻿@model List<MasterDataAutomation.Application.Modules.ProductMaster.Dtos.ProductDto>
+
+@{
+    ViewData["Title"] = "Products";
+    var totalProducts = Model?.Count ?? 0;
+}
+
+<div class="container-fluid mt-4 mb-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold mb-1" style="color:#2c3e50;">
+                <i class="bi bi-box-seam"></i>
+                Products
+            </h1>
+
+            <p class="text-muted mb-0">
+                Existing product master data imported from SAP price list.
+            </p>
+        </div>
+
+        <a asp-controller="ProductImport"
+           asp-action="Upload"
+           class="btn btn-success">
+            <i class="bi bi-upload"></i>
+            Import Products
+        </a>
+    </div>
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted d-block mb-2">
+                        <i class="bi bi-box"></i>
+                        Total Products
+                    </small>
+                    <h2 class="text-primary mb-0">@totalProducts</h2>
+                    <small class="text-muted">Products in master data</small>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="card shadow-sm border-0" style="border-radius:0.75rem; overflow:hidden;">
+
+        <div class="card-header bg-light py-3 fw-bold">
+            <i class="bi bi-table"></i>
+            Product Records
+        </div>
+
+        @if (Model != null && Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Item Code</th>
+                            <th>Item Name</th>
+                            <th class="text-end">Market Price</th>
+                            <th class="text-end">Retail Price</th>
+                            <th>Currency</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @for (int i = 0; i < Model.Count; i++)
+                        {
+                            <tr>
+                                <td class="fw-bold">@(i + 1)</td>
+
+                                <td>
+                                    <span class="badge bg-dark">
+                                        @Model[i].ItemCode
+                                    </span>
+                                </td>
+
+                                <td class="fw-semibold">@Model[i].ItemName</td>
+
+                                <td class="text-end">
+                                    @(Model[i].MarketSellingPrice?.ToString("N2") ?? "-")
+                                </td>
+
+                                <td class="text-end">
+                                    @(Model[i].RetailSellingPrice?.ToString("N2") ?? "-")
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-secondary">
+                                        @(Model[i].Currency ?? "-")
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @if (Model[i].IsActive)
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">Inactive</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="card-body text-center text-muted py-5">
+                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                <h5>No products imported yet</h5>
+                <p class="mb-0">Import existing products from Excel to start building product master data.</p>
+            </div>
+        }
+
+    </div>
+
+</div>

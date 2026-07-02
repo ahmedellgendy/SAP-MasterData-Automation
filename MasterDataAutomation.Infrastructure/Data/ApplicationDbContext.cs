@@ -1,4 +1,5 @@
 ﻿using MasterDataAutomation.Infrastructure.Data.Entities;
+using MasterDataAutomation.Infrastructure.Data.Entities.Products;
 using Microsoft.EntityFrameworkCore;
 
 namespace MasterDataAutomation.Infrastructure.Data;
@@ -16,6 +17,8 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<SystemSettingEntity> SystemSettings { get; set; }
     public DbSet<AppUserEntity> AppUsers { get; set; }
+
+    public DbSet<ProductEntity> Products { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -121,6 +124,37 @@ public class ApplicationDbContext : DbContext
                 .HasDefaultValueSql("GETDATE()");
 
             entity.HasIndex(x => x.UserName)
+                .IsUnique();
+        });
+
+        // Product Master
+        modelBuilder.Entity<ProductEntity>(entity =>
+        {
+            entity.ToTable("Products");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.ItemCode)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(x => x.ItemName)
+                .IsRequired()
+                .HasMaxLength(250);
+
+            entity.Property(x => x.MarketSellingPrice)
+                .HasPrecision(18, 2);
+
+            entity.Property(x => x.RetailSellingPrice)
+                .HasPrecision(18, 2);
+
+            entity.Property(x => x.Currency)
+                .HasMaxLength(10);
+
+            entity.Property(x => x.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            entity.HasIndex(x => x.ItemCode)
                 .IsUnique();
         });
     }
