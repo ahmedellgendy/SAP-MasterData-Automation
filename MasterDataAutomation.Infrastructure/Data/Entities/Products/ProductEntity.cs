@@ -7,7 +7,7 @@ public class ProductEntity
     public string ItemCode { get; set; } = string.Empty;
     public string ItemName { get; set; } = string.Empty;
 
-    public decimal? MarketSellingPrice { get; set; }
+    public decimal? OutletSellingPrice { get; set; }
     public decimal? RetailSellingPrice { get; set; }
 
     public string? Currency { get; set; }

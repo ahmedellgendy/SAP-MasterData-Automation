@@ -1,4 +1,4 @@
-﻿@model MasterDataAutomation.Web.ViewModels.ManagerDashboardViewModel
+﻿@* @model MasterDataAutomation.Web.ViewModels.ManagerDashboardViewModel
 
 @{
     ViewData["Title"] = "Manager Dashboard";
@@ -390,4 +390,98 @@
     .table td {
         vertical-align: middle;
     }
-</style>
+</style> *@
+
+@{
+    ViewData["Title"] = "Manager Dashboard";
+}
+
+<div class="container-fluid mt-4 mb-4">
+
+    <div class="mb-4">
+        <h1 class="fw-bold mb-1" style="color:#2c3e50;">
+            <i class="bi bi-speedometer2"></i>
+            Manager Dashboard
+        </h1>
+
+        <p class="text-muted mb-0">
+            Review customer requests, approve master data, and follow SAP generation history.
+        </p>
+    </div>
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+            <a asp-controller="ManagerDashboard"
+               asp-action="SubmittedCustomers"
+               class="card shadow-sm border-0 text-decoration-none h-100 action-card">
+                <div class="card-body text-center">
+                    <i class="bi bi-send-check fs-1 text-warning d-block mb-3"></i>
+                    <h5 class="text-dark">Pending Customers</h5>
+                    <small class="text-muted">Review submitted customers</small>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-3">
+            <a asp-controller="ManagerDashboard"
+               asp-action="ApprovedCustomers"
+               class="card shadow-sm border-0 text-decoration-none h-100 action-card">
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle fs-1 text-success d-block mb-3"></i>
+                    <h5 class="text-dark">Approved Customers</h5>
+                    <small class="text-muted">Ready for SAP generation</small>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-3">
+            <a asp-controller="ManagerDashboard"
+               asp-action="RejectedCustomers"
+               class="card shadow-sm border-0 text-decoration-none h-100 action-card">
+                <div class="card-body text-center">
+                    <i class="bi bi-x-circle fs-1 text-danger d-block mb-3"></i>
+                    <h5 class="text-dark">Rejected Customers</h5>
+                    <small class="text-muted">Rejected requests with reasons</small>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-3">
+            <a asp-controller="CustomerImport"
+               asp-action="History"
+               class="card shadow-sm border-0 text-decoration-none h-100 action-card">
+                <div class="card-body text-center">
+                    <i class="bi bi-clock-history fs-1 text-primary d-block mb-3"></i>
+                    <h5 class="text-dark">SAP History</h5>
+                    <small class="text-muted">Generated SAP files history</small>
+                </div>
+            </a>
+        </div>
+
+    </div>
+
+    <div class="card shadow-sm border-0" style="border-radius:0.75rem;">
+        <div class="card-body p-4">
+
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-primary bg-opacity-10 text-primary rounded-3 d-flex align-items-center justify-content-center"
+                     style="width:55px;height:55px;">
+                    <i class="bi bi-info-circle fs-3"></i>
+                </div>
+
+                <div>
+                    <h5 class="fw-bold mb-1">
+                        Customer Approval Workflow
+                    </h5>
+
+                    <p class="text-muted mb-0">
+                        Sales users create or upload customers, then manager reviews and approves them before SAP file generation.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>

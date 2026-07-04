@@ -57,6 +57,11 @@ namespace MasterDataAutomation
             builder.Services.AddScoped<ICustomerDraftRepository, SqlCustomerDraftRepository>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<IProductRepository, ProductRepository>();
+            builder.Services.AddScoped<IProductRequestRepository, ProductRequestRepository>();
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
+
+
 
             builder.Services.AddDistributedMemoryCache();
             builder.Services.AddSession();

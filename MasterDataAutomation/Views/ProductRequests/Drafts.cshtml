@@ -1,0 +1,370 @@
+﻿@model List<MasterDataAutomation.Application.Modules.ProductMaster.Dtos.ProductRequestDto>
+
+@{
+    ViewData["Title"] = "Draft Product Requests";
+
+    var requests = Model ?? new List<MasterDataAutomation.Application.Modules.ProductMaster.Dtos.ProductRequestDto>();
+}
+
+<style>
+    .draft-wrap {
+        background: #f4f7f8;
+        border-radius: 16px;
+        padding: 24px;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        color: #16232c;
+    }
+
+    .draft-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 16px;
+        flex-wrap: wrap;
+        border-bottom: 2px solid #16232c;
+        padding-bottom: 18px;
+        margin-bottom: 22px;
+    }
+
+    .draft-title {
+        margin: 0;
+        font-size: 30px;
+        font-weight: 800;
+    }
+
+    .draft-sub {
+        margin: 6px 0 0;
+        color: #6b7a86;
+        font-size: 14px;
+    }
+
+    .draft-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn-main {
+        background: #2f7d6b;
+        border: 1px solid #2f7d6b;
+        color: #fff;
+        font-weight: 700;
+        border-radius: 10px;
+        padding: 10px 16px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-main:hover {
+            background: #245f52;
+            border-color: #245f52;
+            color: #fff;
+        }
+
+    .btn-back {
+        border: 1px solid #16232c;
+        color: #16232c;
+        background: transparent;
+        font-weight: 700;
+        border-radius: 10px;
+        padding: 10px 16px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-back:hover {
+            background: #16232c;
+            color: #fff;
+        }
+
+    .draft-alert {
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 16px;
+        font-weight: 600;
+    }
+
+    .draft-alert-success {
+        background: #e7f3f0;
+        color: #1d5347;
+        border: 1px solid #cfe6de;
+    }
+
+    .draft-panel {
+        background: #fff;
+        border: 1px solid #e1e7ea;
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .draft-panel-head {
+        padding: 16px 18px;
+        background: #fafcfd;
+        border-bottom: 1px solid #e1e7ea;
+        font-weight: 800;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .draft-count {
+        background: #e7f3f0;
+        color: #1d5347;
+        border-radius: 999px;
+        padding: 5px 12px;
+        font-size: 13px;
+        font-weight: 800;
+    }
+
+    .draft-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0;
+    }
+
+        .draft-table th {
+            background: #f4f7f8;
+            color: #6b7a86;
+            padding: 12px 14px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            border-bottom: 1px solid #e1e7ea;
+            white-space: nowrap;
+        }
+
+        .draft-table td {
+            padding: 14px;
+            border-bottom: 1px solid #e1e7ea;
+            vertical-align: middle;
+            font-size: 14px;
+        }
+
+        .draft-table tr:last-child td {
+            border-bottom: none;
+        }
+
+    .code {
+        font-family: Consolas, monospace;
+        font-weight: 800;
+        border-left: 3px solid #2f7d6b;
+        padding-left: 8px;
+    }
+
+    .name {
+        font-weight: 700;
+    }
+
+    .num {
+        font-family: Consolas, monospace;
+        font-weight: 700;
+    }
+
+    .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #f7eedc;
+        color: #b5822b;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+        .status::before {
+            content: "";
+            width: 7px;
+            height: 7px;
+            background: #b5822b;
+            border-radius: 50%;
+        }
+
+    .submit-btn {
+        border: 1px solid #2f7d6b;
+        background: #2f7d6b;
+        color: #fff;
+        border-radius: 8px;
+        padding: 7px 12px;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+        .submit-btn:hover {
+            background: #245f52;
+            border-color: #245f52;
+        }
+
+    .empty {
+        text-align: center;
+        padding: 50px 18px;
+    }
+
+    .empty-icon {
+        width: 60px;
+        height: 60px;
+        border: 1px dashed #9aa8b2;
+        border-radius: 14px;
+        margin: 0 auto 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #9aa8b2;
+        font-size: 24px;
+    }
+
+    .empty h5 {
+        font-weight: 800;
+        margin-bottom: 6px;
+    }
+
+    .empty p {
+        color: #6b7a86;
+        margin-bottom: 18px;
+    }
+</style>
+
+<div class="draft-wrap">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="draft-alert draft-alert-success">
+            <i class="bi bi-check-circle"></i>
+            @TempData["Success"]
+        </div>
+    }
+
+    <div class="draft-header">
+        <div>
+            <h1 class="draft-title">Draft Product Requests</h1>
+            <p class="draft-sub">
+                Review draft product requests before submitting them to Accounts Manager.
+            </p>
+        </div>
+
+        <div class="draft-actions">
+            <a asp-controller="ProductRequests"
+               asp-action="Index"
+               class="btn-back">
+                <i class="bi bi-arrow-left"></i>
+                Back
+            </a>
+
+            <a asp-controller="ProductRequests"
+               asp-action="Create"
+               class="btn-main">
+                <i class="bi bi-plus-circle"></i>
+                New Request
+            </a>
+        </div>
+    </div>
+
+    <div class="draft-panel">
+
+        <div class="draft-panel-head">
+            <span>
+                <i class="bi bi-list-check"></i>
+                Draft Requests
+            </span>
+
+            <span class="draft-count">
+                @requests.Count Draft(s)
+            </span>
+        </div>
+
+        @if (requests.Any())
+        {
+            <div class="table-responsive">
+                <table class="draft-table">
+                    <thead>
+                        <tr>
+                            <th>Item Code</th>
+                            <th>Item Name</th>
+                            <th style="text-align:right;">Purchase Price</th>
+                            <th style="text-align:center;">Pieces</th>
+                            <th style="text-align:right;">Piece Price</th>
+                            <th>Currency</th>
+                            <th>Status</th>
+                            <th style="text-align:right;">Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var item in requests)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="code">@item.ItemCode</span>
+                                </td>
+
+                                <td class="name">@item.ItemName</td>
+
+                                <td class="num" style="text-align:right;">
+                                    @item.PurchasePrice.ToString("N2")
+                                </td>
+
+                                <td class="num" style="text-align:center;">
+                                    @item.PiecesCount
+                                </td>
+
+                                <td class="num" style="text-align:right;">
+                                    @item.PiecePrice.ToString("N2")
+                                </td>
+
+                                <td>
+                                    @(item.Currency ?? "EGP")
+                                </td>
+
+                                <td>
+                                    <span class="status">@item.Status</span>
+                                </td>
+
+                                <td style="text-align:right;">
+                                    <form asp-controller="ProductRequests"
+                                          asp-action="Submit"
+                                          method="post"
+                                          class="m-0"
+                                          onsubmit="return confirm('Submit this request to Accounts Manager?');">
+
+                                        <input type="hidden" name="id" value="@item.Id" />
+
+                                        <button type="submit" class="submit-btn">
+                                            <i class="bi bi-send"></i>
+                                            Submit
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty">
+                <div class="empty-icon">
+                    <i class="bi bi-inbox"></i>
+                </div>
+
+                <h5>No draft requests</h5>
+                <p>Create a new product request first.</p>
+
+                <a asp-controller="ProductRequests"
+                   asp-action="Create"
+                   class="btn-main">
+                    <i class="bi bi-plus-circle"></i>
+                    Create Request
+                </a>
+            </div>
+        }
+
+    </div>
+
+</div>

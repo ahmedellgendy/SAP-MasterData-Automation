@@ -61,7 +61,21 @@ public class AccountController : Controller
         if (user.Role == "Manager" || user.Role == "Admin")
             return RedirectToAction("Index", "ManagerDashboard");
 
-        return RedirectToAction("Index", "SalesDashboard");
+        return user.Role switch
+        {
+            "Admin" => RedirectToAction("Index", "ManagerDashboard"),
+
+            "Sales" => RedirectToAction("Index", "SalesDashboard"),
+
+            "Manager" => RedirectToAction("Index", "ManagerDashboard"),
+
+            "AccountsUser" => RedirectToAction("Index", "ProductRequests"),
+            "AccountsManager" => RedirectToAction("Index", "ProductAccountsManager"),
+            "ExecutiveManager" => RedirectToAction("Index", "ProductExecutiveManager"),
+
+
+            _ => RedirectToAction("AccessDenied", "Account")
+        };
     }
 
     [HttpPost]

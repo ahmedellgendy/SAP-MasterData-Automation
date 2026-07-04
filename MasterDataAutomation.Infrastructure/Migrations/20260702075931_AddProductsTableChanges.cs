@@ -19,7 +19,7 @@ namespace MasterDataAutomation.Infrastructure.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ItemCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     ItemName = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
-                    MarketSellingPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
+                    OutletSellingPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
                     RetailSellingPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
                     Currency = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
                     MarketValidFrom = table.Column<DateTime>(type: "datetime2", nullable: true),

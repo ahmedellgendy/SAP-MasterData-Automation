@@ -1,0 +1,158 @@
+﻿@model MasterDataAutomation.Application.Modules.ProductMaster.Dtos.ProductRequestDto
+
+@{
+    ViewData["Title"] = "Set Product Prices";
+}
+
+<div class="container-fluid mt-4 mb-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold mb-1" style="color:#2c3e50;">
+                <i class="bi bi-cash-coin"></i>
+                Set Product Prices
+            </h1>
+
+            <p class="text-muted mb-0">
+                Add market and retail prices before creating the final product.
+            </p>
+        </div>
+
+        <a asp-controller="ProductExecutiveManager"
+           asp-action="Submitted"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 h-100" style="border-radius:0.75rem;">
+                <div class="card-header bg-light fw-bold py-3">
+                    <i class="bi bi-info-circle"></i>
+                    Product Request Details
+                </div>
+
+                <div class="card-body">
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Item Code</small>
+                        <span class="badge bg-dark fs-6">@Model.ItemCode</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Item Name</small>
+                        <strong>@Model.ItemName</strong>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Purchase Price</small>
+                        <strong>@Model.PurchasePrice.ToString("N2") @Model.Currency</strong>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Pieces Count</small>
+                        <strong>@Model.PiecesCount</strong>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Piece Price</small>
+                        <strong>@Model.PiecePrice.ToString("N2") @Model.Currency</strong>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Bonus</small>
+                        @if (Model.HasBonus)
+                        {
+                            <span class="badge bg-info text-dark">
+                                Yes (@Model.BonusQuantity)
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">No Bonus</span>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Notes))
+                    {
+                        <div class="mb-3">
+                            <small class="text-muted d-block">Notes</small>
+                            <p class="mb-0">@Model.Notes</p>
+                        </div>
+                    }
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 h-100" style="border-radius:0.75rem;">
+                <div class="card-header bg-light fw-bold py-3">
+                    <i class="bi bi-cash-stack"></i>
+                    Pricing
+                </div>
+
+                <div class="card-body">
+
+                    <form asp-action="SetPrices" method="post">
+
+                        <input type="hidden" asp-for="Id" />
+
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="row g-3">
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Outlet Price</label>
+                                <input asp-for="OutletSellingPrice"
+                                       class="form-control"
+                                       type="number"
+                                       step="0.01"
+                                       placeholder="Enter Outlet Price" />
+                                <span asp-validation-for="OutletSellingPrice" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Retail Price</label>
+                                <input asp-for="RetailSellingPrice"
+                                       class="form-control"
+                                       type="number"
+                                       step="0.01"
+                                       placeholder="Enter retail price" />
+                                <span asp-validation-for="RetailSellingPrice" class="text-danger"></span>
+                            </div>
+
+                        </div>
+
+                        <div class="alert alert-info mt-4">
+                            <i class="bi bi-info-circle"></i>
+                            After saving, this request will be converted into a final product in Products Master.
+                        </div>
+
+                        <div class="mt-4 d-flex gap-2">
+                            <button type="submit"
+                                    class="btn btn-success"
+                                    onclick="return confirm('Create this product in products master?');">
+                                <i class="bi bi-check-circle"></i>
+                                Create Product
+                            </button>
+
+                            <a asp-controller="ProductExecutiveManager"
+                               asp-action="Submitted"
+                               class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
