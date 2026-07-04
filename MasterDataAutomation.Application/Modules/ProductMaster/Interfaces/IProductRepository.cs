@@ -9,6 +9,9 @@ public interface IProductRepository
 
     ProductDto? GetById(int id);
     ProductDto? GetByItemCode(string itemCode);
+    ProductDto? GetByItemName(string itemName);
+
+    bool ExistsByItemName(string itemName, int? excludeId = null);
 
     void Add(ProductDto product);
     void Update(ProductDto product);

@@ -70,26 +70,42 @@ public class ProductRequestsController : Controller
             ModelState.AddModelError(nameof(model.ItemName), "Item name is required.");
         }
 
-        if (model.PurchasePrice <= 0)
+        if (!model.PurchasePrice.HasValue || model.PurchasePrice.Value <= 0)
         {
-            ModelState.AddModelError(nameof(model.PurchasePrice), "Purchase price must be greater than zero.");
+            ModelState.AddModelError(nameof(model.PurchasePrice), "Purchase price is required and must be greater than zero.");
         }
 
-        if (model.PiecesCount <= 0)
+        if (!model.PiecesCount.HasValue || model.PiecesCount.Value <= 0)
         {
-            ModelState.AddModelError(nameof(model.PiecesCount), "Pieces count must be greater than zero.");
+            ModelState.AddModelError(nameof(model.PiecesCount), "Pieces count is required and must be greater than zero.");
         }
 
-
-        if (_productRepository.GetByItemCode(model.ItemCode.Trim()) != null)
+        if (!string.IsNullOrWhiteSpace(model.ItemCode)
+            && _productRepository.GetByItemCode(model.ItemCode.Trim()) != null)
         {
             ModelState.AddModelError(nameof(model.ItemCode), "This item code already exists in products master.");
         }
 
+        if (!string.IsNullOrWhiteSpace(model.ItemName)
+            && _productRepository.GetByItemName(model.ItemName.Trim()) != null)
+        {
+            ModelState.AddModelError(nameof(model.ItemName), "Product name already exists in products master.");
+        }
+
         if (!ModelState.IsValid)
         {
+            model.Currency = string.IsNullOrWhiteSpace(model.Currency)
+                ? "EGP"
+                : model.Currency;
+
             return View(model);
         }
+
+        model.ItemCode = model.ItemCode.Trim();
+        model.ItemName = model.ItemName.Trim();
+        model.Currency = string.IsNullOrWhiteSpace(model.Currency)
+            ? "EGP"
+            : model.Currency.Trim();
 
         _productRequestRepository.Create(model);
 

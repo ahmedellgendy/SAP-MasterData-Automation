@@ -63,10 +63,35 @@ public class ProductsController : Controller
             ModelState.AddModelError(nameof(model.ItemCode), "Item code already exists.");
         }
 
+        if (!string.IsNullOrWhiteSpace(model.ItemName)
+            && _productRepository.GetByItemName(model.ItemName.Trim()) != null)
+        {
+            ModelState.AddModelError(nameof(model.ItemName), "Item name already exists.");
+        }
+
+        if (!model.RetailSellingPrice.HasValue || model.RetailSellingPrice <= 0)
+        {
+            ModelState.AddModelError(nameof(model.RetailSellingPrice), "Retail selling price is required and must be greater than zero.");
+        }
+
+        if (!model.OutletSellingPrice.HasValue || model.OutletSellingPrice <= 0)
+        {
+            ModelState.AddModelError(nameof(model.OutletSellingPrice), "Outlet selling price is required and must be greater than zero.");
+        }
+
         if (!ModelState.IsValid)
         {
             return View(model);
         }
+
+        model.ItemCode = model.ItemCode.Trim();
+        model.ItemName = model.ItemName.Trim();
+        model.Currency = string.IsNullOrWhiteSpace(model.Currency)
+            ? "EGP"
+            : model.Currency.Trim();
+
+        // حل مشكلة إن المنتج بيتحفظ Inactive
+        model.IsActive = true;
 
         _productRepository.Add(model);
 
@@ -90,8 +115,9 @@ public class ProductsController : Controller
         return View(product);
     }
 
-    [Authorize(Roles = "Admin,ExecutiveManager")]
+
     [HttpPost]
+    [Authorize(Roles = "Admin,ExecutiveManager")]
     public IActionResult Edit(ProductDto model)
     {
         if (model.Id <= 0)
@@ -105,10 +131,30 @@ public class ProductsController : Controller
             ModelState.AddModelError(nameof(model.ItemName), "Item name is required.");
         }
 
+        if (!string.IsNullOrWhiteSpace(model.ItemName)
+            && _productRepository.ExistsByItemName(model.ItemName.Trim(), model.Id))
+        {
+            ModelState.AddModelError(nameof(model.ItemName), "Item name already exists.");
+        }
+        if (!model.RetailSellingPrice.HasValue || model.RetailSellingPrice <= 0)
+        {
+            ModelState.AddModelError(nameof(model.RetailSellingPrice), "Retail selling price is required and must be greater than zero.");
+        }
+
+        if (!model.OutletSellingPrice.HasValue || model.OutletSellingPrice <= 0)
+        {
+            ModelState.AddModelError(nameof(model.OutletSellingPrice), "Outlet selling price is required and must be greater than zero.");
+        }
+
         if (!ModelState.IsValid)
         {
             return View(model);
         }
+
+        model.ItemName = model.ItemName.Trim();
+        model.Currency = string.IsNullOrWhiteSpace(model.Currency)
+            ? "EGP"
+            : model.Currency.Trim();
 
         _productRepository.Update(model);
 
@@ -275,6 +321,18 @@ public class ProductsController : Controller
             if (!TryGetDecimal(worksheet.Cell(row, outletPriceCol), out var outletSellingPrice))
             {
                 errors.Add($"Row {row}: OutletSellingPrice is invalid.");
+                continue;
+            }
+
+            if (retailSellingPrice <= 0)
+            {
+                errors.Add($"Row {row}: RetailSellingPrice is required and must be greater than zero.");
+                continue;
+            }
+
+            if (outletSellingPrice <= 0)
+            {
+                errors.Add($"Row {row}: OutletSellingPrice is required and must be greater than zero.");
                 continue;
             }
 

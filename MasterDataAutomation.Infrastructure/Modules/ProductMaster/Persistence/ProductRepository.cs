@@ -119,6 +119,45 @@ public class ProductRepository : IProductRepository
             .FirstOrDefault();
     }
 
+    public ProductDto? GetByItemName(string itemName)
+    {
+        itemName = itemName.Trim().ToLower();
+
+        return _context.Products
+            .AsNoTracking()
+            .Where(x => x.ItemName.ToLower() == itemName)
+            .Select(x => new ProductDto
+            {
+                Id = x.Id,
+                ItemCode = x.ItemCode,
+                ItemName = x.ItemName,
+                OutletSellingPrice = x.OutletSellingPrice,
+                RetailSellingPrice = x.RetailSellingPrice,
+                Currency = x.Currency,
+                MarketValidFrom = x.MarketValidFrom,
+                MarketValidTo = x.MarketValidTo,
+                RetailValidFrom = x.RetailValidFrom,
+                RetailValidTo = x.RetailValidTo,
+                IsActive = x.IsActive
+            })
+            .FirstOrDefault();
+    }
+
+    public bool ExistsByItemName(string itemName, int? excludeId = null)
+    {
+        itemName = itemName.Trim().ToLower();
+
+        var query = _context.Products
+            .AsNoTracking()
+            .Where(x => x.ItemName.ToLower() == itemName);
+
+        if (excludeId.HasValue)
+        {
+            query = query.Where(x => x.Id != excludeId.Value);
+        }
+
+        return query.Any();
+    }
     public void Add(ProductDto product)
     {
         var entity = new ProductEntity

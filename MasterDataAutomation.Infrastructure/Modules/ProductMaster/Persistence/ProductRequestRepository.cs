@@ -45,15 +45,24 @@ public class ProductRequestRepository : IProductRequestRepository
 
     public void Create(CreateProductRequestDto dto)
     {
+        if (!dto.PurchasePrice.HasValue || dto.PurchasePrice.Value <= 0)
+            return;
+
+        if (!dto.PiecesCount.HasValue || dto.PiecesCount.Value <= 0)
+            return;
+
+        var purchasePrice = dto.PurchasePrice.Value;
+        var piecesCount = dto.PiecesCount.Value;
+
         var entity = new ProductRequestEntity
         {
             ItemCode = dto.ItemCode.Trim(),
             ItemName = dto.ItemName.Trim(),
             Notes = dto.Notes?.Trim(),
 
-            PurchasePrice = dto.PurchasePrice,
-            PiecesCount = dto.PiecesCount,
-            PiecePrice = Math.Round(dto.PurchasePrice / dto.PiecesCount, 2),
+            PurchasePrice = purchasePrice,
+            PiecesCount = piecesCount,
+            PiecePrice = Math.Round(purchasePrice / piecesCount, 2),
 
             HasBonus = dto.HasBonus,
             BonusQuantity = dto.HasBonus ? dto.BonusQuantity : null,
@@ -190,7 +199,8 @@ public class ProductRequestRepository : IProductRequestRepository
             return false;
 
         var productExists = _context.Products
-            .Any(x => x.ItemCode == request.ItemCode);
+                .Any(x => x.ItemCode == request.ItemCode ||
+              x.ItemName.ToLower() == request.ItemName.ToLower());
 
         if (productExists)
             return false;

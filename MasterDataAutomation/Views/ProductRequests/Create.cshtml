@@ -168,13 +168,24 @@
 
                 <div class="col-md-4">
                     <label asp-for="PurchasePrice" class="form-label">Purchase Price</label>
-                    <input asp-for="PurchasePrice" class="form-control" type="number" step="0.01" min="0" />
+                    <input asp-for="PurchasePrice"
+                           class="form-control"
+                           type="number"
+                           step="0.01"
+                           min="0.01"
+                           required
+                           placeholder="Enter purchase price" />
                     <span asp-validation-for="PurchasePrice" class="text-danger small"></span>
                 </div>
 
                 <div class="col-md-4">
                     <label asp-for="PiecesCount" class="form-label">Pieces Count</label>
-                    <input asp-for="PiecesCount" class="form-control" type="number" min="1" />
+                    <input asp-for="PiecesCount"
+                           class="form-control"
+                           type="number"
+                           min="1"
+                           required
+                           placeholder="Enter pieces count" />
                     <span asp-validation-for="PiecesCount" class="text-danger small"></span>
                 </div>
 
