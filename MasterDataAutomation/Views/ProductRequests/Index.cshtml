@@ -1,431 +1,668 @@
-﻿@* @model MasterDataAutomation.Web.ViewModels.ProductMaster.AccountsUserProductDashboardViewModel
+﻿@model MasterDataAutomation.Web.ViewModels.ProductMaster.AccountsUserProductDashboardViewModel
 
 @{
     ViewData["Title"] = "Product Requests";
+
+    var draftCount = Model?.DraftCount ?? 0;
+    var submittedCount = Model?.SubmittedCount ?? 0;
+    var totalCount = draftCount + submittedCount;
+
+    var recentDrafts = Model?.RecentDrafts
+        ?? new List<MasterDataAutomation.Application.Modules.ProductMaster.Dtos.ProductRequestDto>();
+
+    var recentSubmitted = Model?.RecentSubmitted
+        ?? new List<MasterDataAutomation.Application.Modules.ProductMaster.Dtos.ProductRequestDto>();
 }
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-
 <style>
-    :root {
-        --ink: #16232c;
-        --ink-soft: #5b6b78;
-        --ink-faint: #93a0aa;
-        --paper: #f3f6f6;
-        --surface: #ffffff;
-        --line: #e0e6e7;
-        --accent: #2f7d6b;
-        --accent-ink: #1d5347;
-        --accent-soft: #e6f1ee;
-        --amber: #b5822b;
-        --amber-soft: #f6ecd9;
-        --warn: #b6483f;
-        --warn-soft: #f7e9e7;
+    .requests-page {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        color: #17212b;
     }
 
-    .pm-wrap {
-        font-family: 'Inter', sans-serif;
-        color: var(--ink);
-        background: var(--paper);
-        border-radius: 0.4rem;
-        padding: 1.75rem;
-    }
-
-    .pm-eyebrow {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.7rem;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: var(--accent-ink);
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        margin-bottom: 0.6rem;
-    }
-
-        .pm-eyebrow::before {
-            content: "";
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--accent);
-            display: inline-block;
-        }
-
-    .pm-header {
-        border-bottom: 2px solid var(--ink);
-        padding-bottom: 1.25rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .pm-title {
-        font-family: 'Space Grotesk', sans-serif;
-        font-weight: 700;
-        font-size: 2rem;
-        letter-spacing: -0.02em;
-        margin: 0;
-        color: var(--ink);
-    }
-
-    .pm-sub {
-        color: var(--ink-soft);
-        font-size: 0.92rem;
-        margin: 0.3rem 0 0;
-    }
-
-    .btn-flat {
-        font-family: 'Inter', sans-serif;
-        font-weight: 600;
-        font-size: 0.85rem;
-        border-radius: 0.3rem;
-        padding: 0.5rem 0.95rem;
-        border: 1.5px solid var(--ink);
-        background: transparent;
-        color: var(--ink);
-        display: inline-flex;
-        align-items: center;
-        gap: 0.45rem;
-        transition: background 0.12s ease, color 0.12s ease;
-        text-decoration: none;
-    }
-
-        .btn-flat:hover {
-            background: var(--ink);
-            color: #fff;
-        }
-
-    /* action cards */
-    .pm-action-row {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .pm-action-card {
-        background: var(--surface);
-        border: 1px solid var(--line);
-        border-radius: 0.4rem;
-        padding: 1.5rem;
-        text-decoration: none;
-        color: var(--ink);
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        transition: border-color 0.12s ease, transform 0.12s ease;
+    .requests-hero {
+        background: linear-gradient(135deg, #0f766e, #134e4a);
+        border-radius: 22px;
+        padding: 26px;
+        color: #fff;
+        margin-bottom: 22px;
         position: relative;
         overflow: hidden;
     }
 
-    a.pm-action-card:hover {
-        border-color: var(--accent);
-        transform: translateY(-2px);
-        color: var(--ink);
-    }
+        .requests-hero::after {
+            content: "";
+            position: absolute;
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.09);
+            right: -80px;
+            top: -90px;
+        }
 
-    .pm-action-card::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 3px;
-        height: 100%;
-        background: var(--card-accent, var(--ink-faint));
-    }
-
-    .pm-action-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 0.4rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-        background: var(--card-accent-soft, var(--paper));
-        color: var(--card-accent, var(--ink-soft));
-    }
-
-    .pm-action-card h5 {
-        font-family: 'Space Grotesk', sans-serif;
-        font-weight: 700;
-        font-size: 1.05rem;
-        margin: 0;
-        color: var(--ink);
-    }
-
-    .pm-action-card .pm-action-hint {
-        font-size: 0.82rem;
-        color: var(--ink-soft);
-    }
-
-    .pm-action-num {
-        font-family: 'Space Grotesk', sans-serif;
-        font-weight: 700;
-        font-size: 1.9rem;
-        color: var(--ink);
-        margin: 0;
-    }
-
-    .pm-card-accent {
-        --card-accent: var(--accent);
-        --card-accent-soft: var(--accent-soft);
-    }
-
-    .pm-card-blue {
-        --card-accent: #2f5f9e;
-        --card-accent-soft: #e8eef7;
-    }
-
-    .pm-card-amber {
-        --card-accent: var(--amber);
-        --card-accent-soft: var(--amber-soft);
-    }
-
-    /* panel */
-    .pm-panel {
-        background: var(--surface);
-        border: 1px solid var(--line);
-        border-radius: 0.4rem;
-        overflow: hidden;
-    }
-
-    .pm-panel-head {
+    .hero-content {
+        position: relative;
+        z-index: 2;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 18px;
         flex-wrap: wrap;
-        gap: 0.75rem;
-        padding: 1rem 1.25rem;
-        border-bottom: 1px solid var(--line);
-        background: var(--paper);
     }
 
-    .pm-panel-title {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.72rem;
-        letter-spacing: 0.1em;
+    .hero-label {
+        font-size: 12px;
+        letter-spacing: .14em;
         text-transform: uppercase;
-        color: var(--ink-soft);
-        font-weight: 600;
+        opacity: .85;
+        font-weight: 700;
+        margin-bottom: 8px;
     }
 
-    table.pm-table {
-        width: 100%;
+    .hero-title {
+        font-size: 34px;
+        font-weight: 900;
         margin: 0;
-        border-collapse: collapse;
     }
 
-        table.pm-table thead th {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.68rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--ink-faint);
-            font-weight: 600;
-            text-align: left;
-            padding: 0.75rem 1.1rem;
-            background: var(--paper);
-            border-bottom: 1px solid var(--line);
-            white-space: nowrap;
-        }
-
-        table.pm-table tbody td {
-            padding: 0.85rem 1.1rem;
-            border-bottom: 1px solid var(--line);
-            vertical-align: middle;
-            font-size: 0.9rem;
-        }
-
-        table.pm-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        table.pm-table tbody tr:hover {
-            background: var(--accent-soft);
-        }
-
-    .pm-code {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: var(--ink);
-        border-left: 3px solid var(--accent);
-        padding-left: 0.55rem;
+    .hero-subtitle {
+        margin: 8px 0 0;
+        opacity: .88;
+        font-size: 15px;
     }
 
-    .pm-name {
-        font-weight: 600;
-        color: var(--ink);
+    .hero-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
     }
 
-    .pm-price {
-        font-family: 'JetBrains Mono', monospace;
-        font-weight: 600;
-        color: var(--ink);
-        text-align: right;
-    }
-
-    .pm-count {
-        font-family: 'JetBrains Mono', monospace;
-        font-weight: 600;
-        color: var(--ink);
-        text-align: center;
-    }
-
-    .pm-status-chip {
+    .hero-btn {
+        border: 0;
+        border-radius: 12px;
+        padding: 11px 16px;
+        text-decoration: none;
+        font-weight: 800;
         display: inline-flex;
         align-items: center;
-        gap: 0.35rem;
-        font-size: 0.76rem;
-        font-weight: 600;
-        color: var(--amber);
-        background: var(--amber-soft);
-        border-radius: 50px;
-        padding: 0.25rem 0.65rem;
+        gap: 8px;
     }
 
-        .pm-status-chip::before {
-            content: "";
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--amber);
+        .hero-btn.primary {
+            background: #fff;
+            color: #0f766e;
         }
 
-    /* empty state */
-    .pm-empty {
-        text-align: center;
-        padding: 3.5rem 2rem;
+        .hero-btn.secondary {
+            background: rgba(255,255,255,.13);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,.35);
+        }
+
+        .hero-btn:hover {
+            transform: translateY(-1px);
+        }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 22px;
     }
 
-    .pm-empty-tag {
-        width: 60px;
-        height: 60px;
-        border: 1.5px dashed var(--ink-faint);
-        border-radius: 0.4rem;
+    .summary-card {
+        background: #fff;
+        border: 1px solid #e5e9ef;
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, .05);
+    }
+
+    .summary-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .summary-label {
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+    }
+
+    .summary-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 0 auto 1.1rem;
-        color: var(--ink-faint);
-        font-size: 1.4rem;
+        font-size: 19px;
     }
 
-    .pm-empty h5 {
-        font-family: 'Space Grotesk', sans-serif;
-        font-weight: 700;
-        color: var(--ink);
+    .icon-total {
+        background: #eef2ff;
+        color: #4f46e5;
     }
 
-    @@media (max-width: 900px) {
-        .pm-action-row {
+    .icon-draft {
+        background: #eff6ff;
+        color: #2563eb;
+    }
+
+    .icon-submitted {
+        background: #fff7ed;
+        color: #ea580c;
+    }
+
+    .summary-number {
+        font-size: 34px;
+        font-weight: 900;
+        margin: 0;
+        line-height: 1;
+    }
+
+    .summary-text {
+        color: #64748b;
+        font-size: 13px;
+        margin: 8px 0 0;
+    }
+
+    .workflow-card {
+        background: #fff;
+        border: 1px solid #e5e9ef;
+        border-radius: 18px;
+        padding: 20px;
+        margin-bottom: 22px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, .05);
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 900;
+        margin: 0;
+        color: #17212b;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .section-subtitle {
+        color: #64748b;
+        font-size: 13px;
+        margin: 6px 0 0;
+    }
+
+    .workflow-steps {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+    }
+
+    .workflow-step {
+        border: 1px solid #e5e9ef;
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 16px;
+        position: relative;
+    }
+
+    .workflow-step-number {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #0f766e;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 13px;
+        margin-bottom: 10px;
+    }
+
+    .workflow-step-title {
+        font-weight: 900;
+        margin-bottom: 5px;
+    }
+
+    .workflow-step-text {
+        color: #64748b;
+        font-size: 13px;
+        margin: 0;
+    }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: 1.1fr .9fr;
+        gap: 18px;
+    }
+
+    .panel {
+        background: #fff;
+        border: 1px solid #e5e9ef;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, .05);
+    }
+
+    .panel-header {
+        padding: 16px 18px;
+        border-bottom: 1px solid #e5e9ef;
+        background: #fbfcfe;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .panel-title {
+        font-weight: 900;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .panel-link {
+        text-decoration: none;
+        color: #0f766e;
+        font-weight: 800;
+        font-size: 13px;
+    }
+
+    .clean-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0;
+    }
+
+        .clean-table th {
+            background: #f8fafc;
+            color: #64748b;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            padding: 12px 14px;
+            border-bottom: 1px solid #e5e9ef;
+            white-space: nowrap;
+        }
+
+        .clean-table td {
+            padding: 14px;
+            border-bottom: 1px solid #eef2f7;
+            vertical-align: middle;
+            font-size: 14px;
+        }
+
+        .clean-table tr:last-child td {
+            border-bottom: none;
+        }
+
+    .item-code {
+        font-family: Consolas, monospace;
+        font-weight: 900;
+        color: #0f766e;
+        background: #ecfdf5;
+        border-radius: 8px;
+        padding: 5px 8px;
+        display: inline-block;
+    }
+
+    .item-name {
+        font-weight: 800;
+        color: #17212b;
+    }
+
+    .money {
+        font-family: Consolas, monospace;
+        font-weight: 900;
+        text-align: right;
+    }
+
+    .badge-soft {
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: 12px;
+        font-weight: 900;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .badge-soft::before {
+            content: "";
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+
+    .badge-draft {
+        background: #eff6ff;
+        color: #2563eb;
+    }
+
+        .badge-draft::before {
+            background: #2563eb;
+        }
+
+    .badge-submitted {
+        background: #fff7ed;
+        color: #ea580c;
+    }
+
+        .badge-submitted::before {
+            background: #ea580c;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 48px 20px;
+    }
+
+    .empty-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 18px;
+        background: #f1f5f9;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        margin: 0 auto 14px;
+    }
+
+    .empty-state h5 {
+        font-weight: 900;
+        margin-bottom: 6px;
+    }
+
+    .empty-state p {
+        color: #64748b;
+        margin-bottom: 16px;
+    }
+
+    .mini-btn {
+        border-radius: 10px;
+        padding: 8px 13px;
+        background: #0f766e;
+        color: #fff;
+        text-decoration: none;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 13px;
+    }
+
+        .mini-btn:hover {
+            background: #134e4a;
+            color: #fff;
+        }
+
+    @@media (max-width: 1100px) {
+        .summary-grid,
+        .workflow-steps,
+        .content-grid {
             grid-template-columns: 1fr;
         }
     }
 </style>
 
-<div class="pm-wrap">
- *@
-    @* header *@
-   @*  <div class="pm-header">
-        <div class="pm-eyebrow">Accounts · Requests</div>
-        <h1 class="pm-title">Product Requests</h1>
-        <p class="pm-sub">Create new product requests and follow your latest drafts.</p>
-    </div> *@
+<div class="requests-page">
 
-    @* action cards *@
-  @*   <div class="pm-action-row">
-
-        <a asp-controller="ProductRequests" asp-action="Create" class="pm-action-card pm-card-accent">
-            <div class="pm-action-icon"><i class="bi bi-plus-circle"></i></div>
-            <h5>Create New Product</h5>
-            <span class="pm-action-hint">Start a new product request</span>
-        </a>
-
-        <a asp-controller="ProductRequests" asp-action="Drafts" class="pm-action-card pm-card-blue">
-            <div class="pm-action-icon"><i class="bi bi-list-check"></i></div>
-            <h5>Draft Requests</h5>
-            <p class="pm-action-num">@Model.DraftCount</p>
-            <span class="pm-action-hint">Requests not submitted yet</span>
-        </a>
-
-        <div class="pm-action-card pm-card-amber">
-            <div class="pm-action-icon"><i class="bi bi-send-check"></i></div>
-            <h5>Submitted</h5>
-            <p class="pm-action-num">@Model.SubmittedCount</p>
-            <span class="pm-action-hint">Waiting for accounts manager</span>
-        </div>
-
-    </div> *@
-
-    @* panel *@
-@*     <div class="pm-panel">
-
-        <div class="pm-panel-head">
-            <span class="pm-panel-title">
-                <i class="bi bi-clock-history"></i>
-                Latest Draft Requests
-            </span>
-
-            <a asp-controller="ProductRequests" asp-action="Drafts" class="btn-flat">
-                View All
-            </a>
-        </div>
-
-        @if (Model.RecentDrafts.Any())
-        {
-            <div class="table-responsive">
-                <table class="pm-table">
-                    <thead>
-                        <tr>
-                            <th>Item Code</th>
-                            <th>Item Name</th>
-                            <th style="text-align:right;">Purchase Price</th>
-                            <th style="text-align:center;">Pieces</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        @foreach (var item in Model.RecentDrafts)
-                        {
-                            <tr>
-                                <td><span class="pm-code">@item.ItemCode</span></td>
-                                <td class="pm-name">@item.ItemName</td>
-                                <td class="pm-price">@item.PurchasePrice.ToString("N2")</td>
-                                <td class="pm-count">@item.PiecesCount</td>
-                                <td><span class="pm-status-chip">@item.Status</span></td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+    <div class="requests-hero">
+        <div class="hero-content">
+            <div>
+                <div class="hero-label">Accounts Product Workflow</div>
+                <h1 class="hero-title">Product Requests</h1>
+                <p class="hero-subtitle">
+                    Start a request, save it as draft, then submit it to Accounts Manager for approval.
+                </p>
             </div>
-        }
-        else
-        {
-            <div class="pm-empty">
-                <div class="pm-empty-tag"><i class="bi bi-inbox"></i></div>
-                <h5>No draft requests yet</h5>
-                <p class="text-muted mb-0">Create a new product request to start.</p>
+
+            <div class="hero-actions">
+                <a asp-controller="ProductRequests"
+                   asp-action="Create"
+                   class="hero-btn primary">
+                    <i class="bi bi-plus-circle"></i>
+                    New Request
+                </a>
+
+                <a asp-controller="ProductRequests"
+                   asp-action="Drafts"
+                   class="hero-btn secondary">
+                    <i class="bi bi-folder2-open"></i>
+                    View Drafts
+                </a>
             </div>
-        }
+        </div>
     </div>
 
-</div> *@
+    <div class="summary-grid">
 
+        <div class="summary-card">
+            <div class="summary-head">
+                <div class="summary-label">Total Requests</div>
+                <div class="summary-icon icon-total">
+                    <i class="bi bi-stack"></i>
+                </div>
+            </div>
+            <h2 class="summary-number">@totalCount</h2>
+            <p class="summary-text">Drafts and submitted requests.</p>
+        </div>
 
-@model MasterDataAutomation.Web.ViewModels.ProductMaster.AccountsUserProductDashboardViewModel
+        <div class="summary-card">
+            <div class="summary-head">
+                <div class="summary-label">Drafts</div>
+                <div class="summary-icon icon-draft">
+                    <i class="bi bi-pencil-square"></i>
+                </div>
+            </div>
+            <h2 class="summary-number">@draftCount</h2>
+            <p class="summary-text">Editable requests not submitted yet.</p>
+        </div>
 
-@{
-    ViewData["Title"] = "Product Requests";
-}
+        <div class="summary-card">
+            <div class="summary-head">
+                <div class="summary-label">Submitted</div>
+                <div class="summary-icon icon-submitted">
+                    <i class="bi bi-send-check"></i>
+                </div>
+            </div>
+            <h2 class="summary-number">@submittedCount</h2>
+            <p class="summary-text">Waiting for Accounts Manager review.</p>
+        </div>
 
-<h1>Product Requests Page Working</h1>
+    </div>
 
-<p>Draft Count: @Model.DraftCount</p>
-<p>Submitted Count: @Model.SubmittedCount</p>
+    <div class="workflow-card">
+        <div>
+            <h3 class="section-title">
+                <i class="bi bi-diagram-3 text-success"></i>
+                Request Flow
+            </h3>
+            <p class="section-subtitle">
+                Clear steps for creating and approving a new product.
+            </p>
+        </div>
 
-<a asp-controller="ProductRequests" asp-action="Create">
-    Create Product Request
-</a>
+        <div class="workflow-steps">
+            <div class="workflow-step">
+                <div class="workflow-step-number">1</div>
+                <div class="workflow-step-title">Create Request</div>
+                <p class="workflow-step-text">Enter product code, name, purchase price and pieces count.</p>
+            </div>
+
+            <div class="workflow-step">
+                <div class="workflow-step-number">2</div>
+                <div class="workflow-step-title">Save Draft</div>
+                <p class="workflow-step-text">Review your draft before sending it to the manager.</p>
+            </div>
+
+            <div class="workflow-step">
+                <div class="workflow-step-number">3</div>
+                <div class="workflow-step-title">Submit</div>
+                <p class="workflow-step-text">Send the request to Accounts Manager for approval.</p>
+            </div>
+
+            <div class="workflow-step">
+                <div class="workflow-step-number">4</div>
+                <div class="workflow-step-title">Final Pricing</div>
+                <p class="workflow-step-text">Executive Manager sets prices and creates the final product.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-grid">
+
+        <div class="panel">
+            <div class="panel-header">
+                <h4 class="panel-title">
+                    <i class="bi bi-pencil-square text-primary"></i>
+                    Latest Draft Requests
+                </h4>
+
+                <a asp-controller="ProductRequests"
+                   asp-action="Drafts"
+                   class="panel-link">
+                    View All Drafts
+                </a>
+            </div>
+
+            @if (recentDrafts.Any())
+            {
+                <div class="table-responsive">
+                    <table class="clean-table">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Product</th>
+                                <th style="text-align:right;">Purchase</th>
+                                <th style="text-align:right;">Piece</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var item in recentDrafts)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="item-code">@item.ItemCode</span>
+                                    </td>
+
+                                    <td>
+                                        <div class="item-name">@item.ItemName</div>
+                                        <small class="text-muted">@item.PiecesCount pieces</small>
+                                    </td>
+
+                                    <td class="money">
+                                        @item.PurchasePrice.ToString("N2")
+                                    </td>
+
+                                    <td class="money">
+                                        @item.PiecePrice.ToString("N2")
+                                    </td>
+
+                                    <td>
+                                        <span class="badge-soft badge-draft">Draft</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="bi bi-inbox"></i>
+                    </div>
+
+                    <h5>No drafts yet</h5>
+                    <p>Create a request and it will appear here before submission.</p>
+
+                    <a asp-controller="ProductRequests"
+                       asp-action="Create"
+                       class="mini-btn">
+                        <i class="bi bi-plus-circle"></i>
+                        Create Request
+                    </a>
+                </div>
+            }
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <h4 class="panel-title">
+                    <i class="bi bi-send-check text-warning"></i>
+                    Submitted Requests
+                </h4>
+            </div>
+
+            @if (recentSubmitted.Any())
+            {
+                <div class="table-responsive">
+                    <table class="clean-table">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Product</th>
+                                <th>Submitted</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var item in recentSubmitted)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="item-code">@item.ItemCode</span>
+                                    </td>
+
+                                    <td>
+                                        <div class="item-name">@item.ItemName</div>
+                                        <small class="text-muted">@item.PurchasePrice.ToString("N2") EGP</small>
+                                    </td>
+
+                                    <td>
+                                        @(item.SubmittedAt.HasValue
+                                                                        ? item.SubmittedAt.Value.ToString("yyyy-MM-dd")
+                                                                        : "-")
+                            </td>
+
+                                    <td>
+                                        <span class="badge-soft badge-submitted">Submitted</span>
+                                    </td>
+                                </tr>
+                                                }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="bi bi-send"></i>
+                    </div>
+
+                    <h5>No submitted requests</h5>
+                    <p>Requests sent to Accounts Manager will appear here.</p>
+                </div>
+            }
+        </div>
+
+    </div>
+
+</div>
