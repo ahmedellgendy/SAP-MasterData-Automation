@@ -61,4 +61,12 @@ public class CustomerModificationManagerController : Controller
 
         return RedirectToAction(nameof(Index));
     }
+
+    [HttpGet]
+    public IActionResult Approved()
+    {
+        var requests = _repository.GetApproved();
+
+        return View(requests);
+    }
 }

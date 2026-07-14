@@ -7,6 +7,7 @@ namespace MasterDataAutomation.Application.Modules.CustomerModification.Interfac
         List<CustomerModificationRequestDto> GetDrafts();
         List<CustomerModificationRequestDto> GetSubmitted();
         List<CustomerModificationRequestDto> GetRejected();
+        List<CustomerModificationRequestDto> GetApproved();
 
         CustomerModificationRequestDto? GetById(int id);
 

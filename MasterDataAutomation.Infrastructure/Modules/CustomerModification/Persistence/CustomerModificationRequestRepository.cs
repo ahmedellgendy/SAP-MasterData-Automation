@@ -197,6 +197,33 @@ namespace MasterDataAutomation.Infrastructure.Modules.CustomerModification.Persi
             return true;
         }
 
+        public List<CustomerModificationRequestDto> GetApproved()
+        {
+            return _context.CustomerModificationRequests
+                .AsNoTracking()
+                .Where(x => x.Status == CustomerModificationStatus.Approved)
+                .OrderByDescending(x => x.ReviewedAt)
+                .Take(50)
+                .Select(x => new CustomerModificationRequestDto
+                {
+                    Id = x.Id,
+                    BranchId = x.BranchId,
+                    BranchName = x.BranchName,
+                    MarketCode = x.MarketCode,
+                    MarketName = x.MarketName,
+                    CurrentCustomerType = x.CurrentCustomerType,
+                    ModificationType = x.ModificationType,
+                    NewMarketName = x.NewMarketName,
+                    Notes = x.Notes,
+                    Status = x.Status,
+                    RejectionReason = x.RejectionReason,
+                    CreatedAt = x.CreatedAt,
+                    SubmittedAt = x.SubmittedAt,
+                    ReviewedAt = x.ReviewedAt,
+                    CreatedBy = x.CreatedBy
+                })
+                .ToList();
+        }
         public bool Reject(int id, string rejectionReason)
         {
             if (string.IsNullOrWhiteSpace(rejectionReason))
