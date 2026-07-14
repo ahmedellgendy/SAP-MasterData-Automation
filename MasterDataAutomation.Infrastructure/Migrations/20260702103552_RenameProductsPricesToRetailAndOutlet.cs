@@ -10,29 +10,41 @@ namespace MasterDataAutomation.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
-        name: "MarketSellingPrice",
-        table: "Products",
-        newName: "OutletSellingPrice");
+            migrationBuilder.Sql(@"
+IF COL_LENGTH('Products', 'MarketSellingPrice') IS NOT NULL
+   AND COL_LENGTH('Products', 'OutletSellingPrice') IS NULL
+BEGIN
+    EXEC sp_rename 'Products.MarketSellingPrice', 'OutletSellingPrice', 'COLUMN';
+END
+");
 
-            migrationBuilder.RenameColumn(
-                name: "MarketSellingPrice",
-                table: "ProductRequests",
-                newName: "OutletSellingPrice");
+            migrationBuilder.Sql(@"
+IF COL_LENGTH('ProductRequests', 'MarketSellingPrice') IS NOT NULL
+   AND COL_LENGTH('ProductRequests', 'OutletSellingPrice') IS NULL
+BEGIN
+    EXEC sp_rename 'ProductRequests.MarketSellingPrice', 'OutletSellingPrice', 'COLUMN';
+END
+");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
-        name: "OutletSellingPrice",
-        table: "Products",
-        newName: "MarketSellingPrice");
+            migrationBuilder.Sql(@"
+IF COL_LENGTH('Products', 'OutletSellingPrice') IS NOT NULL
+   AND COL_LENGTH('Products', 'MarketSellingPrice') IS NULL
+BEGIN
+    EXEC sp_rename 'Products.OutletSellingPrice', 'MarketSellingPrice', 'COLUMN';
+END
+");
 
-            migrationBuilder.RenameColumn(
-                name: "OutletSellingPrice",
-                table: "ProductRequests",
-                newName: "MarketSellingPrice");
+            migrationBuilder.Sql(@"
+IF COL_LENGTH('ProductRequests', 'OutletSellingPrice') IS NOT NULL
+   AND COL_LENGTH('ProductRequests', 'MarketSellingPrice') IS NULL
+BEGIN
+    EXEC sp_rename 'ProductRequests.OutletSellingPrice', 'MarketSellingPrice', 'COLUMN';
+END
+");
         }
     }
 }
