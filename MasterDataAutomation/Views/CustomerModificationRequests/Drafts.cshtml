@@ -1,0 +1,335 @@
+﻿@model List<MasterDataAutomation.Application.Modules.CustomerModification.Dtos.CustomerModificationRequestDto>
+@using MasterDataAutomation.Application.Modules.CustomerModification.Enums
+
+@{
+    ViewData["Title"] = "مسودات تعديل العملاء";
+
+    var requests = Model ?? new List<MasterDataAutomation.Application.Modules.CustomerModification.Dtos.CustomerModificationRequestDto>();
+}
+
+@functions {
+    string CustomerTypeText(CustomerModificationCustomerType type)
+    {
+        return type switch
+        {
+            CustomerModificationCustomerType.Private => "خاص",
+            CustomerModificationCustomerType.Fridge => "ثلاجة",
+            _ => "-"
+        };
+    }
+
+    string ModificationTypeText(CustomerModificationType type)
+    {
+        return type switch
+        {
+            CustomerModificationType.RemoveFridge => "رفع الثلاجة",
+            CustomerModificationType.ChangeName => "تعديل اسم",
+            CustomerModificationType.ChangeToPrivate => "تحويل إلى خاص",
+            CustomerModificationType.ChangeToFridge => "تحويل إلى ثلاجة",
+            _ => "-"
+        };
+    }
+}
+
+<style>
+    .draft-wrap {
+        background: #f4f7f8;
+        border-radius: 16px;
+        padding: 24px;
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        color: #16232c;
+    }
+
+    .draft-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 16px;
+        flex-wrap: wrap;
+        border-bottom: 2px solid #16232c;
+        padding-bottom: 18px;
+        margin-bottom: 22px;
+    }
+
+    .draft-title {
+        margin: 0;
+        font-size: 30px;
+        font-weight: 900;
+    }
+
+    .draft-sub {
+        margin: 6px 0 0;
+        color: #6b7a86;
+        font-size: 14px;
+    }
+
+    .draft-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn-main {
+        background: #2f7d6b;
+        border: 1px solid #2f7d6b;
+        color: #fff;
+        font-weight: 800;
+        border-radius: 10px;
+        padding: 10px 16px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-main:hover {
+            background: #245f52;
+            color: #fff;
+        }
+
+    .draft-alert {
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 16px;
+        font-weight: 700;
+    }
+
+    .draft-alert-success {
+        background: #e7f3f0;
+        color: #1d5347;
+        border: 1px solid #cfe6de;
+    }
+
+    .draft-panel {
+        background: #fff;
+        border: 1px solid #e1e7ea;
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .draft-panel-head {
+        padding: 16px 18px;
+        background: #fafcfd;
+        border-bottom: 1px solid #e1e7ea;
+        font-weight: 900;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .draft-count {
+        background: #e7f3f0;
+        color: #1d5347;
+        border-radius: 999px;
+        padding: 5px 12px;
+        font-size: 13px;
+        font-weight: 900;
+    }
+
+    .draft-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0;
+    }
+
+        .draft-table th {
+            background: #f4f7f8;
+            color: #6b7a86;
+            padding: 12px 14px;
+            font-size: 12px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #e1e7ea;
+            white-space: nowrap;
+            text-align: right;
+        }
+
+        .draft-table td {
+            padding: 14px;
+            border-bottom: 1px solid #e1e7ea;
+            vertical-align: middle;
+            font-size: 14px;
+        }
+
+    .code {
+        font-family: Consolas, monospace;
+        font-weight: 900;
+        background: #ecfdf5;
+        color: #0f766e;
+        padding: 5px 8px;
+        border-radius: 8px;
+        display: inline-block;
+    }
+
+    .name {
+        font-weight: 900;
+    }
+
+    .chip {
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: 12px;
+        font-weight: 900;
+        background: #f1f5f9;
+        color: #475569;
+        display: inline-block;
+    }
+
+    .submit-btn {
+        border: 1px solid #2f7d6b;
+        background: #2f7d6b;
+        color: #fff;
+        border-radius: 8px;
+        padding: 7px 12px;
+        font-size: 13px;
+        font-weight: 800;
+    }
+
+        .submit-btn:hover {
+            background: #245f52;
+            border-color: #245f52;
+        }
+
+    .empty {
+        text-align: center;
+        padding: 50px 18px;
+    }
+
+        .empty h5 {
+            font-weight: 900;
+            margin-bottom: 6px;
+        }
+
+        .empty p {
+            color: #6b7a86;
+            margin-bottom: 18px;
+        }
+</style>
+
+<div class="draft-wrap" dir="rtl">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="draft-alert draft-alert-success">
+            <i class="bi bi-check-circle"></i>
+            @TempData["Success"]
+        </div>
+    }
+
+    <div class="draft-header">
+        <div>
+            <h1 class="draft-title">مسودات تعديل العملاء</h1>
+            <p class="draft-sub">
+                راجع طلبات تعديل العملاء قبل إرسالها للمراجعة.
+            </p>
+        </div>
+
+        <div class="draft-actions">
+            <a asp-controller="CustomerModificationRequests"
+               asp-action="Create"
+               class="btn-main">
+                <i class="bi bi-plus-circle"></i>
+                طلب تعديل جديد
+            </a>
+        </div>
+    </div>
+
+    <div class="draft-panel">
+
+        <div class="draft-panel-head">
+            <span>
+                <i class="bi bi-list-check"></i>
+                الطلبات المسودة
+            </span>
+
+            <span class="draft-count">
+                @requests.Count طلب
+            </span>
+        </div>
+
+        @if (requests.Any())
+        {
+            <div class="table-responsive">
+                <table class="draft-table">
+                    <thead>
+                        <tr>
+                            <th>الفرع</th>
+                            <th>كود العميل</th>
+                            <th>اسم العميل</th>
+                            <th>نوع العميل الحالي</th>
+                            <th>نوع التعديل</th>
+                            <th>الاسم الجديد</th>
+                            <th>تاريخ الإنشاء</th>
+                            <th style="text-align:left;">إجراء</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var item in requests)
+                        {
+                            <tr>
+                                <td>@item.BranchName</td>
+
+                                <td>
+                                    <span class="code">@item.MarketCode</span>
+                                </td>
+
+                                <td class="name">@item.MarketName</td>
+
+                                <td>
+                                    <span class="chip">@CustomerTypeText(item.CurrentCustomerType)</span>
+                                </td>
+
+                                <td>
+                                    <span class="chip">@ModificationTypeText(item.ModificationType)</span>
+                                </td>
+
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(item.NewMarketName) ? "-" : item.NewMarketName)
+                                </td>
+
+                                <td>
+                                    @item.CreatedAt.ToString("yyyy-MM-dd")
+                                </td>
+
+                                <td style="text-align:left;">
+                                    <form asp-controller="CustomerModificationRequests"
+                                          asp-action="Submit"
+                                          method="post"
+                                          class="m-0"
+                                          onsubmit="return confirm('هل تريد إرسال طلب التعديل للمراجعة؟');">
+
+                                        <input type="hidden" name="id" value="@item.Id" />
+
+                                        <button type="submit" class="submit-btn">
+                                            <i class="bi bi-send"></i>
+                                            إرسال
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty">
+                <h5>لا توجد مسودات</h5>
+                <p>ابدأ بإنشاء طلب تعديل عميل جديد.</p>
+
+                <a asp-controller="CustomerModificationRequests"
+                   asp-action="Create"
+                   class="btn-main">
+                    <i class="bi bi-plus-circle"></i>
+                    إنشاء طلب تعديل
+                </a>
+            </div>
+        }
+
+    </div>
+
+</div>
