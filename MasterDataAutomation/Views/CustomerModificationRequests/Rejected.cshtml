@@ -2,7 +2,7 @@
 @using MasterDataAutomation.Application.Modules.CustomerModification.Enums
 
 @{
-    ViewData["Title"] = "مسودات تعديل العملاء";
+    ViewData["Title"] = "طلبات تعديل العملاء المرفوضة";
 
     var requests = Model ?? new List<MasterDataAutomation.Application.Modules.CustomerModification.Dtos.CustomerModificationRequestDto>();
 }
@@ -32,38 +32,35 @@
 }
 
 <style>
-    .draft-wrap {
-        background: #f4f7f8;
-        border-radius: 16px;
-        padding: 24px;
+    .rejected-page {
+        direction: rtl;
+        text-align: right;
         font-family: "Segoe UI", Tahoma, Arial, sans-serif;
         color: #16232c;
     }
 
-    .draft-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        gap: 16px;
-        flex-wrap: wrap;
-        border-bottom: 2px solid #16232c;
-        padding-bottom: 18px;
-        margin-bottom: 22px;
+    .rejected-header {
+        background: linear-gradient(135deg, #7f1d1d, #dc2626);
+        color: #fff;
+        border-radius: 20px;
+        padding: 28px;
+        margin-bottom: 24px;
     }
 
-    .draft-title {
-        margin: 0;
+    .rejected-title {
         font-size: 30px;
         font-weight: 900;
+        margin: 0;
     }
 
-    .draft-sub {
-        margin: 6px 0 0;
-        color: #6b7a86;
+    .rejected-subtitle {
+        margin: 8px 0 0;
+        opacity: .9;
         font-size: 14px;
     }
 
-    .draft-actions {
+    .top-actions {
+        margin-bottom: 18px;
         display: flex;
         gap: 10px;
         flex-wrap: wrap;
@@ -73,7 +70,7 @@
         background: #2f7d6b;
         border: 1px solid #2f7d6b;
         color: #fff;
-        font-weight: 800;
+        font-weight: 900;
         border-radius: 10px;
         padding: 10px 16px;
         text-decoration: none;
@@ -87,72 +84,77 @@
             color: #fff;
         }
 
-    .draft-alert {
-        border-radius: 10px;
-        padding: 12px 14px;
-        margin-bottom: 16px;
-        font-weight: 700;
-    }
-
-    .draft-alert-success {
-        background: #e7f3f0;
-        color: #1d5347;
-        border: 1px solid #cfe6de;
-    }
-
-    .draft-panel {
-        background: #fff;
-        border: 1px solid #e1e7ea;
-        border-radius: 16px;
-        overflow: hidden;
-    }
-
-    .draft-panel-head {
-        padding: 16px 18px;
-        background: #fafcfd;
-        border-bottom: 1px solid #e1e7ea;
+    .btn-back {
+        border: 1px solid #16232c;
+        color: #16232c;
+        background: transparent;
         font-weight: 900;
+        border-radius: 10px;
+        padding: 10px 16px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-back:hover {
+            background: #16232c;
+            color: #fff;
+        }
+
+    .rejected-panel {
+        background: #fff;
+        border: 1px solid #e5e9ef;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, .06);
+    }
+
+    .rejected-panel-head {
+        padding: 18px 20px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e5e9ef;
         display: flex;
         justify-content: space-between;
         align-items: center;
         gap: 12px;
         flex-wrap: wrap;
+        font-weight: 900;
     }
 
-    .draft-count {
-        background: #e7f3f0;
-        color: #1d5347;
+    .rejected-count {
+        background: #fee2e2;
+        color: #991b1b;
         border-radius: 999px;
-        padding: 5px 12px;
+        padding: 6px 14px;
         font-size: 13px;
         font-weight: 900;
     }
 
-    .draft-table {
+    .rejected-table {
         width: 100%;
         border-collapse: collapse;
         margin: 0;
     }
 
-        .draft-table th {
+        .rejected-table th {
             background: #f4f7f8;
-            color: #6b7a86;
+            color: #64748b;
             padding: 12px 14px;
             font-size: 12px;
-            text-transform: uppercase;
-            border-bottom: 1px solid #e1e7ea;
+            border-bottom: 1px solid #e5e9ef;
             white-space: nowrap;
             text-align: right;
         }
 
-        .draft-table td {
+        .rejected-table td {
             padding: 14px;
-            border-bottom: 1px solid #e1e7ea;
+            border-bottom: 1px solid #e5e9ef;
             vertical-align: middle;
             font-size: 14px;
         }
 
-    .code {
+    .customer-code {
         font-family: Consolas, monospace;
         font-weight: 900;
         background: #ecfdf5;
@@ -162,7 +164,7 @@
         display: inline-block;
     }
 
-    .name {
+    .customer-name {
         font-weight: 900;
     }
 
@@ -174,83 +176,69 @@
         background: #f1f5f9;
         color: #475569;
         display: inline-block;
+        white-space: nowrap;
     }
 
-    .submit-btn {
-        border: 1px solid #2f7d6b;
-        background: #2f7d6b;
-        color: #fff;
-        border-radius: 8px;
-        padding: 7px 12px;
-        font-size: 13px;
+    .reason-box {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+        border-radius: 10px;
+        padding: 8px 10px;
         font-weight: 800;
+        min-width: 180px;
     }
 
-        .submit-btn:hover {
-            background: #245f52;
-            border-color: #245f52;
-        }
-
-    .empty {
+    .empty-box {
         text-align: center;
-        padding: 50px 18px;
+        padding: 55px 20px;
     }
 
-        .empty h5 {
+        .empty-box h5 {
             font-weight: 900;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
 
-        .empty p {
-            color: #6b7a86;
-            margin-bottom: 18px;
+        .empty-box p {
+            color: #64748b;
+            margin: 0;
         }
 </style>
 
-<div class="draft-wrap" dir="rtl">
+<div class="rejected-page">
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="draft-alert draft-alert-success">
-            <i class="bi bi-check-circle"></i>
-            @TempData["Success"]
-        </div>
-    }
-
-    <div class="draft-header">
-        <div>
-            <h1 class="draft-title">مسودات تعديل العملاء</h1>
-            <p class="draft-sub">
-                راجع طلبات تعديل العملاء قبل إرسالها للمراجعة.
-            </p>
-        </div>
-
-        <div class="draft-actions">
-            <a asp-controller="CustomerModificationRequests"
-               asp-action="Create"
-               class="btn-main">
-                <i class="bi bi-plus-circle"></i>
-                طلب تعديل جديد
-            </a>
-
-            <a asp-controller="CustomerModificationRequests"
-               asp-action="Rejected"
-               class="btn-main">
-                <i class="bi bi-x-octagon"></i>
-                الطلبات المرفوضة
-            </a>
-        </div>
+    <div class="rejected-header">
+        <h1 class="rejected-title">طلبات تعديل العملاء المرفوضة</h1>
+        <p class="rejected-subtitle">
+            هنا تظهر الطلبات التي رفضها المدير مع سبب الرفض.
+        </p>
     </div>
 
-    <div class="draft-panel">
+    <div class="top-actions">
+        <a asp-controller="CustomerModificationRequests"
+           asp-action="Create"
+           class="btn-main">
+            <i class="bi bi-plus-circle"></i>
+            طلب تعديل جديد
+        </a>
 
-        <div class="draft-panel-head">
+        <a asp-controller="CustomerModificationRequests"
+           asp-action="Drafts"
+           class="btn-back">
+            <i class="bi bi-list-check"></i>
+            المسودات
+        </a>
+    </div>
+
+    <div class="rejected-panel">
+
+        <div class="rejected-panel-head">
             <span>
-                <i class="bi bi-list-check"></i>
-                الطلبات المسودة
+                <i class="bi bi-x-octagon"></i>
+                الطلبات المرفوضة
             </span>
 
-            <span class="draft-count">
+            <span class="rejected-count">
                 @requests.Count طلب
             </span>
         </div>
@@ -258,7 +246,7 @@
         @if (requests.Any())
         {
             <div class="table-responsive">
-                <table class="draft-table">
+                <table class="rejected-table">
                     <thead>
                         <tr>
                             <th>الفرع</th>
@@ -267,8 +255,8 @@
                             <th>نوع العميل الحالي</th>
                             <th>نوع التعديل</th>
                             <th>الاسم الجديد</th>
-                            <th>تاريخ الإنشاء</th>
-                            <th style="text-align:left;">إجراء</th>
+                            <th>سبب الرفض</th>
+                            <th>تاريخ المراجعة</th>
                         </tr>
                     </thead>
 
@@ -279,10 +267,10 @@
                                 <td>@item.BranchName</td>
 
                                 <td>
-                                    <span class="code">@item.MarketCode</span>
+                                    <span class="customer-code">@item.MarketCode</span>
                                 </td>
 
-                                <td class="name">@item.MarketName</td>
+                                <td class="customer-name">@item.MarketName</td>
 
                                 <td>
                                     <span class="chip">@CustomerTypeText(item.CurrentCustomerType)</span>
@@ -297,43 +285,25 @@
                                 </td>
 
                                 <td>
-                                    @item.CreatedAt.ToString("yyyy-MM-dd")
+                                    <div class="reason-box">
+                                        @(string.IsNullOrWhiteSpace(item.RejectionReason) ? "لم يتم إدخال سبب" : item.RejectionReason)
+                                    </div>
                                 </td>
 
-                                <td style="text-align:left;">
-                                    <form asp-controller="CustomerModificationRequests"
-                                          asp-action="Submit"
-                                          method="post"
-                                          class="m-0"
-                                          onsubmit="return confirm('هل تريد إرسال طلب التعديل للمراجعة؟');">
-
-                                        <input type="hidden" name="id" value="@item.Id" />
-
-                                        <button type="submit" class="submit-btn">
-                                            <i class="bi bi-send"></i>
-                                            إرسال
-                                        </button>
-                                    </form>
+                                <td>
+                                    @(item.ReviewedAt.HasValue? item.ReviewedAt.Value.ToString("yyyy-MM-dd") : "-")
                                 </td>
                             </tr>
                         }
                     </tbody>
-
                 </table>
             </div>
         }
         else
         {
-            <div class="empty">
-                <h5>لا توجد مسودات</h5>
-                <p>ابدأ بإنشاء طلب تعديل عميل جديد.</p>
-
-                <a asp-controller="CustomerModificationRequests"
-                   asp-action="Create"
-                   class="btn-main">
-                    <i class="bi bi-plus-circle"></i>
-                    إنشاء طلب تعديل
-                </a>
+            <div class="empty-box">
+                <h5>لا توجد طلبات مرفوضة</h5>
+                <p>أي طلب يرفضه المدير سيظهر هنا مع سبب الرفض.</p>
             </div>
         }
 

@@ -70,6 +70,13 @@ public class CustomerModificationRequestsController : Controller
         return RedirectToAction(nameof(Drafts));
     }
 
+    [HttpGet]
+    public IActionResult Rejected()
+    {
+        var requests = _repository.GetRejected();
+
+        return View(requests);
+    }
     private void ValidateCreateModel(CreateCustomerModificationRequestDto model)
     {
         if (!model.BranchId.HasValue || model.BranchId <= 0)

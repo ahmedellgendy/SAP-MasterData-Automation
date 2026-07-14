@@ -72,6 +72,33 @@ namespace MasterDataAutomation.Infrastructure.Modules.CustomerModification.Persi
                 .ToList();
         }
 
+        public List<CustomerModificationRequestDto> GetRejected()
+        {
+            return _context.CustomerModificationRequests
+                .AsNoTracking()
+                .Where(x => x.Status == CustomerModificationStatus.Rejected)
+                .OrderByDescending(x => x.ReviewedAt)
+                .Take(50)
+                .Select(x => new CustomerModificationRequestDto
+                {
+                    Id = x.Id,
+                    BranchId = x.BranchId,
+                    BranchName = x.BranchName,
+                    MarketCode = x.MarketCode,
+                    MarketName = x.MarketName,
+                    CurrentCustomerType = x.CurrentCustomerType,
+                    ModificationType = x.ModificationType,
+                    NewMarketName = x.NewMarketName,
+                    Notes = x.Notes,
+                    Status = x.Status,
+                    RejectionReason = x.RejectionReason,
+                    CreatedAt = x.CreatedAt,
+                    SubmittedAt = x.SubmittedAt,
+                    ReviewedAt = x.ReviewedAt,
+                    CreatedBy = x.CreatedBy
+                })
+                .ToList();
+        }
         public CustomerModificationRequestDto? GetById(int id)
         {
             return _context.CustomerModificationRequests
