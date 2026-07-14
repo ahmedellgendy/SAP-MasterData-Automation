@@ -1,32 +1,55 @@
-﻿@{
+﻿@model MasterDataAutomation.Web.ViewModels.SalesDashboardViewModel
+
+@{
     ViewData["Title"] = "Sales Dashboard";
+
+    var draftCustomersCount = Model?.DraftCustomersCount ?? 0;
+    var rejectedCustomersCount = Model?.RejectedCount ?? 0;
+    var submittedCustomersCount = Model?.SubmittedCount ?? 0;
+
+    var modificationDraftsCount = ViewBag.ModificationDraftsCount as int? ?? 0;
+    var modificationRejectedCount = ViewBag.ModificationRejectedCount as int? ?? 0;
+    var modificationSubmittedCount = ViewBag.ModificationSubmittedCount as int? ?? 0;
+
+    var totalNeedsAction =
+        draftCustomersCount +
+        rejectedCustomersCount +
+        modificationDraftsCount +
+        modificationRejectedCount;
+
+    var underReviewCount = submittedCustomersCount + modificationSubmittedCount;
 }
 
 <style>
-    .sales-dashboard {
-        font-family: "Segoe UI", system-ui, sans-serif;
+    .sales-page {
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
         color: #16232c;
     }
 
     .sales-hero {
-        background: linear-gradient(135deg, #0f766e, #134e4a);
-        border-radius: 22px;
-        padding: 30px;
+        background: linear-gradient(135deg, #123c3a, #2f7d6b);
         color: #fff;
-        margin-bottom: 24px;
-        position: relative;
+        border-radius: 22px;
+        padding: 28px;
+        margin-bottom: 22px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
         overflow: hidden;
+        position: relative;
     }
 
         .sales-hero::after {
             content: "";
             position: absolute;
-            width: 260px;
-            height: 260px;
+            width: 230px;
+            height: 230px;
             border-radius: 50%;
-            background: rgba(255,255,255,.09);
-            right: -80px;
-            top: -90px;
+            background: rgba(255,255,255,.08);
+            right: -70px;
+            top: -85px;
         }
 
     .hero-content {
@@ -44,7 +67,7 @@
     }
 
     .hero-title {
-        font-size: 34px;
+        font-size: 32px;
         font-weight: 900;
         margin: 0;
     }
@@ -52,49 +75,90 @@
     .hero-subtitle {
         margin: 8px 0 0;
         opacity: .9;
-        font-size: 15px;
+        font-size: 14px;
     }
 
-    .action-grid {
+    .hero-badge {
+        position: relative;
+        z-index: 2;
+        background: rgba(255,255,255,.14);
+        border: 1px solid rgba(255,255,255,.24);
+        border-radius: 16px;
+        padding: 12px 16px;
+        min-width: 150px;
+        text-align: center;
+    }
+
+    .hero-badge-number {
+        font-size: 28px;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    .hero-badge-text {
+        font-size: 12px;
+        opacity: .9;
+        margin-top: 5px;
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 900;
+        margin: 22px 0 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #16232c;
+    }
+
+    .main-actions {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 22px;
+        gap: 18px;
+        margin-bottom: 22px;
     }
 
-    .action-card {
+    .main-card {
         background: #fff;
         border: 1px solid #e5e9ef;
-        border-radius: 20px;
-        padding: 28px;
+        border-radius: 18px;
+        padding: 22px;
         text-decoration: none;
         color: #16232c;
-        box-shadow: 0 8px 24px rgba(15, 23, 42, .05);
-        transition: all .18s ease;
-        min-height: 210px;
         display: flex;
-        flex-direction: column;
+        align-items: center;
         justify-content: space-between;
+        gap: 18px;
+        min-height: 150px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, .05);
+        transition: .18s ease;
     }
 
-        .action-card:hover {
-            transform: translateY(-5px);
+        .main-card:hover {
+            transform: translateY(-4px);
+            border-color: #2f7d6b;
             box-shadow: 0 16px 34px rgba(15, 23, 42, .10);
             color: #16232c;
-            border-color: #0f766e;
         }
 
-    .action-icon {
+    .main-card-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .main-icon {
         width: 58px;
         height: 58px;
         border-radius: 18px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 26px;
-        margin-bottom: 18px;
+        font-size: 27px;
+        flex-shrink: 0;
     }
 
-    .icon-create {
+    .icon-add {
         background: #ecfdf5;
         color: #059669;
     }
@@ -104,108 +168,445 @@
         color: #2563eb;
     }
 
-    .action-title {
-        font-size: 22px;
+    .main-title {
+        font-size: 21px;
         font-weight: 900;
-        margin-bottom: 8px;
+        margin-bottom: 5px;
     }
 
-    .action-text {
+    .main-text {
         color: #64748b;
-        font-size: 14px;
-        margin: 0;
+        font-size: 13px;
         line-height: 1.6;
+        margin: 0;
     }
 
-    .action-footer {
-        margin-top: 24px;
+    .main-arrow {
+        color: #2f7d6b;
+        font-size: 22px;
+    }
+
+    .attention-box {
+        background: #fff;
+        border: 1px solid #e5e9ef;
+        border-radius: 18px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, .05);
+        overflow: hidden;
+        margin-bottom: 22px;
+    }
+
+    .attention-head {
+        background: #f8fafc;
+        border-bottom: 1px solid #e5e9ef;
+        padding: 15px 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .attention-title {
+        font-weight: 900;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        font-weight: 800;
-        color: #0f766e;
+        gap: 8px;
     }
 
-    .action-card:hover .action-footer i {
-        transform: translateX(-4px);
+    .attention-count {
+        background: #dc2626;
+        color: #fff;
+        border-radius: 999px;
+        padding: 5px 12px;
+        font-size: 13px;
+        font-weight: 900;
     }
 
-    .action-footer i {
+    .attention-list {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0;
+    }
+
+    .attention-item {
+        padding: 18px;
+        border-right: 1px solid #e5e9ef;
+        text-decoration: none;
+        color: #16232c;
+        min-height: 120px;
         transition: .18s ease;
     }
 
+        .attention-item:first-child {
+            border-left: none;
+        }
+
+        .attention-item:hover {
+            background: #f8fafc;
+            color: #16232c;
+        }
+
+    .attention-item-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .small-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 19px;
+    }
+
+    .icon-draft {
+        background: #f1f5f9;
+        color: #334155;
+    }
+
+    .icon-reject {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .item-count {
+        min-width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        padding: 0 9px;
+        background: #334155;
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 900;
+    }
+
+        .item-count.red {
+            background: #dc2626;
+        }
+
+    .item-title {
+        font-size: 15px;
+        font-weight: 900;
+        margin-bottom: 5px;
+    }
+
+    .item-text {
+        color: #64748b;
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    .status-strip {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .status-box {
+        background: #fff;
+        border: 1px solid #e5e9ef;
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, .05);
+        display: flex;
+        align-items: center;
+        gap: 13px;
+    }
+
+    .status-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff7ed;
+        color: #f59e0b;
+        font-size: 21px;
+        flex-shrink: 0;
+    }
+
+    .status-number {
+        font-size: 24px;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    .status-label {
+        color: #64748b;
+        font-size: 13px;
+        margin-top: 4px;
+    }
+
+    .empty-note {
+        background: #ecfdf5;
+        border: 1px solid #bbf7d0;
+        color: #166534;
+        border-radius: 16px;
+        padding: 16px 18px;
+        margin-bottom: 22px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    @@media (max-width: 1200px) {
+        .attention-list,
+        .status-strip {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .attention-item {
+            border-bottom: 1px solid #e5e9ef;
+        }
+    }
+
     @@media (max-width: 900px) {
-        .action-grid {
+        .main-actions,
+        .attention-list,
+        .status-strip {
             grid-template-columns: 1fr;
         }
 
+        .main-card {
+            align-items: flex-start;
+        }
+
         .hero-title {
-            font-size: 28px;
+            font-size: 27px;
         }
     }
 </style>
 
-<div class="sales-dashboard">
+<div class="sales-page">
 
     <div class="sales-hero">
         <div class="hero-content">
             <div class="hero-label">Sales Operations</div>
-            <h1 class="hero-title">Sales Dashboard</h1>
+
+            <h1 class="hero-title">
+                Sales Dashboard
+            </h1>
+
             <p class="hero-subtitle">
-                اختار العملية المطلوبة: إضافة عميل جديد أو طلب تعديل بيانات عميل موجود.
+                Start a customer request, submit saved drafts, and follow rejected items.
             </p>
+        </div>
+
+        <div class="hero-badge">
+            <div class="hero-badge-number">@totalNeedsAction</div>
+            <div class="hero-badge-text">Need action</div>
         </div>
     </div>
 
-    <div class="action-grid">
+    @if (totalNeedsAction == 0)
+    {
+        <div class="empty-note">
+            <i class="bi bi-check-circle"></i>
+            No pending actions now. You can start a new customer request or modification.
+        </div>
+    }
+
+    <div class="section-title">
+        <i class="bi bi-lightning-charge"></i>
+        Main Actions
+    </div>
+
+    <div class="main-actions">
 
         <a asp-controller="CustomerImport"
            asp-action="Create"
-           class="action-card">
+           class="main-card">
 
-            <div>
-                <div class="action-icon icon-create">
+            <div class="main-card-left">
+                <div class="main-icon icon-add">
                     <i class="bi bi-person-plus"></i>
                 </div>
 
-                <div class="action-title">
-                    إضافة عميل جديد
+                <div>
+                    <div class="main-title">إضافة عميل جديد</div>
+                    <p class="main-text">
+                        Create a new customer request and save it as draft.
+                    </p>
                 </div>
-
-                <p class="action-text">
-                    إنشاء طلب إضافة عميل جديد وإرساله للمراجعة والاعتماد.
-                </p>
             </div>
 
-            <div class="action-footer">
-                <span>ابدأ الإضافة</span>
-                <i class="bi bi-arrow-left"></i>
+            <div class="main-arrow">
+                <i class="bi bi-arrow-right"></i>
             </div>
         </a>
 
         <a asp-controller="CustomerModificationRequests"
            asp-action="Create"
-           class="action-card">
+           class="main-card">
 
-            <div>
-                <div class="action-icon icon-edit">
+            <div class="main-card-left">
+                <div class="main-icon icon-edit">
                     <i class="bi bi-pencil-square"></i>
                 </div>
 
-                <div class="action-title">
-                    تعديل عميل
+                <div>
+                    <div class="main-title">تعديل عميل</div>
+                    <p class="main-text">
+                        Request customer name, type, or fridge status modification.
+                    </p>
                 </div>
-
-                <p class="action-text">
-                    طلب تعديل بيانات عميل موجود مثل تعديل الاسم أو نوع العميل أو رفع الثلاجة.
-                </p>
             </div>
 
-            <div class="action-footer">
-                <span>ابدأ التعديل</span>
-                <i class="bi bi-arrow-left"></i>
+            <div class="main-arrow">
+                <i class="bi bi-arrow-right"></i>
             </div>
         </a>
+
+    </div>
+
+    <div class="section-title">
+        <i class="bi bi-bell"></i>
+        Needs Your Attention
+    </div>
+
+    <div class="attention-box">
+
+        <div class="attention-head">
+            <div class="attention-title">
+                <i class="bi bi-clipboard-check"></i>
+                Follow-up Items
+            </div>
+
+            <span class="attention-count">
+                @totalNeedsAction item(s)
+            </span>
+        </div>
+
+        <div class="attention-list">
+
+            <a asp-controller="CustomerImport"
+               asp-action="Draft"
+               class="attention-item">
+
+                <div class="attention-item-top">
+                    <div class="small-icon icon-draft">
+                        <i class="bi bi-list-check"></i>
+                    </div>
+
+                    @if (draftCustomersCount > 0)
+                    {
+                        <span class="item-count">@draftCustomersCount</span>
+                    }
+                </div>
+
+                <div class="item-title">Customer Drafts</div>
+                <div class="item-text">Saved customers waiting for submit.</div>
+            </a>
+
+            <a asp-controller="CustomerImport"
+               asp-action="RejectedForReview"
+               class="attention-item">
+
+                <div class="attention-item-top">
+                    <div class="small-icon icon-reject">
+                        <i class="bi bi-x-octagon"></i>
+                    </div>
+
+                    @if (rejectedCustomersCount > 0)
+                    {
+                        <span class="item-count red">@rejectedCustomersCount</span>
+                    }
+                </div>
+
+                <div class="item-title">Rejected Customers</div>
+                <div class="item-text">Rejected customer requests with reason.</div>
+            </a>
+
+            <a asp-controller="CustomerModificationRequests"
+               asp-action="Drafts"
+               class="attention-item">
+
+                <div class="attention-item-top">
+                    <div class="small-icon icon-draft">
+                        <i class="bi bi-pencil-square"></i>
+                    </div>
+
+                    @if (modificationDraftsCount > 0)
+                    {
+                        <span class="item-count">@modificationDraftsCount</span>
+                    }
+                </div>
+
+                <div class="item-title">Modification Drafts</div>
+                <div class="item-text">Saved modifications not submitted yet.</div>
+            </a>
+
+            <a asp-controller="CustomerModificationRequests"
+               asp-action="Rejected"
+               class="attention-item">
+
+                <div class="attention-item-top">
+                    <div class="small-icon icon-reject">
+                        <i class="bi bi-x-circle"></i>
+                    </div>
+
+                    @if (modificationRejectedCount > 0)
+                    {
+                        <span class="item-count red">@modificationRejectedCount</span>
+                    }
+                </div>
+
+                <div class="item-title">Rejected Modifications</div>
+                <div class="item-text">Rejected modifications that can be edited.</div>
+            </a>
+
+        </div>
+    </div>
+
+    <div class="section-title">
+        <i class="bi bi-hourglass-split"></i>
+        Under Review
+    </div>
+
+    <div class="status-strip">
+
+        <div class="status-box">
+            <div class="status-icon">
+                <i class="bi bi-send"></i>
+            </div>
+
+            <div>
+                <div class="status-number">@submittedCustomersCount</div>
+                <div class="status-label">Customer requests under review</div>
+            </div>
+        </div>
+
+        <div class="status-box">
+            <div class="status-icon">
+                <i class="bi bi-pencil-square"></i>
+            </div>
+
+            <div>
+                <div class="status-number">@modificationSubmittedCount</div>
+                <div class="status-label">Modification requests under review</div>
+            </div>
+        </div>
+
+        <div class="status-box">
+            <div class="status-icon">
+                <i class="bi bi-clock-history"></i>
+            </div>
+
+            <div>
+                <div class="status-number">@underReviewCount</div>
+                <div class="status-label">Total waiting for manager</div>
+            </div>
+        </div>
 
     </div>
 

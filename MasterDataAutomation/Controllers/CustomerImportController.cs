@@ -10,7 +10,7 @@ using System.Text.Json;
 
 namespace MasterDataAutomation.Web.Controllers
 {
-    [Authorize(Roles = "Sales,Manager,Admin")]  
+    [Authorize(Roles = "Sales,Manager,Admin")]
     public class CustomerImportController : Controller
     {
         private readonly ICustomerImportService _customerImportService;
@@ -21,7 +21,7 @@ namespace MasterDataAutomation.Web.Controllers
 
 
         public CustomerImportController(ICustomerImportService customerImportService,
-            ISettingsService settingsService, 
+            ISettingsService settingsService,
             ICustomerValidator customerValidator,
             ICustomerDraftRepository customerDraftRepository,
             IHistoryService historyService)
@@ -30,7 +30,7 @@ namespace MasterDataAutomation.Web.Controllers
             _settingsService = settingsService;
             _customerValidator = customerValidator;
             _customerDraftRepository = customerDraftRepository;
-            _historyService = historyService; 
+            _historyService = historyService;
 
         }
 
@@ -286,7 +286,7 @@ namespace MasterDataAutomation.Web.Controllers
             return View("Create", model);
         }
 
-        
+
 
         [HttpGet]
         public IActionResult History()
