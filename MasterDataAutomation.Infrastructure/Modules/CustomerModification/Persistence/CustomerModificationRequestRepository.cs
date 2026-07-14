@@ -150,5 +150,46 @@ namespace MasterDataAutomation.Infrastructure.Modules.CustomerModification.Persi
 
             _context.SaveChanges();
         }
+
+        public bool Approve(int id)
+        {
+            var request = _context.CustomerModificationRequests
+                .FirstOrDefault(x =>
+                    x.Id == id &&
+                    x.Status == CustomerModificationStatus.Submitted);
+
+            if (request == null)
+                return false;
+
+            request.Status = CustomerModificationStatus.Approved;
+            request.ReviewedAt = DateTime.Now;
+            request.RejectionReason = null;
+
+            _context.SaveChanges();
+
+            return true;
+        }
+
+        public bool Reject(int id, string rejectionReason)
+        {
+            if (string.IsNullOrWhiteSpace(rejectionReason))
+                return false;
+
+            var request = _context.CustomerModificationRequests
+                .FirstOrDefault(x =>
+                    x.Id == id &&
+                    x.Status == CustomerModificationStatus.Submitted);
+
+            if (request == null)
+                return false;
+
+            request.Status = CustomerModificationStatus.Rejected;
+            request.ReviewedAt = DateTime.Now;
+            request.RejectionReason = rejectionReason.Trim();
+
+            _context.SaveChanges();
+
+            return true;
+        }   
     }
 }

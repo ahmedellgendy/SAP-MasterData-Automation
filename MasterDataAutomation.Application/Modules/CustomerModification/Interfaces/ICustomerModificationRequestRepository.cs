@@ -11,5 +11,8 @@ namespace MasterDataAutomation.Application.Modules.CustomerModification.Interfac
 
         void Create(CreateCustomerModificationRequestDto dto, string? createdBy);
         void SubmitDraft(int id);
+
+        bool Approve(int id);
+        bool Reject(int id, string rejectionReason);
     }
 }

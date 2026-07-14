@@ -273,10 +273,10 @@
                         Customer Modification
                     </a>
 
-                    <a asp-controller="CustomerImport" asp-action="UploadToDraft">
+                    @* <a asp-controller="CustomerImport" asp-action="UploadToDraft">
                         <i class="bi bi-file-earmark-excel"></i>
                         Upload Excel
-                    </a>
+                    </a> *@
 
                     <a asp-controller="CustomerImport" asp-action="Draft">
                         <i class="bi bi-list-check"></i>
@@ -288,6 +288,7 @@
                         Rejected Review
                     </a>
                 }
+
 
                 @if (User.IsInRole("Manager") || User.IsInRole("Admin"))
                 {
@@ -305,13 +306,17 @@
                         <i class="bi bi-x-circle"></i>
                         Rejected Customers
                     </a>
-
+                    <a asp-controller="CustomerModificationManager"
+                       asp-action="Index">
+                        <i class="bi bi-clipboard-check"></i>
+                        Customer Modification Review
+                    </a>
                     <a asp-controller="CustomerImport" asp-action="History">
                         <i class="bi bi-clock-history"></i>
                         SAP History
                     </a>
                 }
-
+                
             </div>
         }
 
