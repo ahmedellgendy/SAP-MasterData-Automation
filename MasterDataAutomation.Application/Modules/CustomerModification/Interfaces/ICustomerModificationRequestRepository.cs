@@ -16,5 +16,6 @@ namespace MasterDataAutomation.Application.Modules.CustomerModification.Interfac
 
         bool Approve(int id);
         bool Reject(int id, string rejectionReason);
+        bool UpdateRejectedAndResubmit(int id, CreateCustomerModificationRequestDto dto);
     }
 }

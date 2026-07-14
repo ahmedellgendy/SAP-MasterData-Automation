@@ -244,6 +244,48 @@ namespace MasterDataAutomation.Infrastructure.Modules.CustomerModification.Persi
             _context.SaveChanges();
 
             return true;
-        }   
+        }
+        public bool UpdateRejectedAndResubmit(int id, CreateCustomerModificationRequestDto dto)
+        {
+            if (!dto.BranchId.HasValue)
+                return false;
+
+            if (!dto.CurrentCustomerType.HasValue)
+                return false;
+
+            if (!dto.ModificationType.HasValue)
+                return false;
+
+            var request = _context.CustomerModificationRequests
+                .FirstOrDefault(x => x.Id == id &&
+                                     x.Status == CustomerModificationStatus.Rejected);
+
+            if (request == null)
+                return false;
+
+            request.BranchId = dto.BranchId.Value;
+            request.BranchName = dto.BranchName.Trim();
+
+            request.MarketCode = dto.MarketCode.Trim();
+            request.MarketName = dto.MarketName.Trim();
+
+            request.CurrentCustomerType = dto.CurrentCustomerType.Value;
+            request.ModificationType = dto.ModificationType.Value;
+
+            request.NewMarketName = dto.ModificationType.Value == CustomerModificationType.ChangeName
+                ? dto.NewMarketName?.Trim()
+                : null;
+
+            request.Notes = dto.Notes?.Trim();
+
+            request.Status = CustomerModificationStatus.Submitted;
+            request.SubmittedAt = DateTime.Now;
+            request.ReviewedAt = null;
+            request.RejectionReason = null;
+
+            _context.SaveChanges();
+
+            return true;
+        }
     }
 }

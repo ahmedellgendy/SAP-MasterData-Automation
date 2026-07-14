@@ -206,7 +206,21 @@
 </style>
 
 <div class="rejected-page">
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success fw-bold">
+            <i class="bi bi-check-circle"></i>
+            @TempData["Success"]
+        </div>
+    }
 
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger fw-bold">
+            <i class="bi bi-exclamation-triangle"></i>
+            @TempData["Error"]
+        </div>
+    }
     <div class="rejected-header">
         <h1 class="rejected-title">طلبات تعديل العملاء المرفوضة</h1>
         <p class="rejected-subtitle">
@@ -257,6 +271,7 @@
                             <th>الاسم الجديد</th>
                             <th>سبب الرفض</th>
                             <th>تاريخ المراجعة</th>
+                            <th>إجراء</th>
                         </tr>
                     </thead>
 
@@ -292,6 +307,15 @@
 
                                 <td>
                                     @(item.ReviewedAt.HasValue? item.ReviewedAt.Value.ToString("yyyy-MM-dd") : "-")
+                                </td>
+                                <td>
+                                    <a asp-controller="CustomerModificationRequests"
+                                       asp-action="EditRejected"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-sm btn-warning fw-bold">
+                                        <i class="bi bi-pencil-square"></i>
+                                        تعديل وإرسال
+                                    </a>
                                 </td>
                             </tr>
                         }

@@ -77,6 +77,78 @@ public class CustomerModificationRequestsController : Controller
 
         return View(requests);
     }
+
+    [HttpGet]
+    public IActionResult EditRejected(int id)
+    {
+        var request = _repository.GetById(id);
+
+        if (request == null)
+        {
+            TempData["Error"] = "لم يتم العثور على الطلب.";
+            return RedirectToAction(nameof(Rejected));
+        }
+
+        if (request.Status != CustomerModificationStatus.Rejected)
+        {
+            TempData["Error"] = "يمكن تعديل الطلبات المرفوضة فقط.";
+            return RedirectToAction(nameof(Rejected));
+        }
+
+        LoadBranches();
+
+        var model = new CreateCustomerModificationRequestDto
+        {
+            BranchId = request.BranchId,
+            BranchName = request.BranchName,
+            MarketCode = request.MarketCode,
+            MarketName = request.MarketName,
+            CurrentCustomerType = request.CurrentCustomerType,
+            ModificationType = request.ModificationType,
+            NewMarketName = request.NewMarketName,
+            Notes = request.Notes
+        };
+
+        ViewBag.RequestId = id;
+        ViewBag.RejectionReason = request.RejectionReason;
+
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult EditRejected(int id, CreateCustomerModificationRequestDto model)
+    {
+        ValidateCreateModel(model);
+
+        if (!ModelState.IsValid)
+        {
+            LoadBranches();
+
+            ViewBag.RequestId = id;
+
+            var oldRequest = _repository.GetById(id);
+            ViewBag.RejectionReason = oldRequest?.RejectionReason;
+
+            return View(model);
+        }
+
+        model.BranchName = GetBranchName(model.BranchId!.Value);
+
+        var result = _repository.UpdateRejectedAndResubmit(id, model);
+
+        if (!result)
+        {
+            TempData["Error"] = "لم يتم تعديل الطلب. تأكد أن الطلب مازال مرفوض.";
+            return RedirectToAction(nameof(Rejected));
+        }
+
+        TempData["Success"] = "تم تعديل الطلب وإرساله للمراجعة مرة أخرى.";
+
+        return RedirectToAction(nameof(Rejected));
+    }
+
+
     private void ValidateCreateModel(CreateCustomerModificationRequestDto model)
     {
         if (!model.BranchId.HasValue || model.BranchId <= 0)
