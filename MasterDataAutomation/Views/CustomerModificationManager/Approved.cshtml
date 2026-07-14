@@ -232,6 +232,7 @@
                     <thead>
                         <tr>
                             <th>الفرع</th>
+                            <th>Requested By</th>
                             <th>كود العميل</th>
                             <th>اسم العميل الحالي</th>
                             <th>نوع العميل الحالي</th>
@@ -248,6 +249,12 @@
                         {
                             <tr>
                                 <td>@item.BranchName</td>
+
+                                <td>
+                                    <span class="chip">
+                                        @(string.IsNullOrWhiteSpace(item.CreatedBy) ? "-" : item.CreatedBy)
+                                    </span>
+                                </td>
 
                                 <td>
                                     <span class="customer-code">@item.MarketCode</span>

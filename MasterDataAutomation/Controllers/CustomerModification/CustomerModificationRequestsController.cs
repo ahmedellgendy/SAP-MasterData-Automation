@@ -43,7 +43,7 @@ public class CustomerModificationRequestsController : Controller
 
         model.BranchName = GetBranchName(model.BranchId!.Value);
 
-        var createdBy = User.FindFirst("FullName")?.Value ?? User.Identity?.Name;
+        var createdBy = User.Identity?.Name ?? "Unknown";
 
         _repository.Create(model, createdBy);
 

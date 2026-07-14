@@ -42,6 +42,8 @@ public class CustomerModificationManagerController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+  
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult Reject(int id, string rejectionReason)
@@ -65,6 +67,8 @@ public class CustomerModificationManagerController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+  
+
     [HttpGet]
     public IActionResult Approved()
     {
@@ -78,6 +82,8 @@ public class CustomerModificationManagerController : Controller
     {
         var requests = _repository.GetApproved();
 
+        var exportedIds = requests.Select(x => x.Id).ToList();
+
         using var workbook = new XLWorkbook();
         var worksheet = workbook.Worksheets.Add("Customer Modifications");
 
@@ -85,7 +91,7 @@ public class CustomerModificationManagerController : Controller
         worksheet.Style.Font.FontSize = 11;
 
         // Title
-        worksheet.Range("A1:F1").Merge();
+        worksheet.Range("A1:G1").Merge();
         worksheet.Cell("A1").Value = "Approved Customer Modification Requests";
         worksheet.Cell("A1").Style.Font.Bold = true;
         worksheet.Cell("A1").Style.Font.FontSize = 16;
@@ -95,7 +101,7 @@ public class CustomerModificationManagerController : Controller
         worksheet.Row(1).Height = 28;
 
         // Export date
-        worksheet.Range("A2:F2").Merge();
+        worksheet.Range("A2:G2").Merge();
         worksheet.Cell("A2").Value = $"Export Date: {DateTime.Now:yyyy-MM-dd HH:mm}";
         worksheet.Cell("A2").Style.Font.Italic = true;
         worksheet.Cell("A2").Style.Font.FontColor = XLColor.Gray;
@@ -105,13 +111,14 @@ public class CustomerModificationManagerController : Controller
         var headerRow = 4;
 
         worksheet.Cell(headerRow, 1).Value = "Branch";
-        worksheet.Cell(headerRow, 2).Value = "Customer Code";
-        worksheet.Cell(headerRow, 3).Value = "Customer Name";
-        worksheet.Cell(headerRow, 4).Value = "Modification Type";
-        worksheet.Cell(headerRow, 5).Value = "New Customer Name";
-        worksheet.Cell(headerRow, 6).Value = "Notes";
+        worksheet.Cell(headerRow, 2).Value = "Requested By";
+        worksheet.Cell(headerRow, 3).Value = "Customer Code";
+        worksheet.Cell(headerRow, 4).Value = "Customer Name";
+        worksheet.Cell(headerRow, 5).Value = "Modification Type";
+        worksheet.Cell(headerRow, 6).Value = "New Customer Name";
+        worksheet.Cell(headerRow, 7).Value = "Notes";
 
-        var headerRange = worksheet.Range(headerRow, 1, headerRow, 6);
+        var headerRange = worksheet.Range(headerRow, 1, headerRow, 7);
         headerRange.Style.Font.Bold = true;
         headerRange.Style.Font.FontColor = XLColor.White;
         headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#2F7D6B");
@@ -127,19 +134,20 @@ public class CustomerModificationManagerController : Controller
         foreach (var item in requests)
         {
             worksheet.Cell(row, 1).Value = item.BranchName;
-            worksheet.Cell(row, 2).Value = item.MarketCode;
-            worksheet.Cell(row, 3).Value = item.MarketName;
-            worksheet.Cell(row, 4).Value = GetModificationTypeText(item.ModificationType);
+            worksheet.Cell(row, 2).Value = item.CreatedBy ?? "";
+            worksheet.Cell(row, 3).Value = item.MarketCode;
+            worksheet.Cell(row, 4).Value = item.MarketName;
+            worksheet.Cell(row, 5).Value = GetModificationTypeText(item.ModificationType);
 
-            worksheet.Cell(row, 5).Value =
+            worksheet.Cell(row, 6).Value =
                 item.ModificationType == CustomerModificationType.ChangeName
                     ? item.NewMarketName ?? ""
                     : "";
 
-            worksheet.Cell(row, 6).Value = item.Notes ?? "";
+            worksheet.Cell(row, 7).Value = item.Notes ?? "";
 
             // row styling
-            var dataRange = worksheet.Range(row, 1, row, 6);
+            var dataRange = worksheet.Range(row, 1, row, 7);
             dataRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
             dataRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
             dataRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
@@ -157,7 +165,7 @@ public class CustomerModificationManagerController : Controller
 
         if (lastRow >= headerRow)
         {
-            var fullRange = worksheet.Range(headerRow, 1, Math.Max(lastRow, headerRow), 6);
+            var fullRange = worksheet.Range(headerRow, 1, Math.Max(lastRow, headerRow), 7);
             fullRange.SetAutoFilter();
         }
 
@@ -165,25 +173,28 @@ public class CustomerModificationManagerController : Controller
         worksheet.SheetView.FreezeRows(headerRow);
 
         worksheet.Column(1).Width = 18; // Branch
-        worksheet.Column(2).Width = 18; // Customer Code
-        worksheet.Column(3).Width = 35; // Customer Name
-        worksheet.Column(4).Width = 24; // Modification Type
-        worksheet.Column(5).Width = 35; // New Customer Name
-        worksheet.Column(6).Width = 45; // Notes
+        worksheet.Column(2).Width = 22; // Requested By
+        worksheet.Column(3).Width = 18; // Customer Code
+        worksheet.Column(4).Width = 35; // Customer Name
+        worksheet.Column(5).Width = 24; // Modification Type
+        worksheet.Column(6).Width = 35; // New Customer Name
+        worksheet.Column(7).Width = 45; // Notes
 
         // Customer Code as text
-        worksheet.Column(2).Style.NumberFormat.Format = "@";
-        worksheet.Column(2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+        worksheet.Column(3).Style.NumberFormat.Format = "@";
+        worksheet.Column(3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
 
         // Text alignment
-        worksheet.Column(1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-        worksheet.Column(3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
-        worksheet.Column(4).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-        worksheet.Column(5).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
-        worksheet.Column(6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+        worksheet.Column(1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // Branch
+        worksheet.Column(2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;   // Requested By
+        worksheet.Column(3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;   // Customer Code
+        worksheet.Column(4).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;   // Customer Name
+        worksheet.Column(5).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // Modification Type
+        worksheet.Column(6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;   // New Customer Name
+        worksheet.Column(7).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;   // Notes
 
         // Wrap notes
-        worksheet.Column(6).Style.Alignment.WrapText = true;
+        worksheet.Column(7).Style.Alignment.WrapText = true;
 
         // Make used range neat
         var usedRange = worksheet.RangeUsed();
@@ -196,10 +207,14 @@ public class CustomerModificationManagerController : Controller
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
 
+        var fileBytes = stream.ToArray();
+
+        _repository.DeleteApprovedByIds(exportedIds);
+
         var fileName = $"Approved_Customer_Modifications_{DateTime.Now:yyyyMMdd_HHmm}.xlsx";
 
         return File(
-            stream.ToArray(),
+            fileBytes,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             fileName);
     }

@@ -68,6 +68,9 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(x => x.CreatedAt)
                 .HasDefaultValueSql("GETDATE()");
+
+            entity.Property(x => x.CreatedBy)
+                 .HasMaxLength(150);
         });
 
         modelBuilder.Entity<GenerationHistoryEntity>(entity =>

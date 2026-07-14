@@ -287,5 +287,22 @@ namespace MasterDataAutomation.Infrastructure.Modules.CustomerModification.Persi
 
             return true;
         }
+
+        public void DeleteApprovedByIds(List<int> ids)
+        {
+            if (ids == null || !ids.Any())
+                return;
+
+            var requests = _context.CustomerModificationRequests
+                .Where(x => ids.Contains(x.Id) &&
+                            x.Status == CustomerModificationStatus.Approved)
+                .ToList();
+
+            if (!requests.Any())
+                return;
+
+            _context.CustomerModificationRequests.RemoveRange(requests);
+            _context.SaveChanges();
+        }
     }
 }

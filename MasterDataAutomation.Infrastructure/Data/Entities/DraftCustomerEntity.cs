@@ -15,7 +15,7 @@ public class DraftCustomerEntity
     public string CustomerType { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;
-
+    public string? CreatedBy { get; set; }
     public string Status { get; set; } = "Draft";
     public string? RejectionReason { get; set; }
 }

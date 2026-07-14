@@ -289,6 +289,7 @@
                     <thead>
                         <tr>
                             <th>الفرع</th>
+                            <th>Requested By</th>
                             <th>كود العميل</th>
                             <th>اسم العميل الحالي</th>
                             <th>نوع العميل الحالي</th>
@@ -305,6 +306,12 @@
                         {
                             <tr>
                                 <td>@item.BranchName</td>
+
+                                <td>
+                                    <span class="chip">
+                                        @(string.IsNullOrWhiteSpace(item.CreatedBy) ? "-" : item.CreatedBy)
+                                    </span>
+                                </td>
 
                                 <td>
                                     <span class="customer-code">@item.MarketCode</span>
@@ -348,6 +355,8 @@
                                               class="m-0"
                                               onsubmit="return confirm('هل تريد الموافقة على طلب التعديل؟');">
 
+                                            @Html.AntiForgeryToken()
+
                                             <input type="hidden" name="id" value="@item.Id" />
 
                                             <button type="submit" class="approve-btn">
@@ -377,6 +386,8 @@
                                                 <form asp-controller="CustomerModificationManager"
                                                       asp-action="Reject"
                                                       method="post">
+
+                                                    @Html.AntiForgeryToken()
 
                                                     <input type="hidden" name="id" value="@item.Id" />
 

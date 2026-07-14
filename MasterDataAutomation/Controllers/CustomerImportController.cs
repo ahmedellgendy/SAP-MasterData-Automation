@@ -100,8 +100,9 @@ namespace MasterDataAutomation.Web.Controllers
 
             return View(model);
         }
+
         [HttpPost]
-        public IActionResult Create(CreateCustomerViewModel model)  
+        public IActionResult Create(CreateCustomerViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -109,15 +110,20 @@ namespace MasterDataAutomation.Web.Controllers
                 return View(model);
             }
 
+            var currentUser = User.Identity?.Name ?? "Unknown";
+
             var customer = new CustomerImportDto
             {
                 Line = model.Line,
                 Market = model.Market,
                 Branch = model.Branch,
                 SalesDistrict = model.SalesDistrict,
-                CustomerType = model.CustomerType
+                CustomerType = model.CustomerType,
+                CreatedBy = currentUser
             };
+
             Console.WriteLine($"Branch = '{customer.Branch}'");
+
             var errors = _customerValidator.Validate(customer, 1);
 
             if (errors.Any())
@@ -131,8 +137,6 @@ namespace MasterDataAutomation.Web.Controllers
 
                 return View(model);
             }
-
-
 
             if (model.Index.HasValue)
             {
@@ -148,7 +152,6 @@ namespace MasterDataAutomation.Web.Controllers
             }
 
             return RedirectToAction(nameof(Draft));
-
         }
 
 
