@@ -1,6 +1,7 @@
 ﻿using ClosedXML.Excel;
 using MasterDataAutomation.Application.Interfaces.Repositories;
 using MasterDataAutomation.Application.Interfaces.Services;
+using MasterDataAutomation.Application.Modules.CustomerModification.Interfaces;
 using MasterDataAutomation.Web.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,17 +15,21 @@ public class ManagerDashboardController : Controller
     private readonly ISettingsService _settingsService;
     private readonly IHistoryService _historyService;
     private readonly ICustomerImportService _customerImportService;
+    private readonly ICustomerModificationRequestRepository _customerModificationRequestRepository;
 
     public ManagerDashboardController(
         ICustomerDraftRepository customerDraftRepository,
         ISettingsService settingsService,
         IHistoryService historyService,
-        ICustomerImportService customerImportService)
+        ICustomerImportService customerImportService,
+            ICustomerModificationRequestRepository customerModificationRequestRepository)
     {
         _customerDraftRepository = customerDraftRepository;
         _settingsService = settingsService;
         _historyService = historyService;
         _customerImportService = customerImportService;
+        _customerModificationRequestRepository = customerModificationRequestRepository;
+
     }
 
     [HttpGet]
@@ -33,19 +38,24 @@ public class ManagerDashboardController : Controller
         var draftCustomers = _customerDraftRepository.GetAll();
         var history = _historyService.GetAll();
 
+        var pendingModificationsCount = _customerModificationRequestRepository.GetSubmitted().Count;
+        var approvedModificationsCount = _customerModificationRequestRepository.GetApproved().Count;
+
+        ViewBag.PendingModificationsCount = pendingModificationsCount;
+        ViewBag.ApprovedModificationsCount = approvedModificationsCount;
+
         var model = new ManagerDashboardViewModel
         {
             DraftCustomersCount = draftCustomers.Count,
             LastBpCode = _settingsService.GetLastBpCode(),
             HistoryCount = history.Count,
-            //BranchSummary = draftCustomers.GroupBy(x => x.Branch).ToDictionary(g => g.Key, g => g.Count()),
             BranchSummary = _customerDraftRepository.GetBranchSummary(),
             RecentHistory = history.OrderByDescending(x => x.Date).Take(5).ToList(),
             SubmittedCount = _customerDraftRepository.GetSubmittedCount(),
             ApprovedCount = _customerDraftRepository.GetApprovedCount(),
             RejectedCount = _customerDraftRepository.GetRejectedCount(),
             PendingSubmittedCustomers = _customerDraftRepository.GetSubmittedForReview().Take(5).ToList(),
-         };
+        };
 
         return View(model);
     }
@@ -159,6 +169,7 @@ public class ManagerDashboardController : Controller
 
         return View(customers);
     }
+
     [HttpPost]
     public IActionResult RejectCustomer(int id, string rejectionReason)
     {
@@ -192,13 +203,13 @@ public class ManagerDashboardController : Controller
     }
 
     [HttpGet]
-    [HttpGet]
     public IActionResult ApprovedCustomers()
     {
         var customers = _customerDraftRepository.GetApprovedForReview();
 
         return View(customers);
     }
+
     [HttpPost]
     public IActionResult DeleteApprovedCustomer(int id)
     {

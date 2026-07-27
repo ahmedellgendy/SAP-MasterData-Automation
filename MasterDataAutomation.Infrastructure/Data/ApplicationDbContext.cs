@@ -1,4 +1,7 @@
 ﻿using MasterDataAutomation.Infrastructure.Data.Entities;
+using MasterDataAutomation.Infrastructure.Data.Entities.Customers;
+using MasterDataAutomation.Infrastructure.Data.Entities.Products;
+using MasterDataAutomation.Infrastructure.Data.Entities.System;
 using Microsoft.EntityFrameworkCore;
 
 namespace MasterDataAutomation.Infrastructure.Data;
@@ -16,6 +19,14 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<SystemSettingEntity> SystemSettings { get; set; }
     public DbSet<AppUserEntity> AppUsers { get; set; }
+
+    // Product Master
+    public DbSet<ProductEntity> Products { get; set; }
+    public DbSet<ProductRequestEntity> ProductRequests { get; set; }
+
+    public DbSet<ActivityLogEntity> ActivityLogs { get; set; }
+
+    public DbSet<CustomerModificationRequestEntity> CustomerModificationRequests { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -57,6 +68,9 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(x => x.CreatedAt)
                 .HasDefaultValueSql("GETDATE()");
+
+            entity.Property(x => x.CreatedBy)
+                 .HasMaxLength(150);
         });
 
         modelBuilder.Entity<GenerationHistoryEntity>(entity =>
@@ -122,6 +136,147 @@ public class ApplicationDbContext : DbContext
 
             entity.HasIndex(x => x.UserName)
                 .IsUnique();
+        });
+
+        // Product Master
+        modelBuilder.Entity<ProductEntity>(entity =>
+        {
+            entity.ToTable("Products");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.ItemCode)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(x => x.ItemName)
+                .IsRequired()
+                .HasMaxLength(250);
+
+            entity.Property(x => x.OutletSellingPrice)
+                .HasPrecision(18, 2);
+
+            entity.Property(x => x.RetailSellingPrice)
+                .HasPrecision(18, 2);
+
+            entity.Property(x => x.Currency)
+                .HasMaxLength(10);
+
+            entity.Property(x => x.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            entity.HasIndex(x => x.ItemCode)
+                .IsUnique();
+        });
+        // Product Requests
+        modelBuilder.Entity<ProductRequestEntity>(entity =>
+        {
+            entity.ToTable("ProductRequests");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.ItemCode)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(x => x.ItemName)
+                .IsRequired()
+                .HasMaxLength(250);
+
+            entity.Property(x => x.Notes)
+                .HasMaxLength(500);
+
+            entity.Property(x => x.PurchasePrice)
+                .HasPrecision(18, 2);
+
+            entity.Property(x => x.PiecePrice)
+                .HasPrecision(18, 2);
+
+            entity.Property(x => x.OutletSellingPrice)
+                .HasPrecision(18, 2);
+
+            entity.Property(x => x.RetailSellingPrice)
+                .HasPrecision(18, 2);
+
+            entity.Property(x => x.Currency)
+                .IsRequired()
+                .HasMaxLength(10);
+
+            entity.Property(x => x.RejectionReason)
+                .HasMaxLength(500);
+
+            entity.Property(x => x.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            entity.HasIndex(x => x.ItemCode);
+        });
+
+        modelBuilder.Entity<ActivityLogEntity>(entity =>
+        {
+            entity.ToTable("ActivityLogs");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.UserName)
+                .HasMaxLength(100);
+
+            entity.Property(x => x.UserRole)
+                .HasMaxLength(100);
+
+            entity.Property(x => x.Action)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(x => x.Module)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(x => x.EntityName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(x => x.Description)
+                .HasMaxLength(500);
+
+            entity.Property(x => x.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+        });
+
+        modelBuilder.Entity<CustomerModificationRequestEntity>(entity =>
+        {
+            entity.ToTable("CustomerModificationRequests");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.BranchName)
+                .IsRequired()
+                .HasMaxLength(150);
+
+            entity.Property(x => x.MarketCode)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(x => x.MarketName)
+                .IsRequired()
+                .HasMaxLength(250);
+
+            entity.Property(x => x.NewMarketName)
+                .HasMaxLength(250);
+
+            entity.Property(x => x.Notes)
+                .HasMaxLength(500);
+
+            entity.Property(x => x.RejectionReason)
+                .HasMaxLength(500);
+
+            entity.Property(x => x.CreatedBy)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            entity.HasIndex(x => x.MarketCode);
+            entity.HasIndex(x => x.Status);
         });
     }
 }

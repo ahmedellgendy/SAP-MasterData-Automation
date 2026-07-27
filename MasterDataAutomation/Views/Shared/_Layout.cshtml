@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>@ViewData["Title"] - MasterDataAutomation</title>
+    <title>@ViewData["Title"] - @AppBrand.AppName</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
@@ -15,43 +15,117 @@
 
         .sidebar {
             width: 260px;
+            height: 100vh;
             min-height: 100vh;
             background: #1f2937;
             position: fixed;
             left: 0;
             top: 0;
-            padding: 20px;
+            padding: 18px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            box-sizing: border-box;
+            overscroll-behavior: contain;
         }
+
+            .sidebar::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            .sidebar::-webkit-scrollbar-track {
+                background: #1f2937;
+            }
+
+            .sidebar::-webkit-scrollbar-thumb {
+                background: #4b5563;
+                border-radius: 20px;
+            }
+
+                .sidebar::-webkit-scrollbar-thumb:hover {
+                    background: #6b7280;
+                }
 
         .sidebar-title {
             color: white;
             font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 30px;
+            font-weight: 800;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .sidebar a {
-            display: block;
+        .sidebar-section {
+            color: #9ca3af !important;
+            font-size: 11px;
+            letter-spacing: 1.2px;
+            margin-top: 18px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            font-weight: 800;
+        }
+
+        .sidebar a,
+        .sidebar-menu-toggle {
+            display: flex;
+            align-items: center;
             color: #d1d5db;
             text-decoration: none;
-            padding: 12px 14px;
-            border-radius: 8px;
-            margin-bottom: 8px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            margin-bottom: 5px;
+            font-size: 14px;
+            transition: 0.15s ease;
+            border: 0;
+            background: transparent;
+            width: 100%;
+            text-align: left;
         }
 
-            .sidebar a:hover {
+            .sidebar a:hover,
+            .sidebar-menu-toggle:hover {
                 background: #374151;
                 color: white;
             }
 
-            .sidebar a i {
+            .sidebar a i,
+            .sidebar-menu-toggle i:first-child {
                 margin-right: 10px;
+                font-size: 16px;
+                width: 20px;
+                text-align: center;
             }
 
-        .sidebar .text-secondary {
-            color: #9ca3af !important;
-            font-size: 12px;
-            letter-spacing: 1px;
+            .sidebar a.active {
+                background: #2563eb;
+                color: #fff;
+            }
+
+                .sidebar a.active i {
+                    color: #fff;
+                }
+
+        .sidebar-submenu a {
+            font-size: 13px;
+            padding: 9px 12px 9px 42px;
+            margin-bottom: 3px;
+        }
+
+        .sidebar-menu-toggle .chevron {
+            margin-left: auto;
+            font-size: 13px;
+            transition: transform 0.2s ease;
+        }
+
+        .sidebar-menu-toggle[aria-expanded="true"] .chevron {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-footer {
+            margin-top: 24px;
+            padding-top: 14px;
+            padding-bottom: 16px;
+            border-top: 1px solid rgba(255,255,255,0.12);
         }
 
         .main-content {
@@ -59,28 +133,77 @@
             padding: 25px;
         }
 
-        .topbar {
-            background: white;
-            padding: 15px 25px;
-            border-radius: 12px;
-            margin-bottom: 25px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        .app-topbar {
+            background: #fff;
+            border-radius: 14px;
+            padding: 14px 22px;
+            margin-bottom: 22px;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, .05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
         }
+
+        .greeting-title {
+            font-size: 18px;
+            font-weight: 900;
+            color: #16232c;
+            margin-bottom: 2px;
+        }
+
+        .greeting-subtitle {
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .user-chip {
+            color: #475569;
+            background: #f8fafc;
+            border: 1px solid #e5e9ef;
+            border-radius: 999px;
+            padding: 7px 12px;
+            font-size: 13px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .logout-btn {
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            background: #fff;
+            border-radius: 8px;
+            padding: 7px 12px;
+            font-size: 13px;
+            font-weight: 800;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: .15s ease;
+        }
+
+            .logout-btn:hover {
+                background: #ef4444;
+                color: #fff;
+            }
 
         .content-card {
             background: white;
             border-radius: 12px;
             padding: 25px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .collapse a {
-            font-size: 14px;
-            padding-left: 35px !important;
-        }
-
-        .sidebar a[data-bs-toggle] {
-            cursor: pointer;
         }
 
         .action-card {
@@ -105,14 +228,16 @@
                 transform: scale(1.2);
             }
 
-        .sidebar a.active {
-            background: #2563eb;
-            color: #fff;
-        }
-
-            .sidebar a.active i {
-                color: #fff;
+        @@media (max-width: 900px) {
+            .main-content {
+                margin-left: 260px;
+                padding: 18px;
             }
+
+            .app-topbar {
+                align-items: flex-start;
+            }
+        }
     </style>
 </head>
 
@@ -121,15 +246,23 @@
     <div class="sidebar">
 
         <div class="sidebar-title">
-            <i class="bi bi-box-seam"></i>
-            Master Data
+            <i class="bi bi-diagram-3"></i>
+            @AppBrand.AppName
         </div>
 
-        <div class="text-uppercase text-secondary small mb-2">
-            Main
+        <div class="sidebar-section">
+            Dashboard
         </div>
 
-        @if (User.IsInRole("Sales") || User.IsInRole("Admin"))
+        @if (User.IsInRole("Admin"))
+        {
+            <a asp-controller="ManagerDashboard" asp-action="Index">
+                <i class="bi bi-speedometer2"></i>
+                Admin Dashboard
+            </a>
+        }
+
+        @if (User.IsInRole("Sales"))
         {
             <a asp-controller="SalesDashboard" asp-action="Index">
                 <i class="bi bi-speedometer2"></i>
@@ -137,132 +270,267 @@
             </a>
         }
 
-        @if (User.IsInRole("Manager") || User.IsInRole("Admin"))
+        @if (User.IsInRole("Manager"))
         {
             <a asp-controller="ManagerDashboard" asp-action="Index">
                 <i class="bi bi-speedometer2"></i>
                 Manager Dashboard
             </a>
-
-            <a asp-controller="ManagerDashboard" asp-action="SubmittedCustomers">
-                <i class="bi bi-send-check"></i>
-                Submitted Customers
-            </a>
-
-            <a asp-controller="ManagerDashboard" asp-action="ApprovedCustomers">
-                <i class="bi bi-check-circle"></i>
-                Approved Customers
-            </a>
-
-            <a asp-controller="ManagerDashboard" asp-action="RejectedCustomers">
-                <i class="bi bi-x-circle"></i>
-                Rejected Customers
-            </a>
-
-            <a asp-controller="CustomerImport" asp-action="History">
-                <i class="bi bi-clock-history"></i>
-                History
-            </a>
-
-         
         }
 
-        @if (User.IsInRole("Sales") || User.IsInRole("Admin"))
+        @if (User.IsInRole("AccountsUser"))
         {
-            <div class="text-uppercase text-secondary small mt-4 mb-2">
-                Customer Management
-            </div>
-
-            <a class="d-flex justify-content-between align-items-center"
-               data-bs-toggle="collapse"
-               href="#customerMenu"
-               role="button"
-               aria-expanded="true"
-               aria-controls="customerMenu">
-
-                <span>
-                    <i class="bi bi-people"></i>
-                    Customers
-                </span>
-
-                <i class="bi bi-chevron-down"></i>
+            <a asp-controller="ProductRequests" asp-action="Index">
+                <i class="bi bi-file-earmark-plus"></i>
+                Accounts Dashboard
             </a>
+        }
 
-            <div class="collapse show" id="customerMenu">
+        @if (User.IsInRole("AccountsManager"))
+        {
+            <a asp-controller="ProductAccountsManager" asp-action="Index">
+                <i class="bi bi-clipboard-check"></i>
+                Accounts Manager
+            </a>
+        }
 
-                <a class="ps-4"
-                   asp-controller="CustomerImport"
-                   asp-action="Create">
-                    <i class="bi bi-person-plus"></i>
-                    Create Customer
+        @if (User.IsInRole("ExecutiveManager"))
+        {
+            <a asp-controller="ProductExecutiveManager" asp-action="Index">
+                <i class="bi bi-cash-coin"></i>
+                Executive Dashboard
+            </a>
+        }
+
+        @if (User.IsInRole("Sales")
+                || User.IsInRole("Manager")
+                || User.IsInRole("Admin")
+                || User.IsInRole("AccountsUser")
+                || User.IsInRole("AccountsManager")
+                || User.IsInRole("ExecutiveManager"))
+        {
+            <div class="sidebar-section">
+                Modules
+            </div>
+        }
+
+        @if (User.IsInRole("Sales") || User.IsInRole("Manager") || User.IsInRole("Admin"))
+        {
+            <button class="sidebar-menu-toggle"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#customersMenu"
+                    aria-expanded="false"
+                    aria-controls="customersMenu">
+                <i class="bi bi-people"></i>
+                Customers
+                <i class="bi bi-chevron-down chevron"></i>
+            </button>
+
+            <div class="collapse sidebar-submenu" id="customersMenu">
+
+                @if (User.IsInRole("Sales") || User.IsInRole("Admin"))
+                {
+                    <a asp-controller="CustomerImport" asp-action="Create">
+                        <i class="bi bi-person-plus"></i>
+                        Create Customer
+                    </a>
+
+                    <a asp-controller="CustomerModificationRequests"
+                       asp-action="Create">
+                        <i class="bi bi-pencil-square"></i>
+                        Customer Modification
+                    </a>
+
+                    @* <a asp-controller="CustomerImport" asp-action="UploadToDraft">
+                        <i class="bi bi-file-earmark-excel"></i>
+                        Upload Excel
+                    </a> *@
+
+                    <a asp-controller="CustomerImport" asp-action="Draft">
+                        <i class="bi bi-list-check"></i>
+                        Draft Customers
+                    </a>
+
+                    <a asp-controller="CustomerImport" asp-action="RejectedForReview">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        Rejected Review
+                    </a>
+                }
+
+                @if (User.IsInRole("Manager") || User.IsInRole("Admin"))
+                {
+                    <a asp-controller="ManagerDashboard" asp-action="SubmittedCustomers">
+                        <i class="bi bi-send-check"></i>
+                        Pending Customers
+                    </a>
+
+                    <a asp-controller="ManagerDashboard" asp-action="ApprovedCustomers">
+                        <i class="bi bi-check-circle"></i>
+                        Approved Customers
+                    </a>
+
+                    <a asp-controller="ManagerDashboard" asp-action="RejectedCustomers">
+                        <i class="bi bi-x-circle"></i>
+                        Rejected Customers
+                    </a>
+
+                    <a asp-controller="CustomerModificationManager"
+                       asp-action="Index">
+                        <i class="bi bi-clipboard-check"></i>
+                        Customer Modification Review
+                    </a>
+
+                    <a asp-controller="CustomerImport" asp-action="History">
+                        <i class="bi bi-clock-history"></i>
+                        SAP History
+                    </a>
+                }
+
+            </div>
+        }
+
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <button class="sidebar-menu-toggle"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#productsMenu"
+                    aria-expanded="false"
+                    aria-controls="productsMenu">
+                <i class="bi bi-box-seam"></i>
+                Products
+                <i class="bi bi-chevron-down chevron"></i>
+            </button>
+
+            <div class="collapse sidebar-submenu" id="productsMenu">
+
+                <a asp-controller="Products"
+                   asp-action="Index"
+                   class="sidebar-link">
+                    <i class="bi bi-box-seam"></i>
+                    Products Master
                 </a>
 
-                <a class="ps-4"
-                   asp-controller="CustomerImport"
-                   asp-action="UploadToDraft">
-                    <i class="bi bi-file-earmark-excel"></i>
-                    Upload Excel
-                </a>
+                @if (User.IsInRole("Admin") || User.IsInRole("AccountsUser"))
+                {
+                    <a asp-controller="ProductRequests" asp-action="Index">
+                        <i class="bi bi-file-earmark-plus"></i>
+                        Product Requests
+                    </a>
+                }
 
-                <a class="ps-4"
-                   asp-controller="CustomerImport"
-                   asp-action="Draft">
-                    <i class="bi bi-list-check"></i>
-                    Draft Customers
-                </a>
+                @if (User.IsInRole("Admin") || User.IsInRole("AccountsManager"))
+                {
+                    <a asp-controller="ProductAccountsManager" asp-action="Index">
+                        <i class="bi bi-clipboard-check"></i>
+                        Accounts Review
+                    </a>
+                }
 
-                <a class="ps-4"
-                   asp-controller="CustomerImport"
-                   asp-action="RejectedForReview">
-                    <i class="bi bi-arrow-counterclockwise"></i>
-                    Rejected For Review
-                </a>
+                @if (User.IsInRole("Admin") || User.IsInRole("ExecutiveManager"))
+                {
+                    <a asp-controller="ProductExecutiveManager" asp-action="Index">
+                        <i class="bi bi-cash-coin"></i>
+                        Executive Pricing
+                    </a>
+                }
 
             </div>
         }
 
         @if (User.IsInRole("Admin"))
         {
-            <div class="text-uppercase text-secondary small mt-4 mb-2">
-                Admin
+            <div class="sidebar-section">
+                Administration
             </div>
 
-            <a asp-controller="AdminUsers" asp-action="Index">
-                <i class="bi bi-people"></i>
-                Users Management
-            </a>
+            <button class="sidebar-menu-toggle"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#adminMenu"
+                    aria-expanded="false"
+                    aria-controls="adminMenu">
+                <i class="bi bi-shield-lock"></i>
+                Admin Tools
+                <i class="bi bi-chevron-down chevron"></i>
+            </button>
 
-            <a asp-controller="SystemSettings" asp-action="Index">
-                <i class="bi bi-gear"></i>
-                Settings
-            </a>
+            <div class="collapse sidebar-submenu" id="adminMenu">
+
+                <a asp-controller="AdminUsers" asp-action="Index">
+                    <i class="bi bi-people"></i>
+                    Users Management
+                </a>
+
+                <a asp-controller="ActivityLogs" asp-action="Index">
+                    <i class="bi bi-activity"></i>
+                    Activity Logs
+                </a>
+
+                <a asp-controller="SystemSettings" asp-action="Index">
+                    <i class="bi bi-gear"></i>
+                    Settings
+                </a>
+
+            </div>
         }
+
+        <div class="sidebar-footer">
+            <div class="text-secondary small">
+                Developed by
+            </div>
+
+            <div class="text-white fw-semibold small">
+                @AppBrand.DeveloperName
+            </div>
+        </div>
 
     </div>
 
     <div class="main-content">
 
-        <div class="topbar d-flex justify-content-between align-items-center">
+        @{
+            var fullName = User.FindFirst("FullName")?.Value;
+            var userName = !string.IsNullOrWhiteSpace(fullName)
+            ? fullName
+            : User.Identity?.Name ?? "User";
+
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "User";
+
+            var hour = DateTime.Now.Hour;
+
+            var greeting = hour < 12
+            ? "Good morning"
+            : hour < 18
+            ? "Good afternoon"
+            : "Good evening";
+        }
+
+        <div class="app-topbar">
 
             <div>
-                <h5 class="mb-0">@ViewData["Title"]</h5>
-                <small class="text-muted">Sales Master Data Automation</small>
+                <div class="greeting-title">
+                    @greeting, @userName
+                </div>
+
+                <div class="greeting-subtitle">
+                    Welcome back to @AppBrand.AppName
+                </div>
             </div>
 
-            <div class="d-flex align-items-center gap-3">
+            <div class="topbar-actions">
 
-                <span class="text-muted small">
+                <span class="user-chip">
                     <i class="bi bi-person-circle"></i>
-                    @User.FindFirst("FullName")?.Value
-                    -
-                    @User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                    @userName - @userRole
                 </span>
 
                 <form asp-controller="Account"
                       asp-action="Logout"
                       method="post"
                       class="m-0">
-                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                    <button type="submit" class="logout-btn">
                         <i class="bi bi-box-arrow-right"></i>
                         Logout
                     </button>
@@ -294,8 +562,15 @@
                     link.classList.add("active");
 
                     const collapseParent = link.closest(".collapse");
+
                     if (collapseParent) {
                         collapseParent.classList.add("show");
+
+                        const toggleButton = document.querySelector(`[data-bs-target="#${collapseParent.id}"]`);
+
+                        if (toggleButton) {
+                            toggleButton.setAttribute("aria-expanded", "true");
+                        }
                     }
                 }
             });

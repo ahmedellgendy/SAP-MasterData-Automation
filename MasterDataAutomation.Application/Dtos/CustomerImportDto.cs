@@ -12,7 +12,7 @@
         public string SalesDistrict { get; set; } = string.Empty;
 
         public string CustomerType { get; set; } = string.Empty;
-
+        public string? CreatedBy { get; set; }
         public string DuplicateKey => $"{Market.Trim().ToUpper()}|{Line.Trim().ToUpper()}";
     }
 }

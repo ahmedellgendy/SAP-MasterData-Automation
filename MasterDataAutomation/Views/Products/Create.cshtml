@@ -1,0 +1,357 @@
+﻿@model MasterDataAutomation.Application.Modules.ProductMaster.Dtos.ProductDto
+
+@{
+    ViewData["Title"] = "Add Product";
+}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        --ink: #16232c;
+        --ink-soft: #5b6b78;
+        --ink-faint: #93a0aa;
+        --paper: #f3f6f6;
+        --surface: #ffffff;
+        --line: #e0e6e7;
+        --accent: #2f7d6b;
+        --accent-ink: #1d5347;
+        --accent-soft: #e6f1ee;
+        --warn: #b6483f;
+        --warn-soft: #f7e9e7;
+    }
+
+    .pm-wrap {
+        font-family: 'Inter', sans-serif;
+        color: var(--ink);
+        background: var(--paper);
+        border-radius: 0.4rem;
+        padding: 1.75rem;
+    }
+
+    .pm-eyebrow {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent-ink);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.6rem;
+    }
+
+        .pm-eyebrow::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: inline-block;
+        }
+
+    .pm-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        gap: 1rem;
+        border-bottom: 2px solid var(--ink);
+        padding-bottom: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .pm-title {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 2rem;
+        letter-spacing: -0.02em;
+        margin: 0;
+        color: var(--ink);
+    }
+
+    .pm-sub {
+        color: var(--ink-soft);
+        font-size: 0.92rem;
+        margin: 0.3rem 0 0;
+    }
+
+    .btn-flat {
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        font-size: 0.85rem;
+        border-radius: 0.3rem;
+        padding: 0.55rem 1.05rem;
+        border: 1.5px solid var(--ink);
+        background: transparent;
+        color: var(--ink);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        transition: background 0.12s ease, color 0.12s ease;
+        text-decoration: none;
+    }
+
+        .btn-flat:hover {
+            background: var(--ink);
+            color: #fff;
+        }
+
+    .btn-flat-solid {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+    }
+
+        .btn-flat-solid:hover {
+            background: var(--accent-ink);
+            border-color: var(--accent-ink);
+            color: #fff;
+        }
+
+    /* panel */
+    .pm-panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 0.4rem;
+        overflow: hidden;
+    }
+
+    .pm-panel-head {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        background: var(--paper);
+    }
+
+    .pm-panel-title {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.72rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+        font-weight: 600;
+    }
+
+    .pm-panel-body {
+        padding: 1.75rem;
+    }
+
+    .pm-section-label {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.68rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+        font-weight: 600;
+        margin: 1.85rem 0 0.9rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px dashed var(--line);
+    }
+
+        .pm-section-label:first-child {
+            margin-top: 0;
+        }
+
+    .pm-field-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: 0.35rem;
+        display: block;
+    }
+
+    .pm-input {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 0.3rem;
+        padding: 0.55rem 0.8rem;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.88rem;
+        background: #fff;
+        color: var(--ink);
+        transition: border-color 0.12s ease, background 0.12s ease;
+    }
+
+        .pm-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+
+    .pm-input-group {
+        display: flex;
+        align-items: stretch;
+    }
+
+        .pm-input-group .pm-input-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--line);
+            border-right: none;
+            border-radius: 0.3rem 0 0 0.3rem;
+            background: var(--paper);
+            color: var(--ink-faint);
+            padding: 0 0.7rem;
+            font-size: 0.85rem;
+        }
+
+        .pm-input-group .pm-input {
+            border-radius: 0 0.3rem 0.3rem 0;
+        }
+
+            .pm-input-group .pm-input:focus {
+                z-index: 1;
+            }
+
+    .pm-actions-bar {
+        border-top: 1px solid var(--line);
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        display: flex;
+        gap: 0.6rem;
+    }
+
+    .text-danger {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.78rem;
+    }
+
+    @@media (max-width: 767px) {
+        .pm-panel-body {
+            padding: 1.25rem;
+        }
+    }
+</style>
+
+<div class="pm-wrap">
+
+    @* header *@
+    <div class="pm-header">
+        <div>
+            <div class="pm-eyebrow">Master Data · SAP Price List</div>
+            <h1 class="pm-title">Add Product</h1>
+            <p class="pm-sub">Add existing product master data.</p>
+        </div>
+
+        <a asp-controller="Products" asp-action="Index" class="btn-flat">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+    @* panel *@
+    <div class="pm-panel">
+
+        <div class="pm-panel-head">
+            <span class="pm-panel-title">
+                <i class="bi bi-file-earmark-text"></i>
+                Product Details
+            </span>
+        </div>
+
+        <div class="pm-panel-body">
+
+            <form asp-action="Create" method="post">
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="pm-section-label">
+                    <i class="bi bi-tag"></i>
+                    Basic Information
+                </div>
+                <div class="row g-3">
+
+                    <div class="col-md-4">
+                        <label class="pm-field-label">Item Code</label>
+                        <input asp-for="ItemCode" class="pm-input" placeholder="Enter item code" />
+                        <span asp-validation-for="ItemCode" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-8">
+                        <label class="pm-field-label">Item Name</label>
+                        <input asp-for="ItemName" class="pm-input" placeholder="Enter item name" />
+                        <span asp-validation-for="ItemName" class="text-danger"></span>
+                    </div>
+
+                </div>
+
+                <div class="pm-section-label">
+                    <i class="bi bi-currency-exchange"></i>
+                    Pricing
+                </div>
+                <div class="row g-3">
+
+                    <div class="col-md-4">
+                        <label class="pm-field-label">Outlet Price</label>
+                        <div class="pm-input-group">
+                            <span class="pm-input-icon"><i class="bi bi-cash"></i></span>
+                            <input asp-for="OutletSellingPrice" class="pm-input" type="number" step="0.01" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="pm-field-label">Retail Price</label>
+                        <div class="pm-input-group">
+                            <span class="pm-input-icon"><i class="bi bi-cash"></i></span>
+                            <input asp-for="RetailSellingPrice" class="pm-input" type="number" step="0.01" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="pm-field-label">Currency</label>
+                        <input asp-for="Currency" class="pm-input" placeholder="e.g. EGP" />
+                    </div>
+
+                </div>
+
+                <div class="pm-section-label">
+                    <i class="bi bi-calendar-range"></i>
+                    Validity Periods
+                </div>
+                <div class="row g-3">
+
+                    <div class="col-md-3">
+                        <label class="pm-field-label">Market Valid From</label>
+                        <input asp-for="MarketValidFrom" class="pm-input" type="date" />
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="pm-field-label">Market Valid To</label>
+                        <input asp-for="MarketValidTo" class="pm-input" type="date" />
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="pm-field-label">Retail Valid From</label>
+                        <input asp-for="RetailValidFrom" class="pm-input" type="date" />
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="pm-field-label">Retail Valid To</label>
+                        <input asp-for="RetailValidTo" class="pm-input" type="date" />
+                    </div>
+
+                </div>
+
+                <div class="pm-actions-bar">
+                    <button type="submit" class="btn-flat btn-flat-solid">
+                        <i class="bi bi-check-lg"></i>
+                        Save Product
+                    </button>
+
+                    <a asp-controller="Products" asp-action="Index" class="btn-flat">
+                        Cancel
+                    </a>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>

@@ -26,7 +26,19 @@ namespace MasterDataAutomation.Infrastructure.Excel
 
             using var workbook = new XLWorkbook(stream);
 
-            var worksheet = workbook.Worksheet("Sheet2");
+            var worksheet = workbook.Worksheets.FirstOrDefault();
+
+            if (worksheet == null)
+            {
+                result.Errors.Add(new ExcelErrorDto
+                {
+                    RowNumber = 0,
+                    Column = "Sheet",
+                    Message = "Excel file does not contain any worksheets."
+                });
+
+                return result;
+            }
 
             var headers = _headerMapper.Map(worksheet);
 

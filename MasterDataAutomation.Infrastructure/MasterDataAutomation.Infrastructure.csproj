@@ -7,12 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MasterDataAutomation.Application\MasterDataAutomation.Application.csproj" />
-    <ProjectReference Include="..\MasterDataAutomation.Domain\MasterDataAutomation.Domain.csproj" />
+    <Compile Remove="Repositories\**" />
+    <EmbeddedResource Remove="Repositories\**" />
+    <None Remove="Repositories\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Repositories\" />
+    <ProjectReference Include="..\MasterDataAutomation.Application\MasterDataAutomation.Application.csproj" />
+    <ProjectReference Include="..\MasterDataAutomation.Domain\MasterDataAutomation.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

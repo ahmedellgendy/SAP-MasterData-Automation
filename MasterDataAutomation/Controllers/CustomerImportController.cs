@@ -10,7 +10,7 @@ using System.Text.Json;
 
 namespace MasterDataAutomation.Web.Controllers
 {
-    [Authorize(Roles = "Sales,Manager,Admin")]  
+    [Authorize(Roles = "Sales,Manager,Admin")]
     public class CustomerImportController : Controller
     {
         private readonly ICustomerImportService _customerImportService;
@@ -21,7 +21,7 @@ namespace MasterDataAutomation.Web.Controllers
 
 
         public CustomerImportController(ICustomerImportService customerImportService,
-            ISettingsService settingsService, 
+            ISettingsService settingsService,
             ICustomerValidator customerValidator,
             ICustomerDraftRepository customerDraftRepository,
             IHistoryService historyService)
@@ -30,7 +30,7 @@ namespace MasterDataAutomation.Web.Controllers
             _settingsService = settingsService;
             _customerValidator = customerValidator;
             _customerDraftRepository = customerDraftRepository;
-            _historyService = historyService; 
+            _historyService = historyService;
 
         }
 
@@ -100,8 +100,9 @@ namespace MasterDataAutomation.Web.Controllers
 
             return View(model);
         }
+
         [HttpPost]
-        public IActionResult Create(CreateCustomerViewModel model)  
+        public IActionResult Create(CreateCustomerViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -109,15 +110,20 @@ namespace MasterDataAutomation.Web.Controllers
                 return View(model);
             }
 
+            var currentUser = User.Identity?.Name ?? "Unknown";
+
             var customer = new CustomerImportDto
             {
                 Line = model.Line,
                 Market = model.Market,
                 Branch = model.Branch,
                 SalesDistrict = model.SalesDistrict,
-                CustomerType = model.CustomerType
+                CustomerType = model.CustomerType,
+                CreatedBy = currentUser
             };
+
             Console.WriteLine($"Branch = '{customer.Branch}'");
+
             var errors = _customerValidator.Validate(customer, 1);
 
             if (errors.Any())
@@ -131,8 +137,6 @@ namespace MasterDataAutomation.Web.Controllers
 
                 return View(model);
             }
-
-
 
             if (model.Index.HasValue)
             {
@@ -148,7 +152,6 @@ namespace MasterDataAutomation.Web.Controllers
             }
 
             return RedirectToAction(nameof(Draft));
-
         }
 
 
@@ -283,7 +286,7 @@ namespace MasterDataAutomation.Web.Controllers
             return View("Create", model);
         }
 
-        
+
 
         [HttpGet]
         public IActionResult History()
