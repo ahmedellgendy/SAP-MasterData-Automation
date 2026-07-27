@@ -104,4 +104,110 @@ public class SalesAnalyticsMasterDataController : Controller
         return RedirectToAction(nameof(SalesRepMaster));
     }
 
+    [HttpGet]
+    public IActionResult DailySalesReport()
+    {
+        ViewBag.DefaultDate = DateTime.Today.ToString("yyyy-MM-dd");
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult UploadDailySalesReport(IFormFile file, DateTime reportDate)
+    {
+        if (file == null || file.Length == 0)
+        {
+            TempData["Error"] = "Please select a valid Excel file.";
+            return RedirectToAction(nameof(DailySalesReport));
+        }
+
+        if (reportDate == default)
+        {
+            TempData["Error"] = "Please select report date.";
+            return RedirectToAction(nameof(DailySalesReport));
+        }
+
+        var extension = Path.GetExtension(file.FileName).ToLower();
+
+        if (extension != ".xlsx" && extension != ".xls")
+        {
+            TempData["Error"] = "Only Excel files are allowed.";
+            return RedirectToAction(nameof(DailySalesReport));
+        }
+
+        var uploadedBy = User.Identity?.Name ?? "Unknown";
+
+        using var stream = file.OpenReadStream();
+
+        var result = _importService.ImportDailySalesReport(
+            stream,
+            file.FileName,
+            reportDate,
+            uploadedBy);
+
+        if (!result.Success)
+        {
+            TempData["Error"] = result.Message ?? "Import failed.";
+            return RedirectToAction(nameof(DailySalesReport));
+        }
+
+        TempData["Success"] =
+            $"Daily sales report imported successfully. Imported: {result.ImportedRows}, Failed: {result.FailedRows}";
+
+        return RedirectToAction(nameof(DailySalesReport));
+    }
+
+    [HttpGet]
+    public IActionResult DailyVisitsReport()
+    {
+        ViewBag.DefaultDate = DateTime.Today.ToString("yyyy-MM-dd");
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult UploadDailyVisitsReport(IFormFile file, DateTime reportDate)
+    {
+        if (file == null || file.Length == 0)
+        {
+            TempData["Error"] = "Please select a valid Excel file.";
+            return RedirectToAction(nameof(DailyVisitsReport));
+        }
+
+        if (reportDate == default)
+        {
+            TempData["Error"] = "Please select report date.";
+            return RedirectToAction(nameof(DailyVisitsReport));
+        }
+
+        var extension = Path.GetExtension(file.FileName).ToLower();
+
+        if (extension != ".xlsx" && extension != ".xls")
+        {
+            TempData["Error"] = "Only Excel files are allowed.";
+            return RedirectToAction(nameof(DailyVisitsReport));
+        }
+
+        var uploadedBy = User.Identity?.Name ?? "Unknown";
+
+        using var stream = file.OpenReadStream();
+
+        var result = _importService.ImportDailyVisitsReport(
+            stream,
+            file.FileName,
+            reportDate,
+            uploadedBy);
+
+        if (!result.Success)
+        {
+            TempData["Error"] = result.Message ?? "Import failed.";
+            return RedirectToAction(nameof(DailyVisitsReport));
+        }
+
+        TempData["Success"] =
+            $"Daily visits report imported successfully. Imported: {result.ImportedRows}, Failed: {result.FailedRows}";
+
+        return RedirectToAction(nameof(DailyVisitsReport));
+    }
+
 }

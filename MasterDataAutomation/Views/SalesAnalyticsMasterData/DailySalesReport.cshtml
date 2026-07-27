@@ -1,0 +1,160 @@
+﻿@{
+    ViewData["Title"] = "Daily Sales Report Upload";
+}
+
+<style>
+    .upload-page {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        background: #fff;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+        margin-bottom: 20px;
+        border: 1px solid #edf0f5;
+    }
+
+    .page-title {
+        font-size: 24px;
+        font-weight: 900;
+        color: #0f172a;
+        margin-bottom: 6px;
+    }
+
+    .page-subtitle {
+        color: #64748b;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .upload-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+        border: 1px solid #edf0f5;
+    }
+
+    .upload-label {
+        font-weight: 800;
+        color: #334155;
+        margin-bottom: 8px;
+    }
+
+    .form-control {
+        border-radius: 10px;
+        padding: 12px;
+        border: 1px solid #dbe2ea;
+    }
+
+    .btn-upload {
+        background: #0b2a5b;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 11px 18px;
+        font-weight: 800;
+        margin-top: 16px;
+    }
+
+        .btn-upload:hover {
+            background: #123a78;
+            color: #fff;
+        }
+
+    .info-box {
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 14px;
+        padding: 16px;
+        margin-top: 20px;
+        color: #475569;
+        font-size: 14px;
+        line-height: 1.8;
+    }
+
+    .alert {
+        border-radius: 12px;
+        font-weight: 700;
+    }
+</style>
+
+<div class="upload-page">
+
+    <div class="page-header">
+        <div class="page-title">
+            Daily Sales Report Upload
+        </div>
+
+        <div class="page-subtitle">
+            Upload SalesBuzz daily sales analysis report into FridayOps Sales Analytics.
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Error"]
+        </div>
+    }
+
+    <div class="upload-card">
+
+        <form asp-controller="SalesAnalyticsMasterData"
+              asp-action="UploadDailySalesReport"
+              method="post"
+              enctype="multipart/form-data">
+
+            @Html.AntiForgeryToken()
+
+            <div class="mb-3">
+                <label class="upload-label">
+                    Report Date
+                </label>
+
+                <input type="date"
+                       name="reportDate"
+                       class="form-control"
+                       value="@ViewBag.DefaultDate" />
+            </div>
+
+            <div class="mb-3">
+                <label class="upload-label">
+                    Select Daily Sales Report Excel File
+                </label>
+
+                <input type="file"
+                       name="file"
+                       class="form-control"
+                       accept=".xlsx,.xls" />
+            </div>
+
+            <button type="submit" class="btn-upload">
+                <i class="bi bi-upload"></i>
+                Upload Daily Sales Report
+            </button>
+
+        </form>
+
+        <div class="info-box">
+            <strong>Required columns from SalesBuzz:</strong>
+            <br />
+            الكود، الخط، الكمية، اسم الصنف، القيمة
+            <br />
+            <br />
+            This report will be used for Total Sales, Total Quantity, Sales by Line, and Product Performance.
+        </div>
+
+    </div>
+
+</div>

@@ -24,4 +24,14 @@ public interface ISalesAnalyticsMasterDataRepository
     void ReplaceSalesReps(List<SalesAnalyticsSalesRepImportDto> salesReps, int uploadBatchId);
 
     void ReplaceRepRouteAssignments(List<SalesRepRouteAssignmentImportDto> assignments, int uploadBatchId);
+
+    void ReplaceDailySalesReport(
+    List<SalesAnalyticsDailySalesImportDto> salesRows,
+    int uploadBatchId,
+    DateTime reportDate);
+
+    void ReplaceDailyVisitsReport(
+    List<SalesAnalyticsDailyVisitImportDto> visitRows,
+    int uploadBatchId,
+    DateTime reportDate);
 }

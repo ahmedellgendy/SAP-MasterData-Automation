@@ -34,6 +34,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<SalesAnalyticsCustomerEntity> SalesAnalyticsCustomers { get; set; }
     public DbSet<SalesAnalyticsSalesRepEntity> SalesAnalyticsSalesReps { get; set; }
     public DbSet<SalesRepRouteAssignmentEntity> SalesRepRouteAssignments { get; set; }
+    public DbSet<SalesAnalyticsDailySalesReportEntity> SalesAnalyticsDailySalesReports { get; set; }
+    public DbSet<SalesAnalyticsDailyVisitReportEntity> SalesAnalyticsDailyVisitReports { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -450,6 +452,90 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(x => x.SalesDistrictCode);
             entity.HasIndex(x => x.BranchCode);
             entity.HasIndex(x => x.IsActive);
+            entity.HasIndex(x => x.UploadBatchId);
+        });
+        modelBuilder.Entity<SalesAnalyticsDailySalesReportEntity>(entity =>
+        {
+            entity.ToTable("SalesAnalyticsDailySalesReports");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.LineCode)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(x => x.LineName)
+                .IsRequired()
+                .HasMaxLength(150);
+
+            entity.Property(x => x.ProductName)
+                .IsRequired()
+                .HasMaxLength(250);
+
+            entity.Property(x => x.Quantity)
+                .HasPrecision(18, 3);
+
+            entity.Property(x => x.SalesAmount)
+                .HasPrecision(18, 2);
+
+            entity.Property(x => x.ImportedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            entity.HasIndex(x => x.ReportDate);
+            entity.HasIndex(x => x.LineCode);
+            entity.HasIndex(x => x.ProductName);
+            entity.HasIndex(x => x.UploadBatchId);
+        });
+        modelBuilder.Entity<SalesAnalyticsDailyVisitReportEntity>(entity =>
+        {
+            entity.ToTable("SalesAnalyticsDailyVisitReports");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.SupervisorName)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.CityName)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.VisitCode)
+                .HasMaxLength(100);
+
+            entity.Property(x => x.SalesRepCode)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(x => x.SalesRepName)
+                .IsRequired()
+                .HasMaxLength(250);
+
+            entity.Property(x => x.CustomerCode)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(x => x.CustomerName)
+                .IsRequired()
+                .HasMaxLength(250);
+
+            entity.Property(x => x.VisitStatus)
+                .HasMaxLength(100);
+
+            entity.Property(x => x.NegativeReason)
+                .HasMaxLength(250);
+
+            entity.Property(x => x.SuccessfulVisitValue)
+                .HasPrecision(18, 2);
+
+            entity.Property(x => x.VisitDurationText)
+                .HasMaxLength(100);
+
+            entity.Property(x => x.ImportedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            entity.HasIndex(x => x.ReportDate);
+            entity.HasIndex(x => x.SalesRepCode);
+            entity.HasIndex(x => x.CustomerCode);
+            entity.HasIndex(x => x.VisitStatus);
             entity.HasIndex(x => x.UploadBatchId);
         });
     }

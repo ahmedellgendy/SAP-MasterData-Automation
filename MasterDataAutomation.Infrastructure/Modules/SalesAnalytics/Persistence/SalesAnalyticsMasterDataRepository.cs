@@ -15,11 +15,7 @@ public class SalesAnalyticsMasterDataRepository : ISalesAnalyticsMasterDataRepos
         _context = context;
     }
 
-    public int CreateUploadBatch(
-        SalesAnalyticsUploadFileType fileType,
-        string originalFileName,
-        DateTime? reportDate,
-        string? uploadedBy)
+    public int CreateUploadBatch(SalesAnalyticsUploadFileType fileType,string originalFileName,DateTime? reportDate,string? uploadedBy)
     {
         var batch = new SalesAnalyticsUploadBatchEntity
         {
@@ -37,13 +33,7 @@ public class SalesAnalyticsMasterDataRepository : ISalesAnalyticsMasterDataRepos
         return batch.Id;
     }
 
-    public void CompleteUploadBatch(
-        int uploadBatchId,
-        SalesAnalyticsUploadStatus status,
-        int totalRows,
-        int importedRows,
-        int failedRows,
-        string? errorMessage = null)
+    public void CompleteUploadBatch(int uploadBatchId,SalesAnalyticsUploadStatus status,int totalRows,int importedRows,int failedRows,string? errorMessage = null)
     {
         var batch = _context.SalesAnalyticsUploadBatches
             .FirstOrDefault(x => x.Id == uploadBatchId);
@@ -196,6 +186,104 @@ public class SalesAnalyticsMasterDataRepository : ISalesAnalyticsMasterDataRepos
             }).ToList();
 
             _context.SalesRepRouteAssignments.AddRange(entities);
+            _context.SaveChanges();
+
+            transaction.Commit();
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
+    }
+
+    public void ReplaceDailySalesReport(List<SalesAnalyticsDailySalesImportDto> salesRows,int uploadBatchId,DateTime reportDate)
+    {
+        using var transaction = _context.Database.BeginTransaction();
+
+        try
+        {
+            var oldRows = _context.SalesAnalyticsDailySalesReports
+                .Where(x => x.ReportDate.Date == reportDate.Date)
+                .ToList();
+
+            if (oldRows.Any())
+            {
+                _context.SalesAnalyticsDailySalesReports.RemoveRange(oldRows);
+                _context.SaveChanges();
+            }
+
+            var entities = salesRows.Select(x => new SalesAnalyticsDailySalesReportEntity
+            {
+                ReportDate = reportDate.Date,
+
+                LineCode = x.LineCode.Trim(),
+                LineName = x.LineName.Trim(),
+                ProductName = x.ProductName.Trim(),
+
+                Quantity = x.Quantity,
+                SalesAmount = x.SalesAmount,
+
+                ImportedAt = DateTime.Now,
+                UploadBatchId = uploadBatchId
+            }).ToList();
+
+            _context.SalesAnalyticsDailySalesReports.AddRange(entities);
+            _context.SaveChanges();
+
+            transaction.Commit();
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
+    }
+
+    public void ReplaceDailyVisitsReport(List<SalesAnalyticsDailyVisitImportDto> visitRows,int uploadBatchId,DateTime reportDate)
+    {
+        using var transaction = _context.Database.BeginTransaction();
+
+        try
+        {
+            var oldRows = _context.SalesAnalyticsDailyVisitReports
+                .Where(x => x.ReportDate.Date == reportDate.Date)
+                .ToList();
+
+            if (oldRows.Any())
+            {
+                _context.SalesAnalyticsDailyVisitReports.RemoveRange(oldRows);
+                _context.SaveChanges();
+            }
+
+            var entities = visitRows.Select(x => new SalesAnalyticsDailyVisitReportEntity
+            {
+                ReportDate = reportDate.Date,
+
+                SupervisorName = x.SupervisorName?.Trim(),
+                CityName = x.CityName?.Trim(),
+                VisitCode = x.VisitCode?.Trim(),
+
+                SalesRepCode = x.SalesRepCode.Trim(),
+                SalesRepName = x.SalesRepName.Trim(),
+
+                CustomerCode = x.CustomerCode.Trim(),
+                CustomerName = x.CustomerName.Trim(),
+
+                VisitStatus = x.VisitStatus?.Trim(),
+                NegativeReason = x.NegativeReason?.Trim(),
+
+                SuccessfulVisitValue = x.SuccessfulVisitValue,
+
+                VisitStartTime = x.VisitStartTime,
+                VisitEndTime = x.VisitEndTime,
+                VisitDurationText = x.VisitDurationText?.Trim(),
+
+                ImportedAt = DateTime.Now,
+                UploadBatchId = uploadBatchId
+            }).ToList();
+
+            _context.SalesAnalyticsDailyVisitReports.AddRange(entities);
             _context.SaveChanges();
 
             transaction.Commit();

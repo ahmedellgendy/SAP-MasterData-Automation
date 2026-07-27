@@ -4,6 +4,7 @@ using MasterDataAutomation.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MasterDataAutomation.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260727173131_AddSalesAnalyticsDailySalesReports")]
+    partial class AddSalesAnalyticsDailySalesReports
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -520,94 +523,6 @@ namespace MasterDataAutomation.Infrastructure.Migrations
                     b.HasIndex("UploadBatchId");
 
                     b.ToTable("SalesAnalyticsDailySalesReports", (string)null);
-                });
-
-            modelBuilder.Entity("MasterDataAutomation.Infrastructure.Data.Entities.SalesAnalytics.SalesAnalyticsDailyVisitReportEntity", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CityName")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<string>("CustomerCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("CustomerName")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
-
-                    b.Property<DateTime>("ImportedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
-
-                    b.Property<string>("NegativeReason")
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
-
-                    b.Property<DateTime>("ReportDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("SalesRepCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("SalesRepName")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
-
-                    b.Property<decimal>("SuccessfulVisitValue")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("SupervisorName")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<int>("UploadBatchId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("VisitCode")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("VisitDurationText")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime?>("VisitEndTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("VisitStartTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("VisitStatus")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CustomerCode");
-
-                    b.HasIndex("ReportDate");
-
-                    b.HasIndex("SalesRepCode");
-
-                    b.HasIndex("UploadBatchId");
-
-                    b.HasIndex("VisitStatus");
-
-                    b.ToTable("SalesAnalyticsDailyVisitReports", (string)null);
                 });
 
             modelBuilder.Entity("MasterDataAutomation.Infrastructure.Data.Entities.SalesAnalytics.SalesAnalyticsSalesRepEntity", b =>
