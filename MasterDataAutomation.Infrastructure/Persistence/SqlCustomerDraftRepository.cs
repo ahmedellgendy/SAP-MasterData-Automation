@@ -46,6 +46,7 @@ public class SqlCustomerDraftRepository : ICustomerDraftRepository
                 SalesDistrict = customer.SalesDistrict,
                 CustomerType = customer.CustomerType,
                 Status = "Draft",
+                CreatedBy = customer.CreatedBy,
                 CreatedAt = DateTime.Now
             });
         }
@@ -294,7 +295,8 @@ public class SqlCustomerDraftRepository : ICustomerDraftRepository
                 Branch = x.Branch,
                 SalesDistrict = x.SalesDistrict,
                 CustomerType = x.CustomerType,
-                Status = x.Status
+                Status = x.Status,
+                CreatedBy = x.CreatedBy
             })
             .ToList();
     }

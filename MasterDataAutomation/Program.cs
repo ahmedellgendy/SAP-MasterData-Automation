@@ -2,20 +2,21 @@ using MasterDataAutomation.Application.Configuration;
 using MasterDataAutomation.Application.Interfaces.Repositories;
 using MasterDataAutomation.Application.Interfaces.Services;
 using MasterDataAutomation.Application.Interfaces.Validators;
+using MasterDataAutomation.Application.Modules.CustomerModification.Interfaces;
+using MasterDataAutomation.Application.Modules.ProductMaster.Interfaces;
 using MasterDataAutomation.Application.Validators;
 using MasterDataAutomation.Infrastructure.Data;
 using MasterDataAutomation.Infrastructure.DependencyInjection;
 using MasterDataAutomation.Infrastructure.Excel;
 using MasterDataAutomation.Infrastructure.Mapping;
+using MasterDataAutomation.Infrastructure.Modules.CustomerModification.Persistence;
+using MasterDataAutomation.Infrastructure.Modules.ProductMaster.Persistence;
 using MasterDataAutomation.Infrastructure.Persistence;
 using MasterDataAutomation.Infrastructure.Services;
 using MasterDataAutomation.Infrastructure.Settings;
 using MasterDataAutomation.Infrastructure.Validators;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
-
-using MasterDataAutomation.Application.Modules.ProductMaster.Interfaces;
-using MasterDataAutomation.Infrastructure.Modules.ProductMaster.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 
 namespace MasterDataAutomation
@@ -60,7 +61,7 @@ namespace MasterDataAutomation
             builder.Services.AddScoped<IProductRequestRepository, ProductRequestRepository>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
-
+            builder.Services.AddScoped<ICustomerModificationRequestRepository, CustomerModificationRequestRepository>();
 
 
             builder.Services.AddDistributedMemoryCache();

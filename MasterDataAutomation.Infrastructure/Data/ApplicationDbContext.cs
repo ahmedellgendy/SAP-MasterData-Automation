@@ -1,4 +1,5 @@
 ﻿using MasterDataAutomation.Infrastructure.Data.Entities;
+using MasterDataAutomation.Infrastructure.Data.Entities.Customers;
 using MasterDataAutomation.Infrastructure.Data.Entities.Products;
 using MasterDataAutomation.Infrastructure.Data.Entities.System;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<ProductRequestEntity> ProductRequests { get; set; }
 
     public DbSet<ActivityLogEntity> ActivityLogs { get; set; }
+
+    public DbSet<CustomerModificationRequestEntity> CustomerModificationRequests { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -65,6 +68,9 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(x => x.CreatedAt)
                 .HasDefaultValueSql("GETDATE()");
+
+            entity.Property(x => x.CreatedBy)
+                 .HasMaxLength(150);
         });
 
         modelBuilder.Entity<GenerationHistoryEntity>(entity =>
@@ -234,6 +240,43 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(x => x.CreatedAt)
                 .HasDefaultValueSql("GETDATE()");
+        });
+
+        modelBuilder.Entity<CustomerModificationRequestEntity>(entity =>
+        {
+            entity.ToTable("CustomerModificationRequests");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.BranchName)
+                .IsRequired()
+                .HasMaxLength(150);
+
+            entity.Property(x => x.MarketCode)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(x => x.MarketName)
+                .IsRequired()
+                .HasMaxLength(250);
+
+            entity.Property(x => x.NewMarketName)
+                .HasMaxLength(250);
+
+            entity.Property(x => x.Notes)
+                .HasMaxLength(500);
+
+            entity.Property(x => x.RejectionReason)
+                .HasMaxLength(500);
+
+            entity.Property(x => x.CreatedBy)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            entity.HasIndex(x => x.MarketCode);
+            entity.HasIndex(x => x.Status);
         });
     }
 }

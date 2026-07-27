@@ -1,547 +1,334 @@
-﻿@* @model MasterDataAutomation.Web.ViewModels.CreateCustomerViewModel
+﻿@model MasterDataAutomation.Web.ViewModels.CreateCustomerViewModel
 
-<h2>Create Customer</h2>
-
-<form asp-action="Create" method="post">
-    <input asp-for="Index" type="hidden" />
-
-    <div class="mb-3">
-        <label asp-for="Line"></label>
-        <input asp-for="Line" class="form-control" />
-        <span asp-validation-for="Line" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Market"></label>
-        <input asp-for="Market" class="form-control" />
-        <span asp-validation-for="Market" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Branch"></label>
-        <select asp-for="Branch"
-                asp-items="Model.Branches"
-                class="form-select">
-            <option value="">-- Select Branch --</option>
-        </select>
-        <span asp-validation-for="Branch" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="SalesDistrict"></label>
-        <input asp-for="SalesDistrict" class="form-control" />
-        <span asp-validation-for="SalesDistrict" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="CustomerType"></label>
-        <select asp-for="CustomerType"
-                asp-items="Model.CustomerTypes"
-                class="form-select">
-            <option value="">-- Select Customer Type --</option>
-        </select>
-        <span asp-validation-for="CustomerType" class="text-danger"></span>
-    </div>
-
-    <button class="btn btn-success">
-        Add Customer
-    </button>
-
-</form>
-
-@section Scripts
-{
-    <partial name="_ValidationScriptsPartial" />
-} *@
-
-
-@* @model MasterDataAutomation.Web.ViewModels.CreateCustomerViewModel
-
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <!-- Header Card -->
-            <div class="card mb-4 border-top border-top-4 border-success">
-                <div class="card-body">
-                    <h2 class="card-title mb-1">
-                        <i class="bi bi-person-plus"></i> Create Customer
-                    </h2>
-                    <p class="text-muted mb-0">Add a new customer to your sales distribution network</p>
-                </div>
-            </div>
-
-            <!-- Form Card -->
-            <div class="card shadow-sm">
-                <form asp-action="Create" method="post" novalidate class="needs-validation">
-                    <input asp-for="Index" type="hidden" />
-
-                    <div class="card-body">
-                        <!-- Section 1: Line & Market -->
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="Line" class="form-label fw-bold">
-                                        <i class="bi bi-list-ul text-primary"></i> Line
-                                    </label>
-                                    <input asp-for="Line"
-                                           class="form-control form-control-lg"
-                                           placeholder="e.g., Distribution Line A" />
-                                    <span asp-validation-for="Line" class="d-block mt-1 small text-danger">
-                                        <i class="bi bi-exclamation-circle"></i>
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="Market" class="form-label fw-bold">
-                                        <i class="bi bi-geo-alt text-primary"></i> Market
-                                    </label>
-                                    <input asp-for="Market"
-                                           class="form-control form-control-lg"
-                                           placeholder="e.g., Cairo Market" />
-                                    <span asp-validation-for="Market" class="d-block mt-1 small text-danger">
-                                        <i class="bi bi-exclamation-circle"></i>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Section 2: Branch & Sales District -->
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="Branch" class="form-label fw-bold">
-                                        <i class="bi bi-building text-primary"></i> Branch
-                                    </label>
-                                    <select asp-for="Branch"
-                                            asp-items="Model.Branches"
-                                            class="form-select form-select-lg">
-                                        <option value="">-- Select Branch --</option>
-                                    </select>
-                                    <span asp-validation-for="Branch" class="d-block mt-1 small text-danger">
-                                        <i class="bi bi-exclamation-circle"></i>
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="SalesDistrict" class="form-label fw-bold">
-                                        <i class="bi bi-map text-primary"></i> Sales District
-                                    </label>
-                                    <input asp-for="SalesDistrict"
-                                           class="form-control form-control-lg"
-                                           placeholder="e.g., North Cairo" />
-                                    <span asp-validation-for="SalesDistrict" class="d-block mt-1 small text-danger">
-                                        <i class="bi bi-exclamation-circle"></i>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Section 3: Customer Type -->
-                        <div class="mb-4">
-                            <label asp-for="CustomerType" class="form-label fw-bold">
-                                <i class="bi bi-tag text-primary"></i> Customer Type
-                            </label>
-                            <select asp-for="CustomerType"
-                                    asp-items="Model.CustomerTypes"
-                                    class="form-select form-select-lg">
-                                <option value="">-- Select Customer Type --</option>
-                            </select>
-                            <span asp-validation-for="CustomerType" class="d-block mt-1 small text-danger">
-                                <i class="bi bi-exclamation-circle"></i>
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Footer with Buttons -->
-                    <div class="card-footer bg-light p-4">
-                        <div class="d-flex gap-3">
-                            <button type="submit" class="btn btn-success btn-lg flex-grow-1">
-                                <i class="bi bi-check-circle"></i> Add Customer
-                            </button>
-                            <a asp-action="Index" class="btn btn-outline-secondary btn-lg">
-                                <i class="bi bi-x-circle"></i> Cancel
-                            </a>
-                        </div>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Help Text -->
-            <div class="alert alert-info mt-4">
-                <i class="bi bi-info-circle"></i>
-                <strong>Tip:</strong> All fields are required. Line and Market should be unique identifiers.
-            </div>
-        </div>
-    </div>
-</div>
+@{
+    ViewData["Title"] = "إضافة عميل جديد";
+}
 
 <style>
-    .border-top-4 {
-        border-top-width: 4px !important;
+    .create-customer-page {
+        direction: rtl;
+        text-align: right;
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        color: #16232c;
     }
 
-    .form-control-lg,
-    .form-select-lg {
-        font-size: 1rem;
-        padding: 0.75rem 1rem;
-        border-radius: 0.5rem;
-        border: 1px solid #dee2e6;
-        transition: all 0.3s ease;
-    }
-
-        .form-control-lg:focus,
-        .form-select-lg:focus {
-            border-color: #198754;
-            box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
-            transform: translateY(-2px);
-        }
-
-    .form-label {
-        color: #2c3e50;
-        font-size: 0.95rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .bi-list-ul,
-    .bi-geo-alt,
-    .bi-building,
-    .bi-map,
-    .bi-tag {
-        margin-right: 0.5rem;
-    }
-
-    .card {
-        border-radius: 0.75rem;
+    .customer-header-card {
+        border-radius: 16px;
         border: none;
-        transition: box-shadow 0.3s ease;
+        border-top: 5px solid #2f7d6b;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, .06);
     }
 
-        .card:hover {
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
-        }
-
-    .btn-lg {
-        padding: 0.75rem 1.5rem;
-        font-weight: 500;
-        border-radius: 0.5rem;
-        transition: all 0.3s ease;
+    .customer-title {
+        color: #16232c;
+        font-weight: 900;
+        margin-bottom: 8px;
     }
 
-    .btn-success:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    .customer-subtitle {
+        color: #6b7a86;
+        font-size: 14px;
+        margin: 0;
     }
 
-    .btn-outline-secondary:hover {
-        transform: translateY(-2px);
-    }
-
-    .text-danger {
-        font-weight: 500;
-        font-size: 0.875rem;
-    }
-
-    /* Validation Styling */
-    .form-control.is-invalid,
-    .form-select.is-invalid {
-        border-color: #dc3545;
-    }
-
-    .form-control.is-valid,
-    .form-select.is-valid {
-        border-color: #198754;
-        background-image: none;
-    }
-
-    .alert {
-        border-radius: 0.5rem;
+    .customer-form-card {
+        border-radius: 16px;
         border: none;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .08);
+        overflow: hidden;
     }
 
-    
-</style>
-
-@section Scripts
-{
-    <partial name="_ValidationScriptsPartial" />
-
-    <script>
-        // Client-side validation styling
-        document.addEventListener('DOMContentLoaded', function () {
-            const form = document.querySelector('form');
-            const inputs = form.querySelectorAll('.form-control, .form-select');
-
-            inputs.forEach(input => {
-                input.addEventListener('blur', function () {
-                    if (this.classList.contains('input-validation-error')) {
-                        this.classList.add('is-invalid');
-                    } else if (this.value.trim()) {
-                        this.classList.remove('is-invalid');
-                    }
-                });
-            });
-
-            form.addEventListener('submit', function (e) {
-                if (!form.checkValidity()) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                form.classList.add('was-validated');
-            });
-        });
-    </script>
-} *@
-
-@model MasterDataAutomation.Web.ViewModels.CreateCustomerViewModel
-
-<div class="container mt-5 mb-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <!-- Header Card -->
-            <div class="card mb-4 border-success border-top border-5">
-                <div class="card-body pb-3">
-                    <h1 class="card-title mb-2" style="color: #2c3e50; font-weight: 600;">
-                        <i class="bi bi-person-plus"></i> Create Customer
-                    </h1>
-                    <p class="text-muted mb-0 small">Add a new customer to your sales distribution network</p>
-                </div>
-            </div>
-
-            <!-- Form Card -->
-            <div class="card shadow">
-                <form asp-action="Create" method="post" novalidate class="needs-validation">
-                    <input asp-for="Index" type="hidden" />
-
-                    <div class="card-body p-4">
-                        <!-- Section 1: Line & Market -->
-                        <div class="row">
-                            <div class="col-md-6 mb-4">
-                                <div class="form-group">
-                                    <label asp-for="Line" class="form-label fw-bold mb-2">
-                                        <i class="bi bi-list-ul"></i> Line <span class="text-danger">*</span>
-                                    </label>
-                                    <input asp-for="Line"
-                                           class="form-control form-control-lg border-2"
-                                           placeholder="e.g., Distribution Line A"
-                                           style="border-color: #e0e0e0;" />
-                                    <span asp-validation-for="Line" class="d-block mt-2 small text-danger fw-bold"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-4">
-                                <div class="form-group">
-                                    <label asp-for="Market" class="form-label fw-bold mb-2">
-                                        <i class="bi bi-geo-alt"></i> Market <span class="text-danger">*</span>
-                                    </label>
-                                    <input asp-for="Market"
-                                           class="form-control form-control-lg border-2"
-                                           placeholder="e.g., Elgendy Market "
-                                           style="border-color: #e0e0e0;" />
-                                    <span asp-validation-for="Market" class="d-block mt-2 small text-danger fw-bold"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Section 2: Branch & Sales District -->
-                        <div class="row">
-                            <div class="col-md-6 mb-4">
-                                <div class="form-group">
-                                    <label asp-for="Branch" class="form-label fw-bold mb-2">
-                                        <i class="bi bi-building"></i> Branch <span class="text-danger">*</span>
-                                    </label>
-                                    <select asp-for="Branch"
-                                            asp-items="Model.Branches"
-                                            class="form-select form-select-lg border-2"
-                                            style="border-color: #e0e0e0;">
-                                        <option value="">-- Select Branch --</option>
-                                    </select>
-                                    <span asp-validation-for="Branch" class="d-block mt-2 small text-danger fw-bold"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-4">
-                                <div class="form-group">
-                                    <label asp-for="SalesDistrict" class="form-label fw-bold mb-2">
-                                        <i class="bi bi-map"></i> Sales District <span class="text-danger">*</span>
-                                    </label>
-                                    <input asp-for="SalesDistrict"
-                                           class="form-control form-control-lg border-2"
-                                           placeholder="CR00015"
-                                           style="border-color: #e0e0e0;" />
-                                    <span asp-validation-for="SalesDistrict" class="d-block mt-2 small text-danger fw-bold"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Section 3: Customer Type -->
-                        <div class="row">
-                            <div class="col-12 mb-4">
-                                <div class="form-group">
-                                    <label asp-for="CustomerType" class="form-label fw-bold mb-2">
-                                        <i class="bi bi-tag"></i> Customer Type <span class="text-danger">*</span>
-                                    </label>
-                                    <select asp-for="CustomerType"
-                                            asp-items="Model.CustomerTypes"
-                                            class="form-select form-select-lg border-2"
-                                            style="border-color: #e0e0e0;">
-                                        <option value="">-- Select Customer Type --</option>
-                                    </select>
-                                    <span asp-validation-for="CustomerType" class="d-block mt-2 small text-danger fw-bold"></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Footer with Buttons -->
-                    <div class="card-footer bg-light p-4 border-0">
-                        <div class="d-flex gap-3">
-                            <button type="submit" class="btn btn-success btn-lg flex-grow-1 fw-bold">
-                                <i class="bi bi-check-circle"></i> Add Customer
-                            </button>
-                            <a asp-action="Index" class="btn btn-outline-secondary btn-lg">
-                                <i class="bi bi-x-circle"></i> Cancel
-                            </a>
-                        </div>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Help Text -->
-            <div class="alert alert-info mt-4 mb-5">
-                <i class="bi bi-info-circle"></i>
-                <strong>Tip:</strong> All fields are required. Line and Market should be unique identifiers.
-            </div>
-        </div>
-    </div>
-</div>
-
-<style>
-    .border-5 {
-        border-top-width: 5px !important;
-    }
-
-    .form-control-lg,
-    .form-select-lg {
-        font-size: 1rem;
-        padding: 0.75rem 1rem;
-        border-radius: 0.5rem;
-        transition: all 0.3s ease;
-    }
-
-        .form-control-lg:focus,
-        .form-select-lg:focus {
-            border-color: #28a745 !important;
-            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
-            transform: translateY(-1px);
-        }
-
-    .form-control.is-invalid,
-    .form-select.is-invalid {
-        border-color: #dc3545 !important;
-        background-image: none;
-    }
-
-    .form-control.is-valid,
-    .form-select.is-valid {
-        border-color: #28a745 !important;
-        background-image: none;
+    .section-title {
+        font-size: 15px;
+        font-weight: 900;
+        color: #16232c;
+        margin-bottom: 18px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e5e9ef;
     }
 
     .form-label {
-        color: #2c3e50;
-        font-size: 0.95rem;
-        letter-spacing: 0.3px;
+        color: #16232c;
+        font-size: 14px;
+        font-weight: 900;
+        margin-bottom: 8px;
     }
 
         .form-label i {
-            margin-right: 0.5rem;
-            color: #007bff;
+            margin-left: 6px;
+            margin-right: 0;
+            color: #2f7d6b;
         }
 
-    .card {
-        border-radius: 0.75rem;
-        border: none;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    .form-control-lg,
+    .form-select-lg {
+        font-size: 1rem;
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        border-color: #dce3e8 !important;
+        direction: rtl;
+        text-align: right;
     }
 
-    .btn-lg {
-        padding: 0.75rem 1.5rem;
-        font-weight: 500;
-        border-radius: 0.5rem;
-        transition: all 0.3s ease;
-    }
+        .form-control-lg:focus,
+        .form-select-lg:focus {
+            border-color: #2f7d6b !important;
+            box-shadow: 0 0 0 0.2rem rgba(47, 125, 107, 0.15);
+        }
 
-    .btn-success:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
-        background-color: #218838;
+    .form-select {
+        background-position: left 0.75rem center;
+        padding-left: 2.25rem;
+        padding-right: 0.75rem;
     }
 
     .text-danger {
-        font-weight: 600;
+        display: block;
+        text-align: right;
+        font-weight: 700;
+        margin-top: 6px;
     }
 
-    .alert {
-        border-radius: 0.5rem;
-        border: none;
-        border-left: 4px solid #17a2b8;
+    .required-mark {
+        color: #dc3545;
+        font-weight: 900;
     }
 
-        .alert i {
-            margin-right: 0.5rem;
+    .customer-footer {
+        background: #f8fafc;
+        padding: 22px;
+        border-top: 1px solid #e5e9ef;
+    }
+
+    .actions-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .btn-save {
+        background: #2f7d6b;
+        border: 1px solid #2f7d6b;
+        color: #fff;
+        font-weight: 900;
+        border-radius: 10px;
+        padding: 12px 22px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-width: 190px;
+    }
+
+        .btn-save:hover {
+            background: #245f52;
+            border-color: #245f52;
+            color: #fff;
         }
 
-    
+    .btn-back {
+        border: 1px solid #16232c;
+        color: #16232c;
+        background: transparent;
+        font-weight: 900;
+        border-radius: 10px;
+        padding: 12px 22px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-width: 120px;
+    }
+
+        .btn-back:hover {
+            background: #16232c;
+            color: #fff;
+        }
+
+    .help-box {
+        background: #e7f3f0;
+        border: 1px solid #cfe6de;
+        color: #1d5347;
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-top: 22px;
+        font-weight: 700;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    @@media (max-width: 768px) {
+        .actions-row {
+            flex-direction: column;
+        }
+
+        .btn-save,
+        .btn-back {
+            width: 100%;
+        }
+    }
 </style>
 
-@section Scripts
-{
-    <partial name="_ValidationScriptsPartial" />
+<div class="container mt-5 mb-5 create-customer-page">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const form = document.querySelector('form');
-            const fields = form.querySelectorAll('[asp-for]');
+            <div class="card mb-4 customer-header-card">
+                <div class="card-body pb-3">
+                    <h1 class="customer-title">
+                        <i class="bi bi-person-plus"></i>
+                        إضافة عميل جديد
+                    </h1>
 
-            fields.forEach(field => {
-                field.addEventListener('blur', function () {
-                    validateField(this);
-                });
+                    <p class="customer-subtitle">
+                        أضف بيانات العميل الجديد واحفظ الطلب كمسودة قبل إرساله للمراجعة.
+                    </p>
+                </div>
+            </div>
 
-                field.addEventListener('input', this () {
-                    validateField(this);
-                });
+            <div class="card customer-form-card">
+                <form asp-action="Create" method="post">
+                    <input asp-for="Index" type="hidden" />
 
-                field.addEventListener('change', function () {
-                    validateField(this);
-                });
-            });
+                    <div class="card-body p-4">
 
-            function validateField(field) {
-                if (!field.value.trim()) {
-                    field.classList.add('is-invalid');
-                    field.classList.remove('is-valid');
-                } else {
-                    field.classList.remove('is-invalid');
-                    field.classList.add('is-valid');
-                }
-            }
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-            form.addEventListener('submit', function (e) {
-                let isValid = true;
-                fields.forEach(field => {
-                    if (!field.value.trim()) {
-                        field.classList.add('is-invalid');
-                        field.classList.remove('is-valid');
-                        isValid = false;
-                    }
-                });
+                        <div class="section-title">
+                            بيانات العميل
+                        </div>
 
-                if (!isValid) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-            });
-        });
-    </script>
-}
+                        <div class="row">
+
+                            <div class="col-md-6 mb-4">
+                                <div class="form-group">
+                                    <label asp-for="Line" class="form-label">
+                                        <i class="bi bi-list-ul"></i>
+                                        الخط
+                                        <span class="required-mark">*</span>
+                                    </label>
+
+                                    <input asp-for="Line"
+                                           class="form-control form-control-lg border-2"
+                                           placeholder="مثال: خط الدقي " />
+
+                                    <span asp-validation-for="Line"
+                                          class="small text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-4">
+                                <div class="form-group">
+                                    <label asp-for="Market" class="form-label">
+                                        <i class="bi bi-shop"></i>
+                                        اسم العميل / الماركت
+                                        <span class="required-mark">*</span>
+                                    </label>
+
+                                    <input asp-for="Market"
+                                           class="form-control form-control-lg border-2"
+                                           placeholder="مثال: ماركت الحمدلله" />
+
+                                    <span asp-validation-for="Market"
+                                          class="small text-danger"></span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-4">
+                                <div class="form-group">
+                                    <label asp-for="Branch" class="form-label">
+                                        <i class="bi bi-building"></i>
+                                        الفرع
+                                        <span class="required-mark">*</span>
+                                    </label>
+
+                                    <select asp-for="Branch"
+                                            asp-items="Model.Branches"
+                                            class="form-select form-select-lg border-2">
+                                        <option value="">-- اختر الفرع --</option>
+                                    </select>
+
+                                    <span asp-validation-for="Branch"
+                                          class="small text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-4">
+                                <div class="form-group">
+                                    <label asp-for="SalesDistrict" class="form-label">
+                                        <i class="bi bi-map"></i>
+                                        Sales District
+                                        <span class="required-mark">*</span>
+                                    </label>
+
+                                    <input asp-for="SalesDistrict"
+                                           class="form-control form-control-lg border-2"
+                                           placeholder="مثال: CR00015" />
+
+                                    <span asp-validation-for="SalesDistrict"
+                                          class="small text-danger"></span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="row">
+
+                            <div class="col-12 mb-2">
+                                <div class="form-group">
+                                    <label asp-for="CustomerType" class="form-label">
+                                        <i class="bi bi-tag"></i>
+                                        نوع العميل
+                                        <span class="required-mark">*</span>
+                                    </label>
+
+                                    <select asp-for="CustomerType"
+                                            asp-items="Model.CustomerTypes"
+                                            class="form-select form-select-lg border-2">
+                                        <option value="">-- اختر نوع العميل --</option>
+                                    </select>
+
+                                    <span asp-validation-for="CustomerType"
+                                          class="small text-danger"></span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="customer-footer">
+                        <div class="actions-row">
+                            <button type="submit" class="btn btn-save">
+                                <i class="bi bi-save"></i>
+                                حفظ كمسودة 
+                            </button>
+
+                            <a asp-controller="SalesDashboard"
+                               asp-action="Index"
+                               class="btn-back">
+                                <i class="bi bi-arrow-left-circle"></i>
+                                إلغاء
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="help-box">
+                <i class="bi bi-info-circle"></i>
+                <span>
+                    كل الحقول المطلوبة يجب إدخالها. بعد حفظ العميل  يمكن إرساله للمراجعة من صفحة المسودات.
+                </span>
+            </div>
+
+        </div>
+    </div>
+</div>

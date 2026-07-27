@@ -1,0 +1,318 @@
+﻿@model MasterDataAutomation.Application.Modules.CustomerModification.Dtos.CreateCustomerModificationRequestDto
+@using MasterDataAutomation.Application.Modules.CustomerModification.Enums
+
+@{
+    ViewData["Title"] = "تعديل طلب مرفوض";
+    var requestId = ViewBag.RequestId;
+    var rejectionReason = ViewBag.RejectionReason as string;
+}
+
+<style>
+    .edit-rejected-page {
+        direction: rtl;
+        text-align: right;
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        color: #16232c;
+    }
+
+    .edit-header {
+        background: linear-gradient(135deg, #7f1d1d, #dc2626);
+        color: #fff;
+        border-radius: 20px;
+        padding: 28px;
+        margin-bottom: 24px;
+    }
+
+    .edit-title {
+        font-size: 30px;
+        font-weight: 900;
+        margin: 0;
+    }
+
+    .edit-subtitle {
+        margin: 8px 0 0;
+        opacity: .9;
+        font-size: 14px;
+    }
+
+    .reason-box {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+        border-radius: 14px;
+        padding: 14px 16px;
+        margin-bottom: 20px;
+        font-weight: 800;
+    }
+
+    .form-card {
+        background: #fff;
+        border: 1px solid #e5e9ef;
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, .06);
+    }
+
+    .section-title {
+        font-size: 15px;
+        font-weight: 900;
+        margin-bottom: 16px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e5e9ef;
+    }
+
+    .form-label {
+        font-weight: 900;
+        color: #16232c;
+        margin-bottom: 7px;
+    }
+
+    .form-control,
+    .form-select,
+    textarea {
+        border-radius: 10px;
+        padding: 10px 12px;
+        direction: rtl;
+        text-align: right;
+    }
+
+    .form-select {
+        background-position: left 0.75rem center;
+        padding-left: 2.25rem;
+        padding-right: 0.75rem;
+    }
+
+    .required-mark {
+        color: #dc3545;
+        font-weight: 900;
+    }
+
+    .text-danger {
+        display: block;
+        text-align: right;
+        margin-top: 5px;
+        font-weight: 700;
+    }
+
+    .new-name-box {
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 14px;
+    }
+
+    .actions-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 22px;
+    }
+
+    .btn-resubmit {
+        background: #2f7d6b;
+        border: 1px solid #2f7d6b;
+        color: #fff;
+        font-weight: 900;
+        border-radius: 10px;
+        padding: 11px 18px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-resubmit:hover {
+            background: #245f52;
+            border-color: #245f52;
+            color: #fff;
+        }
+
+    .btn-back {
+        border: 1px solid #16232c;
+        color: #16232c;
+        background: transparent;
+        font-weight: 900;
+        border-radius: 10px;
+        padding: 11px 18px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-back:hover {
+            background: #16232c;
+            color: #fff;
+        }
+</style>
+
+<div class="edit-rejected-page">
+
+    <div class="edit-header">
+        <h1 class="edit-title">تعديل طلب مرفوض</h1>
+        <p class="edit-subtitle">
+            عدّل بيانات الطلب ثم أرسله مرة أخرى للمراجعة.
+        </p>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(rejectionReason))
+    {
+        <div class="reason-box">
+            <i class="bi bi-exclamation-triangle"></i>
+            سبب الرفض:
+            <span>@rejectionReason</span>
+        </div>
+    }
+
+    <div class="form-card">
+
+        <form asp-controller="CustomerModificationRequests"
+              asp-action="EditRejected"
+              asp-route-id="@requestId"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="section-title">
+                بيانات العميل الحالية
+            </div>
+
+            <div class="row g-3 mb-4">
+
+                <div class="col-md-6">
+                    <label asp-for="BranchId" class="form-label">
+                        الفرع <span class="required-mark">*</span>
+                    </label>
+
+                    <select asp-for="BranchId"
+                            asp-items="ViewBag.Branches"
+                            class="form-select">
+                        <option value="">-- اختر الفرع --</option>
+                    </select>
+
+                    <span asp-validation-for="BranchId" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="MarketCode" class="form-label">
+                        كود الماركت / العميل <span class="required-mark">*</span>
+                    </label>
+
+                    <input asp-for="MarketCode"
+                           class="form-control"
+                           placeholder="مثال: 6001577" />
+
+                    <span asp-validation-for="MarketCode" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="MarketName" class="form-label">
+                        اسم الماركت / العميل <span class="required-mark">*</span>
+                    </label>
+
+                    <input asp-for="MarketName"
+                           class="form-control"
+                           placeholder="اكتب اسم العميل الحالي" />
+
+                    <span asp-validation-for="MarketName" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="CurrentCustomerType" class="form-label">
+                        نوع العميل الحالي <span class="required-mark">*</span>
+                    </label>
+
+                    <select asp-for="CurrentCustomerType"
+                            asp-items="Html.GetEnumSelectList<CustomerModificationCustomerType>()"
+                            class="form-select">
+                        <option value="">-- اختر نوع العميل --</option>
+                    </select>
+
+                    <span asp-validation-for="CurrentCustomerType" class="text-danger small"></span>
+                </div>
+
+            </div>
+
+            <div class="section-title">
+                نوع التعديل المطلوب
+            </div>
+
+            <div class="row g-3">
+
+                <div class="col-md-6">
+                    <label asp-for="ModificationType" class="form-label">
+                        نوع التعديل <span class="required-mark">*</span>
+                    </label>
+
+                    <select asp-for="ModificationType"
+                            asp-items="Html.GetEnumSelectList<CustomerModificationType>()"
+                            class="form-select"
+                            id="modificationType">
+                        <option value="">-- اختر نوع التعديل --</option>
+                    </select>
+
+                    <span asp-validation-for="ModificationType" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6" id="newMarketNameBox" style="display:none;">
+                    <div class="new-name-box">
+                        <label asp-for="NewMarketName" class="form-label">
+                            اسم الماركت الجديد <span class="required-mark">*</span>
+                        </label>
+
+                        <input asp-for="NewMarketName"
+                               class="form-control"
+                               placeholder="اكتب الاسم الجديد" />
+
+                        <span asp-validation-for="NewMarketName" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="col-md-12">
+                    <label asp-for="Notes" class="form-label">
+                        ملاحظات
+                    </label>
+
+                    <textarea asp-for="Notes"
+                              class="form-control"
+                              rows="3"
+                              placeholder="ملاحظات اختيارية"></textarea>
+
+                    <span asp-validation-for="Notes" class="text-danger small"></span>
+                </div>
+
+            </div>
+
+            <div class="actions-row">
+                <button type="submit" class="btn btn-resubmit">
+                    <i class="bi bi-send-check"></i>
+                    تعديل وإرسال للمراجعة
+                </button>
+
+                <a asp-controller="CustomerModificationRequests"
+                   asp-action="Rejected"
+                   class="btn-back">
+                    <i class="bi bi-arrow-left-circle"></i>
+                    رجوع للمرفوضات
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+    function toggleNewMarketName() {
+        const modificationType = document.getElementById("modificationType").value;
+        const box = document.getElementById("newMarketNameBox");
+
+        // CustomerModificationType.ChangeName = 2
+        box.style.display = modificationType === "2" ? "block" : "none";
+    }
+
+    document.getElementById("modificationType").addEventListener("change", toggleNewMarketName);
+    toggleNewMarketName();
+</script>
