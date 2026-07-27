@@ -4,6 +4,7 @@ using MasterDataAutomation.Application.Interfaces.Services;
 using MasterDataAutomation.Application.Interfaces.Validators;
 using MasterDataAutomation.Application.Modules.CustomerModification.Interfaces;
 using MasterDataAutomation.Application.Modules.ProductMaster.Interfaces;
+using MasterDataAutomation.Application.Modules.SalesAnalytics.Interfaces;
 using MasterDataAutomation.Application.Validators;
 using MasterDataAutomation.Infrastructure.Data;
 using MasterDataAutomation.Infrastructure.DependencyInjection;
@@ -11,6 +12,8 @@ using MasterDataAutomation.Infrastructure.Excel;
 using MasterDataAutomation.Infrastructure.Mapping;
 using MasterDataAutomation.Infrastructure.Modules.CustomerModification.Persistence;
 using MasterDataAutomation.Infrastructure.Modules.ProductMaster.Persistence;
+using MasterDataAutomation.Infrastructure.Modules.SalesAnalytics.Persistence;
+using MasterDataAutomation.Infrastructure.Modules.SalesAnalytics.Services;
 using MasterDataAutomation.Infrastructure.Persistence;
 using MasterDataAutomation.Infrastructure.Services;
 using MasterDataAutomation.Infrastructure.Settings;
@@ -62,6 +65,8 @@ namespace MasterDataAutomation
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
             builder.Services.AddScoped<ICustomerModificationRequestRepository, CustomerModificationRequestRepository>();
+            builder.Services.AddScoped<ISalesAnalyticsMasterDataRepository, SalesAnalyticsMasterDataRepository>();
+            builder.Services.AddScoped<ISalesAnalyticsMasterDataImportService, SalesAnalyticsMasterDataImportService>();
 
 
             builder.Services.AddDistributedMemoryCache();

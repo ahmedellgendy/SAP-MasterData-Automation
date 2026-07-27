@@ -1,6 +1,7 @@
 ﻿using MasterDataAutomation.Infrastructure.Data.Entities;
 using MasterDataAutomation.Infrastructure.Data.Entities.Customers;
 using MasterDataAutomation.Infrastructure.Data.Entities.Products;
+using MasterDataAutomation.Infrastructure.Data.Entities.SalesAnalytics;
 using MasterDataAutomation.Infrastructure.Data.Entities.System;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,6 +28,12 @@ public class ApplicationDbContext : DbContext
     public DbSet<ActivityLogEntity> ActivityLogs { get; set; }
 
     public DbSet<CustomerModificationRequestEntity> CustomerModificationRequests { get; set; }
+
+    // Data Analytics Dbsets
+    public DbSet<SalesAnalyticsUploadBatchEntity> SalesAnalyticsUploadBatches { get; set; }
+    public DbSet<SalesAnalyticsCustomerEntity> SalesAnalyticsCustomers { get; set; }
+    public DbSet<SalesAnalyticsSalesRepEntity> SalesAnalyticsSalesReps { get; set; }
+    public DbSet<SalesRepRouteAssignmentEntity> SalesRepRouteAssignments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -277,6 +284,173 @@ public class ApplicationDbContext : DbContext
 
             entity.HasIndex(x => x.MarketCode);
             entity.HasIndex(x => x.Status);
+        });
+
+        // Sales Analytics
+        modelBuilder.Entity<SalesAnalyticsUploadBatchEntity>(entity =>
+        {
+            entity.ToTable("SalesAnalyticsUploadBatches");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.OriginalFileName)
+                .IsRequired()
+                .HasMaxLength(250);
+
+            entity.Property(x => x.UploadedBy)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.ErrorMessage)
+                .HasMaxLength(1000);
+
+            entity.Property(x => x.UploadDate)
+                .HasDefaultValueSql("GETDATE()");
+
+            entity.HasIndex(x => x.FileType);
+            entity.HasIndex(x => x.ReportDate);
+            entity.HasIndex(x => x.UploadDate);
+        });
+        modelBuilder.Entity<SalesAnalyticsCustomerEntity>(entity =>
+        {
+            entity.ToTable("SalesAnalyticsCustomers");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.CustomerCode)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(x => x.CustomerName)
+                .IsRequired()
+                .HasMaxLength(250);
+
+            entity.Property(x => x.CustomerAccountGroup)
+                .HasMaxLength(50);
+
+            entity.Property(x => x.BranchCode)
+                .HasMaxLength(50);
+
+            entity.Property(x => x.BranchName)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.SalesDistrictCode)
+                .HasMaxLength(50);
+
+            entity.Property(x => x.SalesDistrictName)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.CustomerClassificationCode)
+                .HasMaxLength(50);
+
+            entity.Property(x => x.CustomerClassificationName)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.IncotermsCode)
+                .HasMaxLength(50);
+
+            entity.Property(x => x.IncotermsName)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.SearchTerm)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.SearchTerm2)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.SourceCreatedBy)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.ImportedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            entity.HasIndex(x => x.CustomerCode)
+                .IsUnique();
+
+            entity.HasIndex(x => x.BranchCode);
+            entity.HasIndex(x => x.SalesDistrictCode);
+            entity.HasIndex(x => x.UploadBatchId);
+        });
+        modelBuilder.Entity<SalesAnalyticsSalesRepEntity>(entity =>
+        {
+            entity.ToTable("SalesAnalyticsSalesReps");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.SalesRepCode)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(x => x.SalesRepName)
+                .IsRequired()
+                .HasMaxLength(250);
+
+            entity.Property(x => x.BranchCode)
+                .HasMaxLength(50);
+
+            entity.Property(x => x.BranchName)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.RegionCode)
+                .HasMaxLength(50);
+
+            entity.Property(x => x.RegionName)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.InternalCode)
+                .HasMaxLength(100);
+
+            entity.Property(x => x.SearchTerm2)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.SourceCreatedBy)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.ImportedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            entity.HasIndex(x => x.SalesRepCode)
+                .IsUnique();
+
+            entity.HasIndex(x => x.BranchCode);
+            entity.HasIndex(x => x.InternalCode);
+            entity.HasIndex(x => x.UploadBatchId);
+        }); 
+        modelBuilder.Entity<SalesRepRouteAssignmentEntity>(entity =>
+        {
+            entity.ToTable("SalesRepRouteAssignments");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.SalesRepCode)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(x => x.SalesRepName)
+                .IsRequired()
+                .HasMaxLength(250);
+
+            entity.Property(x => x.SalesDistrictCode)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(x => x.SalesDistrictName)
+                .IsRequired()
+                .HasMaxLength(150);
+
+            entity.Property(x => x.BranchCode)
+                .HasMaxLength(50);
+
+            entity.Property(x => x.BranchName)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.ImportedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            entity.HasIndex(x => x.SalesRepCode);
+            entity.HasIndex(x => x.SalesDistrictCode);
+            entity.HasIndex(x => x.BranchCode);
+            entity.HasIndex(x => x.IsActive);
+            entity.HasIndex(x => x.UploadBatchId);
         });
     }
 }

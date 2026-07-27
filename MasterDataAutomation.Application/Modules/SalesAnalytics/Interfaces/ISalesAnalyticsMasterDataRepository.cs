@@ -1,0 +1,27 @@
+﻿using MasterDataAutomation.Application.Modules.SalesAnalytics.Dtos;
+using MasterDataAutomation.Application.Modules.SalesAnalytics.Enums;
+
+namespace MasterDataAutomation.Application.Modules.SalesAnalytics.Interfaces;
+
+public interface ISalesAnalyticsMasterDataRepository
+{
+    int CreateUploadBatch(
+        SalesAnalyticsUploadFileType fileType,
+        string originalFileName,
+        DateTime? reportDate,
+        string? uploadedBy);
+
+    void CompleteUploadBatch(
+        int uploadBatchId,
+        SalesAnalyticsUploadStatus status,
+        int totalRows,
+        int importedRows,
+        int failedRows,
+        string? errorMessage = null);
+
+    void ReplaceCustomers(List<SalesAnalyticsCustomerImportDto> customers, int uploadBatchId);
+
+    void ReplaceSalesReps(List<SalesAnalyticsSalesRepImportDto> salesReps, int uploadBatchId);
+
+    void ReplaceRepRouteAssignments(List<SalesRepRouteAssignmentImportDto> assignments, int uploadBatchId);
+}
