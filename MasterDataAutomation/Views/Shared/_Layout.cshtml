@@ -461,6 +461,18 @@
                 </a>
 
                 <a asp-controller="SalesAnalyticsMasterData"
+                   asp-action="UploadCenter">
+                    <i class="bi bi-cloud-upload"></i>
+                    Upload Center
+                </a>
+
+                <a asp-controller="SalesAnalyticsTargets"
+                   asp-action="Index">
+                    <i class="bi bi-bullseye"></i>
+                    Targets
+                </a>
+
+                <a asp-controller="SalesAnalyticsMasterData"
                    asp-action="CustomerMaster">
                     <i class="bi bi-people"></i>
                     Customer Master Upload
@@ -486,7 +498,6 @@
 
             </div>
         }
-
         @if (User.IsInRole("Admin"))
         {
             <div class="sidebar-section">

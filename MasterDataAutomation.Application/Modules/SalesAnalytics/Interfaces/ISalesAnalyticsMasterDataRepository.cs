@@ -34,4 +34,6 @@ public interface ISalesAnalyticsMasterDataRepository
     List<SalesAnalyticsDailyVisitImportDto> visitRows,
     int uploadBatchId,
     DateTime reportDate);
+
+    List<SalesAnalyticsUploadHistoryDto> GetUploadHistory(int take = 50);
 }

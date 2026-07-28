@@ -8,10 +8,13 @@ namespace MasterDataAutomation.Web.Controllers.SalesAnalytics;
 public class SalesAnalyticsMasterDataController : Controller
 {
     private readonly ISalesAnalyticsMasterDataImportService _importService;
+    private readonly ISalesAnalyticsMasterDataRepository _repository;
 
-    public SalesAnalyticsMasterDataController(ISalesAnalyticsMasterDataImportService importService)
+    public SalesAnalyticsMasterDataController(ISalesAnalyticsMasterDataImportService importService, ISalesAnalyticsMasterDataRepository repository)
+
     {
         _importService = importService;
+        _repository = repository;
     }
 
     [HttpGet]
@@ -208,6 +211,13 @@ public class SalesAnalyticsMasterDataController : Controller
             $"Daily visits report imported successfully. Imported: {result.ImportedRows}, Failed: {result.FailedRows}";
 
         return RedirectToAction(nameof(DailyVisitsReport));
+    }
+
+    [HttpGet]
+    public IActionResult UploadCenter()
+    {
+        var history = _repository.GetUploadHistory(50);
+        return View(history);
     }
 
 }

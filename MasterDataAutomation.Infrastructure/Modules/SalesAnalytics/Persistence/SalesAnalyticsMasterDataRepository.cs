@@ -3,6 +3,7 @@ using MasterDataAutomation.Application.Modules.SalesAnalytics.Enums;
 using MasterDataAutomation.Application.Modules.SalesAnalytics.Interfaces;
 using MasterDataAutomation.Infrastructure.Data;
 using MasterDataAutomation.Infrastructure.Data.Entities.SalesAnalytics;
+using Microsoft.EntityFrameworkCore;
 
 namespace MasterDataAutomation.Infrastructure.Modules.SalesAnalytics.Persistence;
 
@@ -293,5 +294,28 @@ public class SalesAnalyticsMasterDataRepository : ISalesAnalyticsMasterDataRepos
             transaction.Rollback();
             throw;
         }
+    }
+
+    public List<SalesAnalyticsUploadHistoryDto> GetUploadHistory(int take = 50)
+    {
+        return _context.SalesAnalyticsUploadBatches
+            .AsNoTracking()
+            .OrderByDescending(x => x.UploadDate)
+            .Take(take)
+            .Select(x => new SalesAnalyticsUploadHistoryDto
+            {
+                Id = x.Id,
+                FileType = x.FileType,
+                Status = x.Status,
+                OriginalFileName = x.OriginalFileName,
+                UploadDate = x.UploadDate,
+                ReportDate = x.ReportDate,
+                TotalRows = x.TotalRows,
+                ImportedRows = x.ImportedRows,
+                FailedRows = x.FailedRows,
+                UploadedBy = x.UploadedBy,
+                ErrorMessage = x.ErrorMessage
+            })
+            .ToList();
     }
 }
