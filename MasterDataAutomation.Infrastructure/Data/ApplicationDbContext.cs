@@ -36,7 +36,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<SalesRepRouteAssignmentEntity> SalesRepRouteAssignments { get; set; }
     public DbSet<SalesAnalyticsDailySalesReportEntity> SalesAnalyticsDailySalesReports { get; set; }
     public DbSet<SalesAnalyticsDailyVisitReportEntity> SalesAnalyticsDailyVisitReports { get; set; }
-
+    public DbSet<SalesDistrictMonthlyTargetEntity> SalesDistrictMonthlyTargets { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -537,6 +537,48 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(x => x.CustomerCode);
             entity.HasIndex(x => x.VisitStatus);
             entity.HasIndex(x => x.UploadBatchId);
+        });
+        modelBuilder.Entity<SalesDistrictMonthlyTargetEntity>(entity =>
+        {
+            entity.ToTable("SalesDistrictMonthlyTargets");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.BranchCode)
+                .HasMaxLength(50);
+
+            entity.Property(x => x.BranchName)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.SalesDistrictCode)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(x => x.SalesDistrictName)
+                .IsRequired()
+                .HasMaxLength(150);
+
+            entity.Property(x => x.MonthlySalesTarget)
+                .HasPrecision(18, 2);
+
+            entity.Property(x => x.CreatedBy)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.UpdatedBy)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            entity.HasIndex(x => new
+            {
+                x.Year,
+                x.Month,
+                x.SalesDistrictCode
+            }).IsUnique();
+
+            entity.HasIndex(x => x.BranchCode);
+            entity.HasIndex(x => x.SalesDistrictCode);
         });
     }
 }

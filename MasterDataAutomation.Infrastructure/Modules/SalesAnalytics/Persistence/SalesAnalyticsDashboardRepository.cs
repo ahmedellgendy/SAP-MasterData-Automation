@@ -19,6 +19,11 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
         var date = reportDate.Date;
         var nextDate = date.AddDays(1);
 
+        var monthStart = new DateTime(date.Year, date.Month, 1);
+        var nextMonth = monthStart.AddMonths(1);
+        var daysInMonth = DateTime.DaysInMonth(date.Year, date.Month);
+        var remainingDays = Math.Max(daysInMonth - date.Day + 1, 1);
+
         var salesRows = _context.SalesAnalyticsDailySalesReports
             .AsNoTracking()
             .Where(x => x.ReportDate >= date && x.ReportDate < nextDate)
@@ -29,6 +34,31 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
             .Where(x => x.ReportDate >= date && x.ReportDate < nextDate)
             .ToList();
 
+        var monthSalesRows = _context.SalesAnalyticsDailySalesReports
+    .AsNoTracking()
+    .Where(x => x.ReportDate >= monthStart && x.ReportDate < nextDate)
+    .ToList();
+
+        var monthVisitRows = _context.SalesAnalyticsDailyVisitReports
+            .AsNoTracking()
+            .Where(x => x.ReportDate >= monthStart && x.ReportDate < nextDate)
+            .ToList();
+
+        var monthlyTargets = _context.SalesDistrictMonthlyTargets
+            .AsNoTracking()
+            .Where(x => x.Year == date.Year && x.Month == date.Month)
+            .ToList();
+
+        var customers = _context.SalesAnalyticsCustomers
+            .AsNoTracking()
+            .Where(x => !string.IsNullOrWhiteSpace(x.CustomerCode))
+            .Select(x => new
+            {
+                x.CustomerCode,
+                x.SalesDistrictCode
+            })
+            .ToList();
+
         var totalSales = salesRows.Sum(x => x.SalesAmount);
         var totalQuantity = salesRows.Sum(x => x.Quantity);
 
@@ -37,6 +67,80 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
         var negativeVisits = totalVisits - positiveVisits;
 
         var totalVisitValue = visitRows.Sum(x => x.SuccessfulVisitValue);
+
+        var salesByLineMonth = monthSalesRows
+            .GroupBy(x => x.LineCode)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Sum(x => x.SalesAmount));
+
+        var customerDistrictMap = customers
+            .Where(x => !string.IsNullOrWhiteSpace(x.CustomerCode))
+            .GroupBy(x => NormalizeCode(x.CustomerCode))
+            .ToDictionary(
+                g => g.Key,
+                g => g.First().SalesDistrictCode ?? string.Empty);
+
+        var visitsByLineMonth = monthVisitRows
+            .Select(x => new
+            {
+                Visit = x,
+                NormalizedCustomerCode = NormalizeCode(x.CustomerCode)
+            })
+            .Where(x =>
+                !string.IsNullOrWhiteSpace(x.NormalizedCustomerCode) &&
+                customerDistrictMap.ContainsKey(x.NormalizedCustomerCode))
+            .GroupBy(x => customerDistrictMap[x.NormalizedCustomerCode])
+            .ToDictionary(
+                g => g.Key,
+                g => g.Count());
+
+        var targetAchievements = monthlyTargets
+            .Select(target =>
+            {
+                var actualSales = salesByLineMonth.TryGetValue(target.SalesDistrictCode, out var sales)
+                    ? sales
+                    : 0;
+
+                var actualVisits = visitsByLineMonth.TryGetValue(target.SalesDistrictCode, out var visits)
+                    ? visits
+                    : 0;
+
+                var remainingTarget = Math.Max(target.MonthlySalesTarget - actualSales, 0);
+
+                var achievement = CalculatePercentage(actualSales, target.MonthlySalesTarget);
+                var visitAchievement = CalculatePercentage(actualVisits, target.PlannedVisits);
+
+                return new TargetAchievementDto
+                {
+                    BranchCode = target.BranchCode,
+                    BranchName = target.BranchName,
+
+                    SalesDistrictCode = target.SalesDistrictCode,
+                    SalesDistrictName = target.SalesDistrictName,
+
+                    MonthlyTarget = target.MonthlySalesTarget,
+                    ActualSales = actualSales,
+                    AchievementPercentage = achievement,
+                    RemainingTarget = remainingTarget,
+                    RequiredDailySales = Math.Round(remainingTarget / remainingDays, 2),
+
+                    PlannedVisits = target.PlannedVisits,
+                    ActualVisits = actualVisits,
+                    VisitAchievementPercentage = visitAchievement,
+
+                    Status = achievement >= 100
+                        ? "Achieved"
+                        : achievement >= 75
+                            ? "On Track"
+                            : achievement >= 50
+                                ? "Needs Attention"
+                                : "Critical"
+                };
+            })
+            .OrderBy(x => x.AchievementPercentage)
+            .Take(10)
+            .ToList();
 
         var dashboard = new SalesAnalyticsDashboardDto
         {
@@ -59,6 +163,8 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
                     ? 0
                     : Math.Round(totalVisitValue / positiveVisits, 2)
             },
+
+            TargetAchievements = targetAchievements,
 
             SalesByLines = salesRows
                 .GroupBy(x => new { x.LineCode, x.LineName })
@@ -149,6 +255,7 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
                 .OrderByDescending(x => x.TotalSales)
                 .Take(10)
                 .ToList()
+
         };
 
         return dashboard;
@@ -178,6 +285,16 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
         return latestSalesDate > latestVisitsDate
             ? latestSalesDate.Value.Date
             : latestVisitsDate.Value.Date;
+    }
+
+    private static string NormalizeCode(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return string.Empty;
+
+        var cleaned = code.Trim();
+
+        return cleaned.TrimStart('0');
     }
 
     private static bool IsPositiveVisit(dynamic visit)

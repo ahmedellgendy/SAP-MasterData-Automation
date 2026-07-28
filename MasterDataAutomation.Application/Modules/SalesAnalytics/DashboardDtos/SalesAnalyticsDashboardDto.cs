@@ -15,4 +15,6 @@ public class SalesAnalyticsDashboardDto
     public List<NegativeVisitReasonDto> NegativeVisitReasons { get; set; } = new();
 
     public List<ProductPerformanceDto> TopProducts { get; set; } = new();
+
+    public List<TargetAchievementDto> TargetAchievements { get; set; } = new();
 }

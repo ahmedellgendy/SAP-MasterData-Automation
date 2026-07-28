@@ -7,7 +7,8 @@
         Model.Kpis.TotalSales > 0 ||
         Model.Kpis.TotalVisits > 0 ||
         Model.SalesByLines.Any() ||
-        Model.VisitsBySalesReps.Any();
+        Model.VisitsBySalesReps.Any() ||
+        Model.TargetAchievements.Any();
 
     string Money(decimal value) => $"{value:N0} EGP";
     string Number(decimal value) => $"{value:N0}";
@@ -239,7 +240,7 @@
                 CEO Sales Analytics Dashboard
             </div>
             <div class="hero-subtitle">
-                Executive overview for sales, visits, customers, products, and field activity.
+                Executive overview for sales, visits, customers, products, targets, and field activity.
             </div>
         </div>
 
@@ -318,6 +319,93 @@
             <div class="kpi-hint">Average successful visit value</div>
         </div>
 
+    </div>
+
+    <div class="panel" style="margin-bottom:18px;">
+        <div class="panel-title">
+            <i class="bi bi-bullseye"></i>
+            Monthly Target Achievement by Sales District
+        </div>
+
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Branch</th>
+                        <th>Sales District</th>
+                        <th>Target</th>
+                        <th>Actual Sales</th>
+                        <th>Achievement</th>
+                        <th>Remaining</th>
+                        <th>Required / Day</th>
+                        <th>Visits</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (!Model.TargetAchievements.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="text-muted fw-bold">
+                                No targets saved for this month.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.TargetAchievements)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="line-name">
+                                        @(string.IsNullOrWhiteSpace(item.BranchName) ? "-" : item.BranchName)
+                                    </div>
+                                    <div class="muted-code">
+                                        @item.BranchCode
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="line-name">
+                                        @item.SalesDistrictName
+                                    </div>
+                                    <div class="muted-code">
+                                        @item.SalesDistrictCode
+                                    </div>
+                                </td>
+
+                                <td>@Money(item.MonthlyTarget)</td>
+                                <td>@Money(item.ActualSales)</td>
+
+                                <td>
+                                    <span class="badge-soft @(item.AchievementPercentage >= 75 ? "badge-positive" : "badge-negative")">
+                                        @Percent(item.AchievementPercentage)
+                                    </span>
+                                </td>
+
+                                <td>@Money(item.RemainingTarget)</td>
+
+                                <td>@Money(item.RequiredDailySales)</td>
+
+                                <td>
+                                    <strong>@item.ActualVisits / @item.PlannedVisits</strong>
+                                    <div class="muted-code">
+                                        @Percent(item.VisitAchievementPercentage)
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="badge-soft @(item.Status == "Achieved" || item.Status == "On Track" ? "badge-positive" : "badge-negative")">
+                                        @item.Status
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="section-grid">
