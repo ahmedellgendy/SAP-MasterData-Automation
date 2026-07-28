@@ -15,10 +15,10 @@ public class SalesAnalyticsDashboardController : Controller
         _dashboardRepository = dashboardRepository;
     }
 
- 
+
 
     [HttpGet]
-    public IActionResult Index(DateTime? reportDate)
+    public IActionResult Index(DateTime? reportDate, string? branchCode)
     {
         var latestReportDate = _dashboardRepository.GetLatestReportDate();
 
@@ -26,9 +26,11 @@ public class SalesAnalyticsDashboardController : Controller
             ?? latestReportDate
             ?? DateTime.Today;
 
-        var dashboard = _dashboardRepository.GetDashboard(selectedDate);
+        var dashboard = _dashboardRepository.GetDashboard(selectedDate, branchCode);
 
         ViewBag.SelectedDate = selectedDate.ToString("yyyy-MM-dd");
+        ViewBag.SelectedBranchCode = branchCode ?? string.Empty;
+        ViewBag.Branches = _dashboardRepository.GetBranchOptions();
 
         return View(dashboard);
     }

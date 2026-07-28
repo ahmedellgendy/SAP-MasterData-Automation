@@ -13,10 +13,12 @@ namespace MasterDataAutomation.Infrastructure.Modules.SalesAnalytics.Services;
 public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataImportService
 {
     private readonly ISalesAnalyticsMasterDataRepository _repository;
+    private readonly ISalesDistrictMonthlyTargetRepository _targetRepository;
 
-    public SalesAnalyticsMasterDataImportService(ISalesAnalyticsMasterDataRepository repository)
+    public SalesAnalyticsMasterDataImportService(ISalesAnalyticsMasterDataRepository repository, ISalesDistrictMonthlyTargetRepository targetRepository )
     {
         _repository = repository;
+        _targetRepository = targetRepository;
     }
 
     public SalesAnalyticsImportResultDto ImportCustomersMaster(
@@ -644,6 +646,184 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
         }
     }
 
+    public SalesAnalyticsImportResultDto ImportMonthlyTargets(
+    Stream fileStream,
+    string originalFileName,
+    string? uploadedBy)
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+        var uploadBatchId = _repository.CreateUploadBatch(
+            SalesAnalyticsUploadFileType.MonthlyTargets,
+            originalFileName,
+            reportDate: null,
+            uploadedBy);
+
+        try
+        {
+            using var reader = ExcelReaderFactory.CreateReader(fileStream);
+
+            var dataSet = reader.AsDataSet(new ExcelDataSetConfiguration
+            {
+                ConfigureDataTable = _ => new ExcelDataTableConfiguration
+                {
+                    UseHeaderRow = false
+                }
+            });
+
+            var table = dataSet.Tables
+                .Cast<DataTable>()
+                .FirstOrDefault();
+
+            if (table == null)
+            {
+                _repository.CompleteUploadBatch(
+                    uploadBatchId,
+                    SalesAnalyticsUploadStatus.Failed,
+                    0,
+                    0,
+                    0,
+                    "Excel file does not contain any sheets.");
+
+                return new SalesAnalyticsImportResultDto
+                {
+                    Success = false,
+                    Message = "Excel file does not contain any sheets."
+                };
+            }
+
+            var headerRowIndex = FindMonthlyTargetsHeaderRow(table);
+
+            if (headerRowIndex == -1)
+            {
+                _repository.CompleteUploadBatch(
+                    uploadBatchId,
+                    SalesAnalyticsUploadStatus.Failed,
+                    0,
+                    0,
+                    0,
+                    "Could not find required target headers.");
+
+                return new SalesAnalyticsImportResultDto
+                {
+                    Success = false,
+                    Message = "Could not find required headers: Year, Month, SalesDistrictCode, MonthlySalesTarget, PlannedVisits."
+                };
+            }
+
+            var headers = BuildDataTableHeaderMap(table, headerRowIndex);
+
+            var salesDistrictOptions = _targetRepository.GetSalesDistrictOptions();
+
+            var totalRows = 0;
+            var importedRows = 0;
+            var failedRows = 0;
+
+            for (var row = headerRowIndex + 1; row < table.Rows.Count; row++)
+            {
+                var yearText = GetTableValue(table, row, headers, "Year");
+                var monthText = GetTableValue(table, row, headers, "Month");
+                var salesDistrictCode = GetTableValue(table, row, headers, "SalesDistrictCode");
+                var monthlySalesTargetText = GetTableValue(table, row, headers, "MonthlySalesTarget");
+                var plannedVisitsText = GetTableValue(table, row, headers, "PlannedVisits");
+
+                if (string.IsNullOrWhiteSpace(yearText) &&
+                    string.IsNullOrWhiteSpace(monthText) &&
+                    string.IsNullOrWhiteSpace(salesDistrictCode) &&
+                    string.IsNullOrWhiteSpace(monthlySalesTargetText) &&
+                    string.IsNullOrWhiteSpace(plannedVisitsText))
+                {
+                    continue;
+                }
+
+                totalRows++;
+
+                var year = ParseInt(yearText);
+                var month = ParseInt(monthText);
+                var monthlySalesTarget = ParseDecimal(monthlySalesTargetText);
+                var plannedVisits = ParseInt(plannedVisitsText);
+
+                if (year < 2000 ||
+                    year > 2100 ||
+                    month < 1 ||
+                    month > 12 ||
+                    string.IsNullOrWhiteSpace(salesDistrictCode) ||
+                    monthlySalesTarget < 0 ||
+                    plannedVisits < 0)
+                {
+                    failedRows++;
+                    continue;
+                }
+
+                var option = salesDistrictOptions
+                    .FirstOrDefault(x =>
+                        NormalizeCode(x.SalesDistrictCode) == NormalizeCode(salesDistrictCode));
+
+                if (option == null)
+                {
+                    failedRows++;
+                    continue;
+                }
+
+                var dto = new SaveSalesDistrictMonthlyTargetDto
+                {
+                    Year = year,
+                    Month = month,
+
+                    SalesDistrictCode = option.SalesDistrictCode,
+                    SalesDistrictName = option.SalesDistrictName,
+
+                    BranchCode = option.BranchCode,
+                    BranchName = option.BranchName,
+
+                    MonthlySalesTarget = monthlySalesTarget,
+                    PlannedVisits = plannedVisits
+                };
+
+                _targetRepository.SaveTarget(dto, uploadedBy);
+
+                importedRows++;
+            }
+
+            var status = failedRows > 0
+                ? SalesAnalyticsUploadStatus.PartiallyImported
+                : SalesAnalyticsUploadStatus.Success;
+
+            _repository.CompleteUploadBatch(
+                uploadBatchId,
+                status,
+                totalRows,
+                importedRows,
+                failedRows);
+
+            return new SalesAnalyticsImportResultDto
+            {
+                Success = true,
+                TotalRows = totalRows,
+                ImportedRows = importedRows,
+                FailedRows = failedRows,
+                Message = $"Monthly targets imported successfully. Imported: {importedRows}, Failed: {failedRows}"
+            };
+        }
+        catch (Exception ex)
+        {
+            _repository.CompleteUploadBatch(
+                uploadBatchId,
+                SalesAnalyticsUploadStatus.Failed,
+                0,
+                0,
+                0,
+                ex.Message);
+
+            return new SalesAnalyticsImportResultDto
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
+    }
+
+
     #region Helper Methods
     private static int FindHeaderRow(IXLWorksheet worksheet)
     {
@@ -826,6 +1006,51 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
             return result;
 
         return null;
+    }
+
+    private static int FindMonthlyTargetsHeaderRow(DataTable table)
+    {
+        var rowsToCheck = Math.Min(table.Rows.Count, 20);
+
+        for (var row = 0; row < rowsToCheck; row++)
+        {
+            var values = table.Rows[row].ItemArray
+                .Select(x => NormalizeHeader(x?.ToString()))
+                .ToList();
+
+            if (values.Contains(NormalizeHeader("Year")) &&
+                values.Contains(NormalizeHeader("Month")) &&
+                values.Contains(NormalizeHeader("SalesDistrictCode")) &&
+                values.Contains(NormalizeHeader("MonthlySalesTarget")) &&
+                values.Contains(NormalizeHeader("PlannedVisits")))
+            {
+                return row;
+            }
+        }
+
+        return -1;
+    }
+
+    private static int ParseInt(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return 0;
+
+        value = value.Trim()
+            .Replace(",", "");
+
+        if (int.TryParse(value, out var result))
+            return result;
+
+        return 0;
+    }
+
+    private static string NormalizeCode(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return string.Empty;
+
+        return code.Trim().TrimStart('0');
     }
 
     #endregion

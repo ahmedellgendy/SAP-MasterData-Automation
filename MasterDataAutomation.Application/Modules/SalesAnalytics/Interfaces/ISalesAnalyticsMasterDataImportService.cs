@@ -25,4 +25,9 @@ public interface ISalesAnalyticsMasterDataImportService
     string originalFileName,
     DateTime reportDate,
     string? uploadedBy);
+
+    SalesAnalyticsImportResultDto ImportMonthlyTargets(
+    Stream fileStream,
+    string originalFileName,
+    string? uploadedBy);
 }

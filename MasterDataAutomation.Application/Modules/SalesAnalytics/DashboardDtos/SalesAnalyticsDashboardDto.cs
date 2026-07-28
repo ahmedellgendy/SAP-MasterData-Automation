@@ -6,6 +6,14 @@ public class SalesAnalyticsDashboardDto
 
     public SalesAnalyticsKpiDto Kpis { get; set; } = new();
 
+    public TargetAchievementSummaryDto TargetSummary { get; set; } = new();
+
+    public List<TargetAchievementDto> TargetAchievements { get; set; } = new();
+
+    public List<TargetAchievementDto> LowestTargetAchievements { get; set; } = new();
+
+    public List<TargetAchievementDto> BestTargetAchievements { get; set; } = new();
+
     public List<SalesByLineDto> SalesByLines { get; set; } = new();
 
     public List<VisitsBySalesRepDto> VisitsBySalesReps { get; set; } = new();
@@ -15,6 +23,4 @@ public class SalesAnalyticsDashboardDto
     public List<NegativeVisitReasonDto> NegativeVisitReasons { get; set; } = new();
 
     public List<ProductPerformanceDto> TopProducts { get; set; } = new();
-
-    public List<TargetAchievementDto> TargetAchievements { get; set; } = new();
 }

@@ -14,15 +14,16 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
         _context = context;
     }
 
-    public SalesAnalyticsDashboardDto GetDashboard(DateTime reportDate)
+    public SalesAnalyticsDashboardDto GetDashboard(DateTime reportDate, string? branchCode = null)
     {
         var date = reportDate.Date;
         var nextDate = date.AddDays(1);
 
         var monthStart = new DateTime(date.Year, date.Month, 1);
-        var nextMonth = monthStart.AddMonths(1);
         var daysInMonth = DateTime.DaysInMonth(date.Year, date.Month);
         var remainingDays = Math.Max(daysInMonth - date.Day + 1, 1);
+
+        var selectedBranchCode = NormalizeCode(branchCode);
 
         var salesRows = _context.SalesAnalyticsDailySalesReports
             .AsNoTracking()
@@ -35,9 +36,9 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
             .ToList();
 
         var monthSalesRows = _context.SalesAnalyticsDailySalesReports
-    .AsNoTracking()
-    .Where(x => x.ReportDate >= monthStart && x.ReportDate < nextDate)
-    .ToList();
+            .AsNoTracking()
+            .Where(x => x.ReportDate >= monthStart && x.ReportDate < nextDate)
+            .ToList();
 
         var monthVisitRows = _context.SalesAnalyticsDailyVisitReports
             .AsNoTracking()
@@ -55,9 +56,63 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
             .Select(x => new
             {
                 x.CustomerCode,
-                x.SalesDistrictCode
+                x.SalesDistrictCode,
+                x.BranchCode,
+                x.BranchName
             })
             .ToList();
+
+        var customerDistrictMap = customers
+            .Where(x => !string.IsNullOrWhiteSpace(x.CustomerCode))
+            .GroupBy(x => NormalizeCode(x.CustomerCode))
+            .ToDictionary(
+                g => g.Key,
+                g => NormalizeCode(g.First().SalesDistrictCode));
+
+        var customerBranchMap = customers
+            .Where(x => !string.IsNullOrWhiteSpace(x.CustomerCode))
+            .GroupBy(x => NormalizeCode(x.CustomerCode))
+            .ToDictionary(
+                g => g.Key,
+                g => NormalizeCode(g.First().BranchCode));
+
+        var lineBranchMap = customers
+            .Where(x => !string.IsNullOrWhiteSpace(x.SalesDistrictCode))
+            .GroupBy(x => NormalizeCode(x.SalesDistrictCode))
+            .ToDictionary(
+                g => g.Key,
+                g => NormalizeCode(g.First().BranchCode));
+
+        if (!string.IsNullOrWhiteSpace(selectedBranchCode))
+        {
+            salesRows = salesRows
+                .Where(x =>
+                    lineBranchMap.ContainsKey(NormalizeCode(x.LineCode)) &&
+                    lineBranchMap[NormalizeCode(x.LineCode)] == selectedBranchCode)
+                .ToList();
+
+            monthSalesRows = monthSalesRows
+                .Where(x =>
+                    lineBranchMap.ContainsKey(NormalizeCode(x.LineCode)) &&
+                    lineBranchMap[NormalizeCode(x.LineCode)] == selectedBranchCode)
+                .ToList();
+
+            visitRows = visitRows
+                .Where(x =>
+                    customerBranchMap.ContainsKey(NormalizeCode(x.CustomerCode)) &&
+                    customerBranchMap[NormalizeCode(x.CustomerCode)] == selectedBranchCode)
+                .ToList();
+
+            monthVisitRows = monthVisitRows
+                .Where(x =>
+                    customerBranchMap.ContainsKey(NormalizeCode(x.CustomerCode)) &&
+                    customerBranchMap[NormalizeCode(x.CustomerCode)] == selectedBranchCode)
+                .ToList();
+
+            monthlyTargets = monthlyTargets
+                .Where(x => NormalizeCode(x.BranchCode) == selectedBranchCode)
+                .ToList();
+        }
 
         var totalSales = salesRows.Sum(x => x.SalesAmount);
         var totalQuantity = salesRows.Sum(x => x.Quantity);
@@ -69,40 +124,34 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
         var totalVisitValue = visitRows.Sum(x => x.SuccessfulVisitValue);
 
         var salesByLineMonth = monthSalesRows
-            .GroupBy(x => x.LineCode)
+            .GroupBy(x => NormalizeCode(x.LineCode))
             .ToDictionary(
                 g => g.Key,
                 g => g.Sum(x => x.SalesAmount));
 
-        var customerDistrictMap = customers
-            .Where(x => !string.IsNullOrWhiteSpace(x.CustomerCode))
-            .GroupBy(x => NormalizeCode(x.CustomerCode))
-            .ToDictionary(
-                g => g.Key,
-                g => g.First().SalesDistrictCode ?? string.Empty);
-
         var visitsByLineMonth = monthVisitRows
             .Select(x => new
             {
-                Visit = x,
                 NormalizedCustomerCode = NormalizeCode(x.CustomerCode)
             })
             .Where(x =>
                 !string.IsNullOrWhiteSpace(x.NormalizedCustomerCode) &&
                 customerDistrictMap.ContainsKey(x.NormalizedCustomerCode))
-            .GroupBy(x => customerDistrictMap[x.NormalizedCustomerCode])
+            .GroupBy(x => NormalizeCode(customerDistrictMap[x.NormalizedCustomerCode]))
             .ToDictionary(
                 g => g.Key,
                 g => g.Count());
 
-        var targetAchievements = monthlyTargets
+        var allTargetAchievements = monthlyTargets
             .Select(target =>
             {
-                var actualSales = salesByLineMonth.TryGetValue(target.SalesDistrictCode, out var sales)
+                var normalizedSalesDistrictCode = NormalizeCode(target.SalesDistrictCode);
+
+                var actualSales = salesByLineMonth.TryGetValue(normalizedSalesDistrictCode, out var sales)
                     ? sales
                     : 0;
 
-                var actualVisits = visitsByLineMonth.TryGetValue(target.SalesDistrictCode, out var visits)
+                var actualVisits = visitsByLineMonth.TryGetValue(normalizedSalesDistrictCode, out var visits)
                     ? visits
                     : 0;
 
@@ -138,7 +187,42 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
                                 : "Critical"
                 };
             })
+            .ToList();
+
+        var totalMonthlyTarget = allTargetAchievements.Sum(x => x.MonthlyTarget);
+        var totalActualSalesToDate = allTargetAchievements.Sum(x => x.ActualSales);
+        var totalRemainingTarget = Math.Max(totalMonthlyTarget - totalActualSalesToDate, 0);
+
+        var totalPlannedVisits = allTargetAchievements.Sum(x => x.PlannedVisits);
+        var totalActualVisits = allTargetAchievements.Sum(x => x.ActualVisits);
+
+        var targetSummary = new TargetAchievementSummaryDto
+        {
+            TotalMonthlyTarget = totalMonthlyTarget,
+            ActualSalesToDate = totalActualSalesToDate,
+            AchievementPercentage = CalculatePercentage(totalActualSalesToDate, totalMonthlyTarget),
+            RemainingTarget = totalRemainingTarget,
+            RequiredDailySales = Math.Round(totalRemainingTarget / remainingDays, 2),
+
+            PlannedVisits = totalPlannedVisits,
+            ActualVisits = totalActualVisits,
+            VisitAchievementPercentage = CalculatePercentage(totalActualVisits, totalPlannedVisits),
+
+            CriticalLinesCount = allTargetAchievements.Count(x => x.Status == "Critical"),
+            OnTrackLinesCount = allTargetAchievements.Count(x => x.Status == "On Track"),
+            AchievedLinesCount = allTargetAchievements.Count(x => x.Status == "Achieved")
+        };
+
+        var lowestTargetAchievements = allTargetAchievements
             .OrderBy(x => x.AchievementPercentage)
+            .ThenByDescending(x => x.MonthlyTarget)
+            .Take(10)
+            .ToList();
+
+        var bestTargetAchievements = allTargetAchievements
+            .Where(x => x.ActualSales > 0 || x.AchievementPercentage > 0)
+            .OrderByDescending(x => x.AchievementPercentage)
+            .ThenByDescending(x => x.ActualSales)
             .Take(10)
             .ToList();
 
@@ -164,7 +248,10 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
                     : Math.Round(totalVisitValue / positiveVisits, 2)
             },
 
-            TargetAchievements = targetAchievements,
+            TargetSummary = targetSummary,
+            TargetAchievements = lowestTargetAchievements,
+            LowestTargetAchievements = lowestTargetAchievements,
+            BestTargetAchievements = bestTargetAchievements,
 
             SalesByLines = salesRows
                 .GroupBy(x => new { x.LineCode, x.LineName })
@@ -255,7 +342,6 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
                 .OrderByDescending(x => x.TotalSales)
                 .Take(10)
                 .ToList()
-
         };
 
         return dashboard;
@@ -325,5 +411,36 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
             return 0;
 
         return Math.Round(((decimal)value / total) * 100, 2);
+    }
+
+    public List<BranchOptionDto> GetBranchOptions()
+    {
+        var rows = _context.SalesAnalyticsCustomers
+            .AsNoTracking()
+            .Where(x => !string.IsNullOrWhiteSpace(x.BranchCode))
+            .Select(x => new
+            {
+                x.BranchCode,
+                x.BranchName
+            })
+            .ToList();
+
+        return rows
+            .GroupBy(x => NormalizeCode(x.BranchCode))
+            .Select(g =>
+            {
+                var first = g.First();
+
+                return new BranchOptionDto
+                {
+                    BranchCode = first.BranchCode ?? string.Empty,
+                    BranchName = string.IsNullOrWhiteSpace(first.BranchName)
+                        ? first.BranchCode ?? string.Empty
+                        : first.BranchName
+                };
+            })
+            .Where(x => !string.IsNullOrWhiteSpace(x.BranchCode))
+            .OrderBy(x => x.BranchName)
+            .ToList();
     }
 }

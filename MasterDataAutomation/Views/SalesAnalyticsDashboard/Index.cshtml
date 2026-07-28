@@ -1,4 +1,5 @@
 ﻿@model MasterDataAutomation.Application.Modules.SalesAnalytics.DashboardDtos.SalesAnalyticsDashboardDto
+@using MasterDataAutomation.Application.Modules.SalesAnalytics.DashboardDtos
 
 @{
     ViewData["Title"] = "CEO Sales Analytics";
@@ -9,6 +10,11 @@
         Model.SalesByLines.Any() ||
         Model.VisitsBySalesReps.Any() ||
         Model.TargetAchievements.Any();
+
+    var branches = ViewBag.Branches as List<BranchOptionDto>
+        ?? new List<BranchOptionDto>();
+
+    var selectedBranchCode = ViewBag.SelectedBranchCode as string ?? string.Empty;
 
     string Money(decimal value) => $"{value:N0} EGP";
     string Number(decimal value) => $"{value:N0}";
@@ -58,7 +64,8 @@
         flex-wrap: wrap;
     }
 
-        .date-filter input {
+        .date-filter input,
+        .date-filter select {
             border: none;
             border-radius: 10px;
             padding: 10px 12px;
@@ -211,6 +218,26 @@
         margin-bottom: 18px;
     }
 
+    .target-note {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e3a8a;
+        border-radius: 14px;
+        padding: 14px 16px;
+        font-size: 13px;
+        font-weight: 800;
+        margin-bottom: 18px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        line-height: 1.7;
+    }
+
+        .target-note i {
+            font-size: 18px;
+            margin-top: 2px;
+        }
+
     @@media (max-width: 1100px) {
         .kpi-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -252,6 +279,26 @@
             <input type="date"
                    name="reportDate"
                    value="@ViewBag.SelectedDate" />
+
+            <select name="branchCode">
+                <option value="">All Branches</option>
+
+                @foreach (var branch in branches)
+                {
+                    if (selectedBranchCode == branch.BranchCode)
+                    {
+                        <option value="@branch.BranchCode" selected>
+                            @branch.BranchName
+                        </option>
+                    }
+                    else
+                    {
+                        <option value="@branch.BranchCode">
+                            @branch.BranchName
+                        </option>
+                    }
+                }
+            </select>
 
             <button type="submit" class="btn-filter">
                 <i class="bi bi-funnel"></i>
@@ -321,93 +368,224 @@
 
     </div>
 
-    <div class="panel" style="margin-bottom:18px;">
-        <div class="panel-title">
-            <i class="bi bi-bullseye"></i>
-            Monthly Target Achievement by Sales District
+    @{
+        var targetSummary = Model.TargetSummary;
+    }
+
+    <div class="kpi-grid">
+
+        <div class="kpi-card">
+            <div class="kpi-label">Monthly Target</div>
+            <div class="kpi-value">@Money(targetSummary.TotalMonthlyTarget)</div>
+            <div class="kpi-hint">Total target for selected month</div>
         </div>
 
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Branch</th>
-                        <th>Sales District</th>
-                        <th>Target</th>
-                        <th>Actual Sales</th>
-                        <th>Achievement</th>
-                        <th>Remaining</th>
-                        <th>Required / Day</th>
-                        <th>Visits</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
+        <div class="kpi-card">
+            <div class="kpi-label">Actual Sales MTD</div>
+            <div class="kpi-value">@Money(targetSummary.ActualSalesToDate)</div>
+            <div class="kpi-hint">Uploaded sales from month start to selected date</div>
+        </div>
 
-                <tbody>
-                    @if (!Model.TargetAchievements.Any())
-                    {
-                        <tr>
-                            <td colspan="9" class="text-muted fw-bold">
-                                No targets saved for this month.
-                            </td>
-                        </tr>
-                    }
-                    else
-                    {
-                        @foreach (var item in Model.TargetAchievements)
-                        {
-                            <tr>
-                                <td>
-                                    <div class="line-name">
-                                        @(string.IsNullOrWhiteSpace(item.BranchName) ? "-" : item.BranchName)
-                                    </div>
-                                    <div class="muted-code">
-                                        @item.BranchCode
-                                    </div>
-                                </td>
+        <div class="kpi-card">
+            <div class="kpi-label">Target Achievement</div>
+            <div class="kpi-value">@Percent(targetSummary.AchievementPercentage)</div>
+            <div class="kpi-hint">
+                Remaining: @Money(targetSummary.RemainingTarget)
+            </div>
+        </div>
 
-                                <td>
-                                    <div class="line-name">
-                                        @item.SalesDistrictName
-                                    </div>
-                                    <div class="muted-code">
-                                        @item.SalesDistrictCode
-                                    </div>
-                                </td>
+        <div class="kpi-card">
+            <div class="kpi-label">Required Daily Sales</div>
+            <div class="kpi-value">@Money(targetSummary.RequiredDailySales)</div>
+            <div class="kpi-hint">Needed per day to reach monthly target</div>
+        </div>
 
-                                <td>@Money(item.MonthlyTarget)</td>
-                                <td>@Money(item.ActualSales)</td>
+    </div>
 
-                                <td>
-                                    <span class="badge-soft @(item.AchievementPercentage >= 75 ? "badge-positive" : "badge-negative")">
-                                        @Percent(item.AchievementPercentage)
-                                    </span>
-                                </td>
+    <div class="kpi-grid">
 
-                                <td>@Money(item.RemainingTarget)</td>
+        <div class="kpi-card">
+            <div class="kpi-label">Visit Achievement</div>
+            <div class="kpi-value">@Percent(targetSummary.VisitAchievementPercentage)</div>
+            <div class="kpi-hint">
+                @targetSummary.ActualVisits actual / @targetSummary.PlannedVisits planned
+            </div>
+        </div>
 
-                                <td>@Money(item.RequiredDailySales)</td>
+        <div class="kpi-card">
+            <div class="kpi-label">Critical Lines</div>
+            <div class="kpi-value">@targetSummary.CriticalLinesCount</div>
+            <div class="kpi-hint">Lines below 50% achievement</div>
+        </div>
 
-                                <td>
-                                    <strong>@item.ActualVisits / @item.PlannedVisits</strong>
-                                    <div class="muted-code">
-                                        @Percent(item.VisitAchievementPercentage)
-                                    </div>
-                                </td>
+        <div class="kpi-card">
+            <div class="kpi-label">On Track Lines</div>
+            <div class="kpi-value">@targetSummary.OnTrackLinesCount</div>
+            <div class="kpi-hint">Lines from 75% to 99%</div>
+        </div>
 
-                                <td>
-                                    <span class="badge-soft @(item.Status == "Achieved" || item.Status == "On Track" ? "badge-positive" : "badge-negative")">
-                                        @item.Status
-                                    </span>
-                                </td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
+        <div class="kpi-card">
+            <div class="kpi-label">Achieved Lines</div>
+            <div class="kpi-value">@targetSummary.AchievedLinesCount</div>
+            <div class="kpi-hint">Lines achieved 100% or more</div>
+        </div>
+
+    </div>
+
+    <div class="target-note">
+        <i class="bi bi-info-circle"></i>
+        <div>
+            Target achievement is calculated based only on uploaded sales and visits reports from the beginning of the selected month up to the selected date.
+            لو الشهر كامل لسه متمش رفع كل أيامه، النسب هتظهر أقل من الحقيقة.
         </div>
     </div>
 
+    <div class="section-grid">
+
+        <div class="panel">
+            <div class="panel-title">
+                <i class="bi bi-exclamation-octagon"></i>
+                Lowest 10 Target Achievement Lines
+            </div>
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Branch</th>
+                            <th>Sales District</th>
+                            <th>Target</th>
+                            <th>Actual</th>
+                            <th>Achievement</th>
+                            <th>Remaining</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @if (!Model.LowestTargetAchievements.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-muted fw-bold">
+                                    No targets saved for this month.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.LowestTargetAchievements)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="line-name">
+                                            @(string.IsNullOrWhiteSpace(item.BranchName) ? "-" : item.BranchName)
+                                        </div>
+                                        <div class="muted-code">@item.BranchCode</div>
+                                    </td>
+
+                                    <td>
+                                        <div class="line-name">@item.SalesDistrictName</div>
+                                        <div class="muted-code">@item.SalesDistrictCode</div>
+                                    </td>
+
+                                    <td>@Money(item.MonthlyTarget)</td>
+                                    <td>@Money(item.ActualSales)</td>
+
+                                    <td>
+                                        <span class="badge-soft @(item.AchievementPercentage >= 75 ? "badge-positive" : "badge-negative")">
+                                            @Percent(item.AchievementPercentage)
+                                        </span>
+                                    </td>
+
+                                    <td>@Money(item.RemainingTarget)</td>
+
+                                    <td>
+                                        <span class="badge-soft @(item.Status == "Achieved" || item.Status == "On Track" ? "badge-positive" : "badge-negative")">
+                                            @item.Status
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">
+                <i class="bi bi-trophy"></i>
+                Top 10 Active Target Lines
+            </div>
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Branch</th>
+                            <th>Sales District</th>
+                            <th>Actual</th>
+                            <th>Achievement</th>
+                            <th>Visits</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @if (!Model.BestTargetAchievements.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-muted fw-bold">
+                                    No active target lines found based on uploaded data yet.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.BestTargetAchievements)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="line-name">
+                                            @(string.IsNullOrWhiteSpace(item.BranchName) ? "-" : item.BranchName)
+                                        </div>
+                                        <div class="muted-code">@item.BranchCode</div>
+                                    </td>
+
+                                    <td>
+                                        <div class="line-name">@item.SalesDistrictName</div>
+                                        <div class="muted-code">@item.SalesDistrictCode</div>
+                                    </td>
+
+                                    <td>@Money(item.ActualSales)</td>
+
+                                    <td>
+                                        <span class="badge-soft @(item.AchievementPercentage >= 75 ? "badge-positive" : "badge-negative")">
+                                            @Percent(item.AchievementPercentage)
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        @item.ActualVisits / @item.PlannedVisits
+                                        <div class="muted-code">
+                                            @Percent(item.VisitAchievementPercentage)
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <span class="badge-soft @(item.Status == "Achieved" || item.Status == "On Track" ? "badge-positive" : "badge-negative")">
+                                            @item.Status
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
     <div class="section-grid">
 
         <div class="panel">

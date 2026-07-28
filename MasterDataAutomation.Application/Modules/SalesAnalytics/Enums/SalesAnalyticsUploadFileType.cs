@@ -6,5 +6,7 @@ public enum SalesAnalyticsUploadFileType
     SalesRepMaster = 2,
     RepRouteAssignment = 3,
     DailySalesReport = 4,
-    DailyVisitsReport = 5
+    DailyVisitsReport = 5,
+    MonthlyTargets = 6
+
 }
