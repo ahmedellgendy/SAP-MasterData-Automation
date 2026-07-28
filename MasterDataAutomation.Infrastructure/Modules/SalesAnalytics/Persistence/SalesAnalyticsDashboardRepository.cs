@@ -226,6 +226,89 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
             .Take(10)
             .ToList();
 
+        var alerts = new List<CeoAlertDto>();
+
+        if (targetSummary.TotalMonthlyTarget > 0 && targetSummary.AchievementPercentage < 50)
+        {
+            alerts.Add(new CeoAlertDto
+            {
+                Title = "Low Target Achievement",
+                Message = $"Target achievement is only {targetSummary.AchievementPercentage:N2}%. Required daily sales: {targetSummary.RequiredDailySales:N0} EGP.",
+                Severity = "Critical",
+                Icon = "bi-exclamation-octagon"
+            });
+        }
+
+        if (targetSummary.CriticalLinesCount > 0)
+        {
+            alerts.Add(new CeoAlertDto
+            {
+                Title = "Critical Sales Lines",
+                Message = $"{targetSummary.CriticalLinesCount} sales lines are below 50% target achievement.",
+                Severity = "Critical",
+                Icon = "bi-bullseye"
+            });
+        }
+
+        if (targetSummary.PlannedVisits > 0 && targetSummary.VisitAchievementPercentage < 70)
+        {
+            alerts.Add(new CeoAlertDto
+            {
+                Title = "Low Visit Achievement",
+                Message = $"Visit achievement is only {targetSummary.VisitAchievementPercentage:N2}% based on uploaded visits data.",
+                Severity = "Warning",
+                Icon = "bi-geo-alt"
+            });
+        }
+
+        if (negativeVisits > 0)
+        {
+            var negativeVisitPercentage = CalculatePercentage(negativeVisits, totalVisits);
+
+            alerts.Add(new CeoAlertDto
+            {
+                Title = "Negative Visits Recorded",
+                Message = $"{negativeVisits} negative visits recorded today, representing {negativeVisitPercentage:N2}% of total visits.",
+                Severity = negativeVisitPercentage >= 25 ? "Warning" : "Info",
+                Icon = "bi-exclamation-triangle"
+            });
+        }
+
+        var topNegativeReason = visitRows
+            .Where(x => !IsPositiveVisit(x))
+            .GroupBy(x => string.IsNullOrWhiteSpace(x.NegativeReason)
+                ? "No Reason"
+                : x.NegativeReason.Trim())
+            .Select(g => new
+            {
+                Reason = g.Key,
+                Count = g.Count()
+            })
+            .OrderByDescending(x => x.Count)
+            .FirstOrDefault();
+
+        if (topNegativeReason != null)
+        {
+            alerts.Add(new CeoAlertDto
+            {
+                Title = "Top Negative Reason",
+                Message = $"Most repeated negative reason: {topNegativeReason.Reason} ({topNegativeReason.Count} times).",
+                Severity = "Info",
+                Icon = "bi-chat-left-text"
+            });
+        }
+
+        if (totalSales == 0 && totalVisits == 0)
+        {
+            alerts.Add(new CeoAlertDto
+            {
+                Title = "No Data Found",
+                Message = "No uploaded sales or visits data found for the selected date and branch.",
+                Severity = "Warning",
+                Icon = "bi-database-exclamation"
+            });
+        }
+
         var dashboard = new SalesAnalyticsDashboardDto
         {
             ReportDate = date,
@@ -249,6 +332,7 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
             },
 
             TargetSummary = targetSummary,
+            Alerts = alerts,
             TargetAchievements = lowestTargetAchievements,
             LowestTargetAchievements = lowestTargetAchievements,
             BestTargetAchievements = bestTargetAchievements,

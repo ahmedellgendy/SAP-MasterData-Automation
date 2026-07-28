@@ -233,17 +233,94 @@
         line-height: 1.7;
     }
 
+
         .target-note i {
             font-size: 18px;
             margin-top: 2px;
         }
 
+    .alerts-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .ceo-alert {
+        background: #fff;
+        border-radius: 16px;
+        padding: 16px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .ceo-alert-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+
+    .ceo-alert-title {
+        font-size: 14px;
+        font-weight: 950;
+        color: #0f172a;
+        margin-bottom: 5px;
+    }
+
+    .ceo-alert-message {
+        font-size: 12px;
+        font-weight: 700;
+        color: #64748b;
+        line-height: 1.6;
+    }
+
+    .ceo-alert-critical {
+        border-color: #fecaca;
+        background: #fff5f5;
+    }
+
+        .ceo-alert-critical .ceo-alert-icon {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+    .ceo-alert-warning {
+        border-color: #fed7aa;
+        background: #fff7ed;
+    }
+
+        .ceo-alert-warning .ceo-alert-icon {
+            background: #ffedd5;
+            color: #9a3412;
+        }
+
+    .ceo-alert-info {
+        border-color: #bfdbfe;
+        background: #eff6ff;
+    }
+
+        .ceo-alert-info .ceo-alert-icon {
+            background: #dbeafe;
+            color: #1e3a8a;
+        }
     @@media (max-width: 1100px) {
         .kpi-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
         .section-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .alerts-grid {
             grid-template-columns: 1fr;
         }
     }
@@ -306,6 +383,37 @@
             </button>
         </form>
     </div>
+
+    @if (Model.Alerts.Any())
+    {
+        <div class="alerts-grid">
+            @foreach (var alert in Model.Alerts)
+            {
+                var alertClass = alert.Severity switch
+                {
+                    "Critical" => "ceo-alert-critical",
+                    "Warning" => "ceo-alert-warning",
+                    _ => "ceo-alert-info"
+                };
+
+                <div class="ceo-alert @alertClass">
+                    <div class="ceo-alert-icon">
+                        <i class="bi @alert.Icon"></i>
+                    </div>
+
+                    <div>
+                        <div class="ceo-alert-title">
+                            @alert.Title
+                        </div>
+
+                        <div class="ceo-alert-message">
+                            @alert.Message
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
 
     @if (!hasData)
     {
