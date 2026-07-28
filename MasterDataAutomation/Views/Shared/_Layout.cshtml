@@ -439,6 +439,54 @@
             </div>
         }
 
+        @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+        {
+            <button class="sidebar-menu-toggle"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#salesAnalyticsMenu"
+                    aria-expanded="false"
+                    aria-controls="salesAnalyticsMenu">
+                <i class="bi bi-bar-chart-line"></i>
+                Sales Analytics
+                <i class="bi bi-chevron-down chevron"></i>
+            </button>
+
+            <div class="collapse sidebar-submenu" id="salesAnalyticsMenu">
+
+                <a asp-controller="SalesAnalyticsDashboard"
+                   asp-action="Index">
+                    <i class="bi bi-speedometer"></i>
+                    CEO Dashboard
+                </a>
+
+                <a asp-controller="SalesAnalyticsMasterData"
+                   asp-action="CustomerMaster">
+                    <i class="bi bi-people"></i>
+                    Customer Master Upload
+                </a>
+
+                <a asp-controller="SalesAnalyticsMasterData"
+                   asp-action="SalesRepMaster">
+                    <i class="bi bi-person-badge"></i>
+                    Sales Rep Master Upload
+                </a>
+
+                <a asp-controller="SalesAnalyticsMasterData"
+                   asp-action="DailySalesReport">
+                    <i class="bi bi-file-earmark-spreadsheet"></i>
+                    Daily Sales Upload
+                </a>
+
+                <a asp-controller="SalesAnalyticsMasterData"
+                   asp-action="DailyVisitsReport">
+                    <i class="bi bi-geo-alt"></i>
+                    Daily Visits Upload
+                </a>
+
+            </div>
+        }
+
         @if (User.IsInRole("Admin"))
         {
             <div class="sidebar-section">
