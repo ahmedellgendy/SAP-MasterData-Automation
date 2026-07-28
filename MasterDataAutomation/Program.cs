@@ -67,6 +67,7 @@ namespace MasterDataAutomation
             builder.Services.AddScoped<ICustomerModificationRequestRepository, CustomerModificationRequestRepository>();
             builder.Services.AddScoped<ISalesAnalyticsMasterDataRepository, SalesAnalyticsMasterDataRepository>();
             builder.Services.AddScoped<ISalesAnalyticsMasterDataImportService, SalesAnalyticsMasterDataImportService>();
+            builder.Services.AddScoped<ISalesAnalyticsDashboardRepository, SalesAnalyticsDashboardRepository>();
 
 
             builder.Services.AddDistributedMemoryCache();

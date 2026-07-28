@@ -1,0 +1,536 @@
+﻿@model MasterDataAutomation.Application.Modules.SalesAnalytics.DashboardDtos.SalesAnalyticsDashboardDto
+
+@{
+    ViewData["Title"] = "CEO Sales Analytics";
+
+    var hasData =
+        Model.Kpis.TotalSales > 0 ||
+        Model.Kpis.TotalVisits > 0 ||
+        Model.SalesByLines.Any() ||
+        Model.VisitsBySalesReps.Any();
+
+    string Money(decimal value) => $"{value:N0} EGP";
+    string Number(decimal value) => $"{value:N0}";
+    string Percent(decimal value) => $"{value:N2}%";
+}
+
+<style>
+    .dashboard-page {
+        max-width: 1500px;
+        margin: 0 auto;
+    }
+
+    .dashboard-hero {
+        background: linear-gradient(135deg, #0b2a5b, #123a78);
+        color: #fff;
+        border-radius: 20px;
+        padding: 26px;
+        margin-bottom: 22px;
+        box-shadow: 0 14px 32px rgba(15, 23, 42, .16);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
+    }
+
+    .hero-title {
+        font-size: 28px;
+        font-weight: 900;
+        margin-bottom: 6px;
+    }
+
+    .hero-subtitle {
+        color: rgba(255,255,255,.78);
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .date-filter {
+        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.2);
+        border-radius: 14px;
+        padding: 14px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+        .date-filter input {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-weight: 800;
+        }
+
+    .btn-filter {
+        background: #fff;
+        color: #0b2a5b;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-weight: 900;
+    }
+
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 22px;
+    }
+
+    .kpi-card {
+        background: #fff;
+        border-radius: 18px;
+        padding: 20px;
+        border: 1px solid #edf0f5;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+    }
+
+    .kpi-label {
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 800;
+        margin-bottom: 8px;
+    }
+
+    .kpi-value {
+        color: #0f172a;
+        font-size: 25px;
+        font-weight: 950;
+    }
+
+    .kpi-hint {
+        color: #94a3b8;
+        font-size: 12px;
+        font-weight: 700;
+        margin-top: 6px;
+    }
+
+    .section-grid {
+        display: grid;
+        grid-template-columns: 1.2fr .8fr;
+        gap: 18px;
+        margin-bottom: 18px;
+    }
+
+    .panel {
+        background: #fff;
+        border-radius: 18px;
+        padding: 20px;
+        border: 1px solid #edf0f5;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+    }
+
+    .panel-title {
+        font-size: 18px;
+        font-weight: 950;
+        color: #0f172a;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .table {
+        margin-bottom: 0;
+        vertical-align: middle;
+    }
+
+        .table thead th {
+            color: #475569;
+            font-size: 12px;
+            font-weight: 900;
+            background: #f8fafc;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        .table tbody td {
+            font-size: 13px;
+            font-weight: 700;
+            color: #334155;
+        }
+
+    .line-name,
+    .customer-name,
+    .product-name {
+        font-weight: 900;
+        color: #0f172a;
+    }
+
+    .muted-code {
+        color: #94a3b8;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .badge-soft {
+        display: inline-flex;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 900;
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .badge-positive {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .badge-negative {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .progress-line {
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 999px;
+        overflow: hidden;
+        min-width: 90px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: #0b2a5b;
+        border-radius: 999px;
+    }
+
+    .empty-state {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        color: #9a3412;
+        padding: 18px;
+        border-radius: 16px;
+        font-weight: 800;
+        margin-bottom: 18px;
+    }
+
+    @@media (max-width: 1100px) {
+        .kpi-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .section-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 650px) {
+        .kpi-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .hero-title {
+            font-size: 22px;
+        }
+    }
+</style>
+
+<div class="dashboard-page">
+
+    <div class="dashboard-hero">
+        <div>
+            <div class="hero-title">
+                CEO Sales Analytics Dashboard
+            </div>
+            <div class="hero-subtitle">
+                Executive overview for sales, visits, customers, products, and field activity.
+            </div>
+        </div>
+
+        <form asp-controller="SalesAnalyticsDashboard"
+              asp-action="Index"
+              method="get"
+              class="date-filter">
+
+            <input type="date"
+                   name="reportDate"
+                   value="@ViewBag.SelectedDate" />
+
+            <button type="submit" class="btn-filter">
+                <i class="bi bi-funnel"></i>
+                Apply
+            </button>
+        </form>
+    </div>
+
+    @if (!hasData)
+    {
+        <div class="empty-state">
+            No sales analytics data found for this date. اختار تاريخ التقرير اللي اترفع، مثلًا 2026-07-22.
+        </div>
+    }
+
+    <div class="kpi-grid">
+
+        <div class="kpi-card">
+            <div class="kpi-label">Total Sales</div>
+            <div class="kpi-value">@Money(Model.Kpis.TotalSales)</div>
+            <div class="kpi-hint">From daily SalesBuzz sales report</div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-label">Total Quantity</div>
+            <div class="kpi-value">@Number(Model.Kpis.TotalQuantity)</div>
+            <div class="kpi-hint">Total sold quantity</div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-label">Total Visits</div>
+            <div class="kpi-value">@Model.Kpis.TotalVisits</div>
+            <div class="kpi-hint">All recorded visits</div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-label">Positive Visit %</div>
+            <div class="kpi-value">@Percent(Model.Kpis.PositiveVisitPercentage)</div>
+            <div class="kpi-hint">
+                @Model.Kpis.PositiveVisits positive / @Model.Kpis.NegativeVisits negative
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-label">Positive Visits</div>
+            <div class="kpi-value">@Model.Kpis.PositiveVisits</div>
+            <div class="kpi-hint">Successful visits</div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-label">Negative Visits</div>
+            <div class="kpi-value">@Model.Kpis.NegativeVisits</div>
+            <div class="kpi-hint">Visits without sales</div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-label">Active Sales Reps</div>
+            <div class="kpi-value">@Model.Kpis.ActiveSalesReps</div>
+            <div class="kpi-hint">Reps appeared in visits report</div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-label">Average Visit Value</div>
+            <div class="kpi-value">@Money(Model.Kpis.AverageVisitValue)</div>
+            <div class="kpi-hint">Average successful visit value</div>
+        </div>
+
+    </div>
+
+    <div class="section-grid">
+
+        <div class="panel">
+            <div class="panel-title">
+                <i class="bi bi-graph-up-arrow"></i>
+                Sales by Line
+            </div>
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Sales</th>
+                            <th>Quantity</th>
+                            <th>Contribution</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.SalesByLines)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="line-name">@item.LineName</div>
+                                    <div class="muted-code">@item.LineCode</div>
+                                </td>
+                                <td>@Money(item.TotalSales)</td>
+                                <td>@Number(item.TotalQuantity)</td>
+                                <td>@Percent(item.ContributionPercentage)</td>
+                                <td>
+                                    <div class="progress-line">
+                                        <div class="progress-fill"
+                                             style="width:@Math.Min(item.ContributionPercentage, 100)%">
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">
+                <i class="bi bi-exclamation-triangle"></i>
+                Negative Visit Reasons
+            </div>
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Reason</th>
+                            <th>Count</th>
+                            <th>%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.NegativeVisitReasons)
+                        {
+                            <tr>
+                                <td>@item.Reason</td>
+                                <td>@item.Count</td>
+                                <td>
+                                    <span class="badge-soft badge-negative">
+                                        @Percent(item.Percentage)
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="section-grid">
+
+        <div class="panel">
+            <div class="panel-title">
+                <i class="bi bi-people"></i>
+                Visits by Sales Rep
+            </div>
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Sales Rep</th>
+                            <th>Total</th>
+                            <th>Positive</th>
+                            <th>Negative</th>
+                            <th>Positive %</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.VisitsBySalesReps)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="line-name">@item.SalesRepName</div>
+                                    <div class="muted-code">@item.SalesRepCode</div>
+                                </td>
+                                <td>@item.TotalVisits</td>
+                                <td>
+                                    <span class="badge-soft badge-positive">
+                                        @item.PositiveVisits
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge-soft badge-negative">
+                                        @item.NegativeVisits
+                                    </span>
+                                </td>
+                                <td>@Percent(item.PositiveVisitPercentage)</td>
+                                <td>@Money(item.TotalVisitValue)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">
+                <i class="bi bi-arrow-down-circle"></i>
+                Bottom 5 Customers Today
+            </div>
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th>Rep</th>
+                            <th>Value</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.BottomCustomersToday)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="customer-name">@item.CustomerName</div>
+                                    <div class="muted-code">@item.CustomerCode</div>
+                                    @if (!string.IsNullOrWhiteSpace(item.NegativeReason))
+                                    {
+                                        <div class="muted-code">@item.NegativeReason</div>
+                                    }
+                                </td>
+                                <td>
+                                    <div>@item.SalesRepName</div>
+                                    <div class="muted-code">@item.SalesRepCode</div>
+                                </td>
+                                <td>@Money(item.SalesValue)</td>
+                                <td>
+                                    <span class="badge-soft @(item.SalesValue > 0 ? "badge-positive" : "badge-negative")">
+                                        @(string.IsNullOrWhiteSpace(item.VisitStatus) ? "-" : item.VisitStatus)
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="panel">
+        <div class="panel-title">
+            <i class="bi bi-box-seam"></i>
+            Top Products
+        </div>
+
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Total Sales</th>
+                        <th>Total Quantity</th>
+                        <th>Contribution</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.TopProducts)
+                    {
+                        <tr>
+                            <td class="product-name">@item.ProductName</td>
+                            <td>@Money(item.TotalSales)</td>
+                            <td>@Number(item.TotalQuantity)</td>
+                            <td>@Percent(item.ContributionPercentage)</td>
+                            <td>
+                                <div class="progress-line">
+                                    <div class="progress-fill"
+                                         style="width:@Math.Min(item.ContributionPercentage, 100)%">
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
