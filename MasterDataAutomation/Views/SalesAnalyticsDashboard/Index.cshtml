@@ -7,6 +7,30 @@
 
     var targetSummary = Model.TargetSummary;
 
+    DateTime selectedDate;
+    if (!DateTime.TryParse(ViewBag.SelectedDate as string, out selectedDate))
+    {
+        selectedDate = Model.ReportDate.Date;
+    }
+
+    selectedDate = selectedDate.Date;
+
+    var selectedMonthDays = DateTime.DaysInMonth(selectedDate.Year, selectedDate.Month);
+    var elapsedDays = Math.Max(Math.Min(selectedDate.Day, selectedMonthDays), 1);
+
+    var expectedPacePercentage = Math.Round(((decimal)elapsedDays / selectedMonthDays) * 100, 2);
+
+    var expectedSalesToDate = targetSummary.TotalMonthlyTarget == 0
+        ? 0
+        : Math.Round((targetSummary.TotalMonthlyTarget * elapsedDays) / selectedMonthDays, 2);
+
+    var salesPaceGap = targetSummary.ActualSalesToDate - expectedSalesToDate;
+    var isAheadOfPace = salesPaceGap >= 0;
+
+    var actualDailyRunRate = elapsedDays == 0
+        ? 0
+        : Math.Round(targetSummary.ActualSalesToDate / elapsedDays, 2);
+
     var visibleAlerts = Model.Alerts
         .Where(x => x.Title != "No Daily Data Uploaded")
         .ToList();
@@ -19,7 +43,7 @@
         Model.LowestTargetAchievements.Any() ||
         Model.BestTargetAchievements.Any();
 
-    var hasSelectedDayActivity =
+    var hasOperationalDetails =
         Model.Kpis.TotalSales > 0 ||
         Model.Kpis.TotalVisits > 0 ||
         Model.SalesByLines.Any() ||
@@ -32,6 +56,87 @@
         ?? new List<BranchOptionDto>();
 
     var selectedBranchCode = ViewBag.SelectedBranchCode as string ?? string.Empty;
+
+    var leadingBranch = Model.BranchPerformances
+        .Where(x => x.ActualSales > 0 || x.AchievementPercentage > 0)
+        .OrderByDescending(x => x.AchievementPercentage)
+        .ThenByDescending(x => x.ActualSales)
+        .FirstOrDefault();
+
+    var weakestBranch = Model.BranchPerformances
+        .Where(x => x.MonthlyTarget > 0)
+        .OrderBy(x => x.AchievementPercentage)
+        .ThenByDescending(x => x.MonthlyTarget)
+        .FirstOrDefault();
+
+    var topProduct = Model.TopProducts.FirstOrDefault();
+    var topLine = Model.BestTargetAchievements.FirstOrDefault();
+    var highestRiskLine = Model.LowestTargetAchievements.FirstOrDefault();
+    var topNegativeReason = Model.NegativeVisitReasons.FirstOrDefault();
+
+    var aiInsights = new List<string>();
+
+    if (targetSummary.TotalMonthlyTarget > 0)
+    {
+        if (isAheadOfPace)
+        {
+            aiInsights.Add($"Sales performance is ahead of the expected monthly pace by {Money(Math.Abs(salesPaceGap))}.");
+        }
+        else
+        {
+            aiInsights.Add($"Sales performance is behind the expected monthly pace by {Money(Math.Abs(salesPaceGap))}. Immediate follow-up is recommended.");
+        }
+    }
+
+    if (targetSummary.PlannedVisits > 0)
+    {
+        if (targetSummary.VisitAchievementPercentage < expectedPacePercentage)
+        {
+            aiInsights.Add($"Visit achievement is {Percent(targetSummary.VisitAchievementPercentage)} while the expected pace is {Percent(expectedPacePercentage)}. Field activity needs attention.");
+        }
+        else
+        {
+            aiInsights.Add($"Visit achievement is aligned with the expected monthly pace.");
+        }
+    }
+
+    if (leadingBranch != null)
+    {
+        aiInsights.Add($"{leadingBranch.BranchName} is currently leading branch performance with {Percent(leadingBranch.AchievementPercentage)} achievement.");
+    }
+
+    if (weakestBranch != null && leadingBranch != null && weakestBranch.BranchCode != leadingBranch.BranchCode)
+    {
+        aiInsights.Add($"{weakestBranch.BranchName} requires follow-up; achievement is currently {Percent(weakestBranch.AchievementPercentage)}.");
+    }
+
+    if (targetSummary.CriticalLinesCount > 0)
+    {
+        aiInsights.Add($"{targetSummary.CriticalLinesCount} sales lines are below 50% achievement and should be reviewed by sales management.");
+    }
+
+    if (topProduct != null)
+    {
+        aiInsights.Add($"Top product to date is {topProduct.ProductName}, generating {Money(topProduct.TotalSales)}.");
+    }
+
+    if (topNegativeReason != null)
+    {
+        aiInsights.Add($"Most repeated negative visit reason is '{topNegativeReason.Reason}' with {topNegativeReason.Count} records.");
+    }
+
+    if (!aiInsights.Any())
+    {
+        aiInsights.Add("No critical insights detected for the selected date. Continue monitoring daily uploads and target progress.");
+    }
+
+    var executiveStatus = isAheadOfPace
+        ? "Ahead of Pace"
+        : "Behind Pace";
+
+    var executiveStatusClass = isAheadOfPace
+        ? "pace-good"
+        : "pace-risk";
 
     string Money(decimal value) => $"{value:N0} EGP";
     string Number(decimal value) => $"{value:N0}";
@@ -97,6 +202,178 @@
         border-radius: 10px;
         padding: 10px 14px;
         font-weight: 900;
+    }
+
+    .executive-grid {
+        display: grid;
+        grid-template-columns: 1.35fr .65fr;
+        gap: 18px;
+        margin-bottom: 22px;
+    }
+
+    .ai-brief-card,
+    .pace-card {
+        background: #fff;
+        border-radius: 20px;
+        padding: 22px;
+        border: 1px solid #edf0f5;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, .07);
+    }
+
+    .ai-brief-card {
+        background: linear-gradient(135deg, #ffffff, #f8fbff);
+        border-color: #bfdbfe;
+    }
+
+    .brief-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: flex-start;
+        margin-bottom: 14px;
+    }
+
+    .brief-title {
+        font-size: 20px;
+        font-weight: 950;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .ai-badge {
+        background: #0b2a5b;
+        color: #fff;
+        border-radius: 999px;
+        padding: 7px 12px;
+        font-size: 11px;
+        font-weight: 900;
+        white-space: nowrap;
+    }
+
+    .brief-subtitle {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 800;
+        margin-top: 5px;
+    }
+
+    .brief-list {
+        display: grid;
+        gap: 10px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+        .brief-list li {
+            background: #eff6ff;
+            border: 1px solid #dbeafe;
+            color: #1e3a8a;
+            border-radius: 14px;
+            padding: 11px 13px;
+            font-size: 13px;
+            font-weight: 800;
+            line-height: 1.6;
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+        }
+
+            .brief-list li i {
+                margin-top: 2px;
+            }
+
+    .pace-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+        margin-bottom: 18px;
+    }
+
+    .pace-title {
+        font-size: 18px;
+        font-weight: 950;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .pace-status {
+        border-radius: 999px;
+        padding: 7px 11px;
+        font-size: 11px;
+        font-weight: 950;
+        white-space: nowrap;
+    }
+
+    .pace-good {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .pace-risk {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .pace-main-value {
+        font-size: 30px;
+        font-weight: 950;
+        color: #0b2a5b;
+        margin-bottom: 6px;
+    }
+
+    .pace-caption {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.6;
+        margin-bottom: 14px;
+    }
+
+    .pace-track {
+        width: 100%;
+        height: 10px;
+        background: #e5e7eb;
+        border-radius: 999px;
+        overflow: hidden;
+        margin-bottom: 14px;
+    }
+
+    .pace-fill {
+        height: 100%;
+        background: #0b2a5b;
+        border-radius: 999px;
+    }
+
+    .pace-metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .pace-metric {
+        background: #f8fafc;
+        border-radius: 14px;
+        padding: 11px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .pace-metric-label {
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 900;
+        margin-bottom: 4px;
+    }
+
+    .pace-metric-value {
+        color: #0f172a;
+        font-size: 14px;
+        font-weight: 950;
     }
 
     .kpi-grid {
@@ -359,7 +636,7 @@
 
     .branch-status-grid {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 14px;
         margin-bottom: 22px;
     }
@@ -370,6 +647,27 @@
         padding: 18px;
         border: 1px solid #edf0f5;
         box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+    }
+
+    .branch-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 10px;
+    }
+
+    .branch-rank {
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+        background: #eff6ff;
+        color: #0b2a5b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 950;
+        flex-shrink: 0;
     }
 
     .branch-name {
@@ -393,7 +691,25 @@
         line-height: 1.7;
     }
 
+    .branch-progress {
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 999px;
+        overflow: hidden;
+        margin: 12px 0;
+    }
+
+    .branch-progress-fill {
+        height: 100%;
+        background: #0b2a5b;
+        border-radius: 999px;
+    }
+
     @@media (max-width: 1100px) {
+        .executive-grid {
+            grid-template-columns: 1fr;
+        }
+
         .kpi-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
@@ -425,6 +741,10 @@
         }
 
         .branch-status-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .pace-metrics {
             grid-template-columns: 1fr;
         }
     }
@@ -517,6 +837,87 @@
         </div>
     }
 
+    <div class="executive-grid">
+
+        <div class="ai-brief-card">
+            <div class="brief-header">
+                <div>
+                    <div class="brief-title">
+                        <i class="bi bi-stars"></i>
+                        AI Executive Brief
+                    </div>
+                    <div class="brief-subtitle">
+                        Smart reading of the current sales, visits, targets, and branch performance.
+                    </div>
+                </div>
+
+                <div class="ai-badge">
+                    Smart Insights
+                </div>
+            </div>
+
+            <ul class="brief-list">
+                @foreach (var insight in aiInsights.Take(6))
+                {
+                    <li>
+                        <i class="bi bi-check2-circle"></i>
+                        <span>@insight</span>
+                    </li>
+                }
+            </ul>
+        </div>
+
+        <div class="pace-card">
+            <div class="pace-top">
+                <div class="pace-title">
+                    <i class="bi bi-speedometer2"></i>
+                    Executive Pace
+                </div>
+
+                <div class="pace-status @executiveStatusClass">
+                    @executiveStatus
+                </div>
+            </div>
+
+            <div class="pace-main-value">
+                @Percent(targetSummary.AchievementPercentage)
+            </div>
+
+            <div class="pace-caption">
+                Actual achievement vs expected pace @Percent(expectedPacePercentage) as of @selectedDate.ToString("dd/MM/yyyy").
+            </div>
+
+            <div class="pace-track">
+                <div class="pace-fill"
+                     style="width:@Math.Min(targetSummary.AchievementPercentage, 100)%">
+                </div>
+            </div>
+
+            <div class="pace-metrics">
+                <div class="pace-metric">
+                    <div class="pace-metric-label">Expected Sales</div>
+                    <div class="pace-metric-value">@Money(expectedSalesToDate)</div>
+                </div>
+
+                <div class="pace-metric">
+                    <div class="pace-metric-label">Actual Sales</div>
+                    <div class="pace-metric-value">@Money(targetSummary.ActualSalesToDate)</div>
+                </div>
+
+                <div class="pace-metric">
+                    <div class="pace-metric-label">Current Run Rate</div>
+                    <div class="pace-metric-value">@Money(actualDailyRunRate)</div>
+                </div>
+
+                <div class="pace-metric">
+                    <div class="pace-metric-label">Required / Day</div>
+                    <div class="pace-metric-value">@Money(targetSummary.RequiredDailySales)</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
     <div class="kpi-grid">
 
         <div class="kpi-card">
@@ -583,37 +984,70 @@
 
     @if (Model.BranchPerformances.Any())
     {
-        <div class="branch-status-grid">
-            @foreach (var branch in Model.BranchPerformances)
-            {
-                <div class="branch-status-card">
-                    <div class="branch-name">
-                        @(string.IsNullOrWhiteSpace(branch.BranchName) ? "Unknown Branch" : branch.BranchName)
+        <div class="panel">
+            <div class="panel-title">
+                <i class="bi bi-list-ol"></i>
+                Branch Leaderboard To Date
+            </div>
+
+            <div class="branch-status-grid">
+                @{
+                    var rank = 1;
+                }
+
+                @foreach (var branch in Model.BranchPerformances)
+                {
+                    <div class="branch-status-card">
+                        <div class="branch-card-top">
+                            <div>
+                                <div class="branch-name">
+                                    @(string.IsNullOrWhiteSpace(branch.BranchName) ? "Unknown Branch" : branch.BranchName)
+                                </div>
+
+                                <div class="muted-code">
+                                    @branch.BranchCode
+                                </div>
+                            </div>
+
+                            <div class="branch-rank">
+                                #@rank
+                            </div>
+                        </div>
+
+                        <div class="branch-sales">
+                            @Money(branch.ActualSales)
+                        </div>
+
+                        <div class="branch-progress">
+                            <div class="branch-progress-fill"
+                                 style="width:@Math.Min(branch.AchievementPercentage, 100)%">
+                            </div>
+                        </div>
+
+                        <div class="branch-meta">
+                            Target: @Money(branch.MonthlyTarget)
+                            <br />
+                            Achievement: @Percent(branch.AchievementPercentage)
+                            <br />
+                            Visits: @branch.ActualVisits / @branch.PlannedVisits
+                            <br />
+                            Critical Lines: @branch.CriticalLinesCount
+                        </div>
                     </div>
 
-                    <div class="muted-code">
-                        @branch.BranchCode
-                    </div>
-
-                    <div class="branch-sales">
-                        @Money(branch.ActualSales)
-                    </div>
-
-                    <div class="branch-meta">
-                        Target: @Money(branch.MonthlyTarget)
-                        <br />
-                        Achievement: @Percent(branch.AchievementPercentage)
-                        <br />
-                        Visits: @branch.ActualVisits / @branch.PlannedVisits
-                        <br />
-                        Critical Lines: @branch.CriticalLinesCount
-                    </div>
-                </div>
-            }
+                    rank++;
+                }
+            </div>
         </div>
     }
 
-   
+    <div class="target-note">
+        <i class="bi bi-info-circle"></i>
+        <div>
+            This dashboard is calculated from uploaded sales and visits data from the beginning of the selected month up to the selected date.
+            الداتا اللي رفعتها من أول الشهر تعتبر رصيد افتتاحي، وبعد كده أي رفع يومي جديد بيتجمع فوقها تلقائيًا.
+        </div>
+    </div>
 
     <div class="chart-grid">
 
@@ -814,13 +1248,13 @@
 
     </div>
 
-    @if (hasSelectedDayActivity)
+    @if (hasOperationalDetails)
     {
         <div class="daily-note">
-            <i class="bi bi-calendar-day"></i>
+            <i class="bi bi-calendar-check"></i>
             <div>
-                The following operational tables show activity for the selected day only, if daily files were uploaded for that date.
-                الجداول التالية تظهر تفاصيل اليوم المختار فقط لو تم رفع ملفات يومية لهذا اليوم.
+                The following operational tables show accumulated activity from the beginning of the selected month up to the selected date.
+                الجداول التالية تعرض النشاط المتراكم من أول الشهر حتى التاريخ المختار.
             </div>
         </div>
 
@@ -1052,7 +1486,6 @@
             </div>
         }
     }
-
 
     @{
         var targetChartLabels = Model.BestTargetAchievements
