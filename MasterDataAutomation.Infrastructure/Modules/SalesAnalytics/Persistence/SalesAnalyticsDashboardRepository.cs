@@ -26,17 +26,12 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
 
         var selectedBranchCode = NormalizeCode(branchCode);
 
-        var salesRows = _context.SalesAnalyticsDailySalesReports
-            .AsNoTracking()
-            .Where(x => x.ReportDate >= date && x.ReportDate < nextDate)
-            .ToList();
-
-        var visitRows = _context.SalesAnalyticsDailyVisitReports
-            .AsNoTracking()
-            .Where(x => x.ReportDate >= date && x.ReportDate < nextDate)
-            .ToList();
-
         var monthSalesRows = _context.SalesAnalyticsDailySalesReports
+            .AsNoTracking()
+            .Where(x => x.ReportDate >= monthStart && x.ReportDate < nextDate)
+            .ToList();
+
+        var monthVisitRows = _context.SalesAnalyticsDailyVisitReports
             .AsNoTracking()
             .Where(x => x.ReportDate >= monthStart && x.ReportDate < nextDate)
             .ToList();
@@ -59,10 +54,41 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
                     x.ToDate == latestMtdToDate.Value)
                 .ToList();
 
-        var monthVisitRows = _context.SalesAnalyticsDailyVisitReports
+        var latestMtdVisitsToDate = _context.SalesAnalyticsMtdVisitReports
             .AsNoTracking()
-            .Where(x => x.ReportDate >= monthStart && x.ReportDate < nextDate)
-            .ToList();
+            .Where(x =>
+                x.Year == date.Year &&
+                x.Month == date.Month &&
+                x.ToDate <= date)
+            .Max(x => (DateTime?)x.ToDate);
+
+        var mtdVisitRows = latestMtdVisitsToDate == null
+            ? new List<SalesAnalyticsMtdVisitReportEntity>()
+            : _context.SalesAnalyticsMtdVisitReports
+                .AsNoTracking()
+                .Where(x =>
+                    x.Year == date.Year &&
+                    x.Month == date.Month &&
+                    x.ToDate == latestMtdVisitsToDate.Value)
+                .ToList();
+
+        var dailySalesRowsAfterMtd = latestMtdToDate == null
+            ? monthSalesRows
+            : _context.SalesAnalyticsDailySalesReports
+                .AsNoTracking()
+                .Where(x =>
+                    x.ReportDate > latestMtdToDate.Value &&
+                    x.ReportDate < nextDate)
+                .ToList();
+
+        var dailyVisitRowsAfterMtd = latestMtdVisitsToDate == null
+            ? monthVisitRows
+            : _context.SalesAnalyticsDailyVisitReports
+                .AsNoTracking()
+                .Where(x =>
+                    x.ReportDate > latestMtdVisitsToDate.Value &&
+                    x.ReportDate < nextDate)
+                .ToList();
 
         var monthlyTargets = _context.SalesDistrictMonthlyTargets
             .AsNoTracking()
@@ -104,22 +130,8 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
 
         if (!string.IsNullOrWhiteSpace(selectedBranchCode))
         {
-            salesRows = salesRows
-                .Where(x =>
-                    lineBranchMap.ContainsKey(NormalizeCode(x.LineCode)) &&
-                    lineBranchMap[NormalizeCode(x.LineCode)] == selectedBranchCode)
-                .ToList();
-
             monthSalesRows = monthSalesRows
-                .Where(x =>
-                    lineBranchMap.ContainsKey(NormalizeCode(x.LineCode)) &&
-                    lineBranchMap[NormalizeCode(x.LineCode)] == selectedBranchCode)
-                .ToList();
-
-            visitRows = visitRows
-                .Where(x =>
-                    customerBranchMap.ContainsKey(NormalizeCode(x.CustomerCode)) &&
-                    customerBranchMap[NormalizeCode(x.CustomerCode)] == selectedBranchCode)
+                .Where(x => IsDailySalesInBranch(x, selectedBranchCode, customerBranchMap, lineBranchMap))
                 .ToList();
 
             monthVisitRows = monthVisitRows
@@ -137,42 +149,149 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
                     customerBranchMap.ContainsKey(NormalizeCode(x.CustomerCode)) &&
                     customerBranchMap[NormalizeCode(x.CustomerCode)] == selectedBranchCode)
                 .ToList();
+
+            mtdVisitRows = mtdVisitRows
+                .Where(x =>
+                    customerBranchMap.ContainsKey(NormalizeCode(x.CustomerCode)) &&
+                    customerBranchMap[NormalizeCode(x.CustomerCode)] == selectedBranchCode)
+                .ToList();
+
+            dailySalesRowsAfterMtd = dailySalesRowsAfterMtd
+                .Where(x => IsDailySalesInBranch(x, selectedBranchCode, customerBranchMap, lineBranchMap))
+                .ToList();
+
+            dailyVisitRowsAfterMtd = dailyVisitRowsAfterMtd
+                .Where(x =>
+                    customerBranchMap.ContainsKey(NormalizeCode(x.CustomerCode)) &&
+                    customerBranchMap[NormalizeCode(x.CustomerCode)] == selectedBranchCode)
+                .ToList();
         }
 
-        var totalSales = salesRows.Sum(x => x.SalesAmount);
-        var totalQuantity = salesRows.Sum(x => x.Quantity);
+        var salesToDateRows = new List<SalesToDateRow>();
 
-        var totalVisits = visitRows.Count;
-        var positiveVisits = visitRows.Count(IsPositiveVisit);
-        var negativeVisits = totalVisits - positiveVisits;
+        salesToDateRows.AddRange(mtdSalesRows.Select(x => new SalesToDateRow
+        {
+            LineCode = string.Empty,
+            LineName = string.Empty,
 
-        var totalVisitValue = visitRows.Sum(x => x.SuccessfulVisitValue);
+            CityCode = x.CityCode,
+            CityName = x.CityName,
 
-        var salesByLineMonth = mtdSalesRows
-               .Select(x => new
-               {
-                   Sales = x,
-                   NormalizedCustomerCode = NormalizeCode(x.CustomerCode)
-               })
-               .Where(x =>
-                   !string.IsNullOrWhiteSpace(x.NormalizedCustomerCode) &&
-                   customerDistrictMap.ContainsKey(x.NormalizedCustomerCode))
-               .GroupBy(x => NormalizeCode(customerDistrictMap[x.NormalizedCustomerCode]))
-               .ToDictionary(
-                   g => g.Key,
-                   g => g.Sum(x => x.Sales.TotalAfterTax > 0
-                       ? x.Sales.TotalAfterTax
-                       : x.Sales.SalesAmount));
+            CustomerCode = x.CustomerCode,
+            CustomerName = x.CustomerName,
 
-        var visitsByLineMonth = monthVisitRows
+            ProductCode = x.ProductCode,
+            ProductName = x.ProductName,
+            Unit = x.Unit,
+
+            Quantity = x.Quantity,
+            SalesAmount = x.TotalAfterTax > 0 ? x.TotalAfterTax : x.SalesAmount
+        }));
+
+        salesToDateRows.AddRange(dailySalesRowsAfterMtd.Select(x => new SalesToDateRow
+        {
+            LineCode = x.LineCode,
+            LineName = x.LineName,
+
+            CityCode = x.CityCode,
+            CityName = x.CityName,
+
+            CustomerCode = x.CustomerCode,
+            CustomerName = x.CustomerName,
+
+            ProductCode = x.ProductCode,
+            ProductName = x.ProductName,
+            Unit = x.Unit,
+
+            Quantity = x.Quantity,
+            SalesAmount = x.TotalAfterTax > 0 ? x.TotalAfterTax : x.SalesAmount
+        }));
+
+        var visitsToDateRows = new List<VisitToDateRow>();
+
+        visitsToDateRows.AddRange(mtdVisitRows.Select(x => new VisitToDateRow
+        {
+            SupervisorName = x.SupervisorName,
+            CityName = x.CityName,
+            VisitCode = x.VisitCode,
+
+            SalesRepCode = x.SalesRepCode,
+            SalesRepName = x.SalesRepName,
+
+            CustomerCode = x.CustomerCode,
+            CustomerName = x.CustomerName,
+
+            VisitStatus = x.VisitStatus,
+            NegativeReason = x.NegativeReason,
+            SuccessfulVisitValue = x.SuccessfulVisitValue,
+
+            VisitStartTime = x.VisitStartTime,
+            VisitEndTime = x.VisitEndTime,
+            VisitDurationText = x.VisitDurationText
+        }));
+
+        visitsToDateRows.AddRange(dailyVisitRowsAfterMtd.Select(x => new VisitToDateRow
+        {
+            SupervisorName = x.SupervisorName,
+            CityName = x.CityName,
+            VisitCode = x.VisitCode,
+
+            SalesRepCode = x.SalesRepCode,
+            SalesRepName = x.SalesRepName,
+
+            CustomerCode = x.CustomerCode,
+            CustomerName = x.CustomerName,
+
+            VisitStatus = x.VisitStatus,
+            NegativeReason = x.NegativeReason,
+            SuccessfulVisitValue = x.SuccessfulVisitValue,
+
+            VisitStartTime = x.VisitStartTime,
+            VisitEndTime = x.VisitEndTime,
+            VisitDurationText = x.VisitDurationText
+        }));
+
+        var totalSalesToDate = salesToDateRows.Sum(x => x.SalesAmount);
+        var totalQuantityToDate = salesToDateRows.Sum(x => x.Quantity);
+
+        var totalVisitsToDate = visitsToDateRows.Count;
+        var positiveVisitsToDate = visitsToDateRows.Count(IsPositiveVisit);
+        var negativeVisitsToDate = totalVisitsToDate - positiveVisitsToDate;
+
+        var totalVisitValueToDate = visitsToDateRows.Sum(x => x.SuccessfulVisitValue);
+
+        var salesByLineMonth = salesToDateRows
             .Select(x => new
             {
-                NormalizedCustomerCode = NormalizeCode(x.CustomerCode)
+                Sales = x,
+                SalesDistrictCode = ResolveSalesDistrictCode(x.CustomerCode, x.LineCode, customerDistrictMap)
             })
-            .Where(x =>
-                !string.IsNullOrWhiteSpace(x.NormalizedCustomerCode) &&
-                customerDistrictMap.ContainsKey(x.NormalizedCustomerCode))
-            .GroupBy(x => NormalizeCode(customerDistrictMap[x.NormalizedCustomerCode]))
+            .Where(x => !string.IsNullOrWhiteSpace(x.SalesDistrictCode))
+            .GroupBy(x => x.SalesDistrictCode)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Sum(x => x.Sales.SalesAmount));
+
+        var quantityByLineMonth = salesToDateRows
+            .Select(x => new
+            {
+                Sales = x,
+                SalesDistrictCode = ResolveSalesDistrictCode(x.CustomerCode, x.LineCode, customerDistrictMap)
+            })
+            .Where(x => !string.IsNullOrWhiteSpace(x.SalesDistrictCode))
+            .GroupBy(x => x.SalesDistrictCode)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Sum(x => x.Sales.Quantity));
+
+        var visitsByLineMonth = visitsToDateRows
+            .Select(x => new
+            {
+                Visit = x,
+                SalesDistrictCode = ResolveSalesDistrictCode(x.CustomerCode, null, customerDistrictMap)
+            })
+            .Where(x => !string.IsNullOrWhiteSpace(x.SalesDistrictCode))
+            .GroupBy(x => x.SalesDistrictCode)
             .ToDictionary(
                 g => g.Key,
                 g => g.Count());
@@ -296,20 +415,20 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
             });
         }
 
-        if (negativeVisits > 0)
+        if (negativeVisitsToDate > 0)
         {
-            var negativeVisitPercentage = CalculatePercentage(negativeVisits, totalVisits);
+            var negativeVisitPercentage = CalculatePercentage(negativeVisitsToDate, totalVisitsToDate);
 
             alerts.Add(new CeoAlertDto
             {
                 Title = "Negative Visits Recorded",
-                Message = $"{negativeVisits} negative visits recorded today, representing {negativeVisitPercentage:N2}% of total visits.",
+                Message = $"{negativeVisitsToDate} negative visits recorded up to selected date, representing {negativeVisitPercentage:N2}% of total visits.",
                 Severity = negativeVisitPercentage >= 25 ? "Warning" : "Info",
                 Icon = "bi-exclamation-triangle"
             });
         }
 
-        var topNegativeReason = visitRows
+        var topNegativeReason = visitsToDateRows
             .Where(x => !IsPositiveVisit(x))
             .GroupBy(x => string.IsNullOrWhiteSpace(x.NegativeReason)
                 ? "No Reason"
@@ -333,7 +452,7 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
             });
         }
 
-        if (totalSales == 0 && totalVisits == 0)
+        if (totalSalesToDate == 0 && totalVisitsToDate == 0)
         {
             alerts.Add(new CeoAlertDto
             {
@@ -344,26 +463,136 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
             });
         }
 
+        var salesDistrictNameMap = monthlyTargets
+            .GroupBy(x => NormalizeCode(x.SalesDistrictCode))
+            .ToDictionary(
+                g => g.Key,
+                g => g.First().SalesDistrictName);
+
+        var salesByLines = salesByLineMonth
+            .Where(x => x.Value > 0)
+            .Select(x =>
+            {
+                var lineName = salesDistrictNameMap.TryGetValue(x.Key, out var name)
+                    ? name
+                    : x.Key;
+
+                var quantity = quantityByLineMonth.TryGetValue(x.Key, out var qty)
+                    ? qty
+                    : 0;
+
+                return new SalesByLineDto
+                {
+                    LineCode = x.Key,
+                    LineName = lineName,
+                    TotalSales = x.Value,
+                    TotalQuantity = quantity,
+                    ContributionPercentage = CalculatePercentage(x.Value, totalSalesToDate)
+                };
+            })
+            .OrderByDescending(x => x.TotalSales)
+            .Take(10)
+            .ToList();
+
+        var visitsBySalesReps = visitsToDateRows
+            .Where(x => !string.IsNullOrWhiteSpace(x.SalesRepCode))
+            .GroupBy(x => new { x.SalesRepCode, x.SalesRepName })
+            .Select(g =>
+            {
+                var repTotalVisits = g.Count();
+                var repPositiveVisits = g.Count(IsPositiveVisit);
+                var repNegativeVisits = repTotalVisits - repPositiveVisits;
+
+                return new VisitsBySalesRepDto
+                {
+                    SalesRepCode = g.Key.SalesRepCode,
+                    SalesRepName = g.Key.SalesRepName,
+                    TotalVisits = repTotalVisits,
+                    PositiveVisits = repPositiveVisits,
+                    NegativeVisits = repNegativeVisits,
+                    PositiveVisitPercentage = CalculatePercentage(repPositiveVisits, repTotalVisits),
+                    TotalVisitValue = g.Sum(x => x.SuccessfulVisitValue)
+                };
+            })
+            .OrderByDescending(x => x.TotalVisits)
+            .Take(10)
+            .ToList();
+
+        var bottomCustomers = visitsToDateRows
+            .GroupBy(x => new
+            {
+                x.CustomerCode,
+                x.CustomerName
+            })
+            .Select(g =>
+            {
+                var lastVisit = g.Last();
+
+                return new BottomCustomerTodayDto
+                {
+                    CustomerCode = g.Key.CustomerCode,
+                    CustomerName = g.Key.CustomerName,
+                    SalesRepCode = lastVisit.SalesRepCode,
+                    SalesRepName = lastVisit.SalesRepName,
+                    VisitStatus = lastVisit.VisitStatus,
+                    NegativeReason = lastVisit.NegativeReason,
+                    SalesValue = g.Sum(x => x.SuccessfulVisitValue)
+                };
+            })
+            .OrderBy(x => x.SalesValue)
+            .ThenBy(x => x.CustomerName)
+            .Take(5)
+            .ToList();
+
+        var negativeVisitReasons = visitsToDateRows
+            .Where(x => !IsPositiveVisit(x))
+            .GroupBy(x => string.IsNullOrWhiteSpace(x.NegativeReason)
+                ? "No Reason"
+                : x.NegativeReason.Trim())
+            .Select(g => new NegativeVisitReasonDto
+            {
+                Reason = g.Key,
+                Count = g.Count(),
+                Percentage = CalculatePercentage(g.Count(), negativeVisitsToDate)
+            })
+            .OrderByDescending(x => x.Count)
+            .Take(10)
+            .ToList();
+
+        var topProducts = salesToDateRows
+            .Where(x => !string.IsNullOrWhiteSpace(x.ProductName))
+            .GroupBy(x => x.ProductName)
+            .Select(g => new ProductPerformanceDto
+            {
+                ProductName = g.Key,
+                TotalSales = g.Sum(x => x.SalesAmount),
+                TotalQuantity = g.Sum(x => x.Quantity),
+                ContributionPercentage = CalculatePercentage(g.Sum(x => x.SalesAmount), totalSalesToDate)
+            })
+            .OrderByDescending(x => x.TotalSales)
+            .Take(10)
+            .ToList();
+
         var dashboard = new SalesAnalyticsDashboardDto
         {
             ReportDate = date,
 
             Kpis = new SalesAnalyticsKpiDto
             {
-                TotalSales = totalSales,
-                TotalQuantity = totalQuantity,
-                TotalVisits = totalVisits,
-                PositiveVisits = positiveVisits,
-                NegativeVisits = negativeVisits,
-                PositiveVisitPercentage = CalculatePercentage(positiveVisits, totalVisits),
-                ActiveSalesReps = visitRows
+                TotalSales = totalSalesToDate,
+                TotalQuantity = totalQuantityToDate,
+                TotalVisits = totalVisitsToDate,
+                PositiveVisits = positiveVisitsToDate,
+                NegativeVisits = negativeVisitsToDate,
+                PositiveVisitPercentage = CalculatePercentage(positiveVisitsToDate, totalVisitsToDate),
+                ActiveSalesReps = visitsToDateRows
                     .Where(x => !string.IsNullOrWhiteSpace(x.SalesRepCode))
                     .Select(x => x.SalesRepCode)
                     .Distinct()
                     .Count(),
-                AverageVisitValue = positiveVisits == 0
+                AverageVisitValue = positiveVisitsToDate == 0
                     ? 0
-                    : Math.Round(totalVisitValue / positiveVisits, 2)
+                    : Math.Round(totalVisitValueToDate / positiveVisitsToDate, 2)
             },
 
             TargetSummary = targetSummary,
@@ -372,95 +601,11 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
             LowestTargetAchievements = lowestTargetAchievements,
             BestTargetAchievements = bestTargetAchievements,
 
-            SalesByLines = salesRows
-                .GroupBy(x => new { x.LineCode, x.LineName })
-                .Select(g => new SalesByLineDto
-                {
-                    LineCode = g.Key.LineCode,
-                    LineName = g.Key.LineName,
-                    TotalSales = g.Sum(x => x.SalesAmount),
-                    TotalQuantity = g.Sum(x => x.Quantity),
-                    ContributionPercentage = CalculatePercentage(g.Sum(x => x.SalesAmount), totalSales)
-                })
-                .OrderByDescending(x => x.TotalSales)
-                .Take(10)
-                .ToList(),
-
-            VisitsBySalesReps = visitRows
-                .GroupBy(x => new { x.SalesRepCode, x.SalesRepName })
-                .Select(g =>
-                {
-                    var repTotalVisits = g.Count();
-                    var repPositiveVisits = g.Count(IsPositiveVisit);
-                    var repNegativeVisits = repTotalVisits - repPositiveVisits;
-
-                    return new VisitsBySalesRepDto
-                    {
-                        SalesRepCode = g.Key.SalesRepCode,
-                        SalesRepName = g.Key.SalesRepName,
-                        TotalVisits = repTotalVisits,
-                        PositiveVisits = repPositiveVisits,
-                        NegativeVisits = repNegativeVisits,
-                        PositiveVisitPercentage = CalculatePercentage(repPositiveVisits, repTotalVisits),
-                        TotalVisitValue = g.Sum(x => x.SuccessfulVisitValue)
-                    };
-                })
-                .OrderByDescending(x => x.TotalVisits)
-                .Take(10)
-                .ToList(),
-
-            BottomCustomersToday = visitRows
-                .GroupBy(x => new
-                {
-                    x.CustomerCode,
-                    x.CustomerName,
-                    x.SalesRepCode,
-                    x.SalesRepName,
-                    x.VisitStatus,
-                    x.NegativeReason
-                })
-                .Select(g => new BottomCustomerTodayDto
-                {
-                    CustomerCode = g.Key.CustomerCode,
-                    CustomerName = g.Key.CustomerName,
-                    SalesRepCode = g.Key.SalesRepCode,
-                    SalesRepName = g.Key.SalesRepName,
-                    VisitStatus = g.Key.VisitStatus,
-                    NegativeReason = g.Key.NegativeReason,
-                    SalesValue = g.Sum(x => x.SuccessfulVisitValue)
-                })
-                .OrderBy(x => x.SalesValue)
-                .ThenBy(x => x.CustomerName)
-                .Take(5)
-                .ToList(),
-
-            NegativeVisitReasons = visitRows
-                .Where(x => !IsPositiveVisit(x))
-                .GroupBy(x => string.IsNullOrWhiteSpace(x.NegativeReason)
-                    ? "No Reason"
-                    : x.NegativeReason.Trim())
-                .Select(g => new NegativeVisitReasonDto
-                {
-                    Reason = g.Key,
-                    Count = g.Count(),
-                    Percentage = CalculatePercentage(g.Count(), negativeVisits)
-                })
-                .OrderByDescending(x => x.Count)
-                .Take(10)
-                .ToList(),
-
-            TopProducts = salesRows
-                .GroupBy(x => x.ProductName)
-                .Select(g => new ProductPerformanceDto
-                {
-                    ProductName = g.Key,
-                    TotalSales = g.Sum(x => x.SalesAmount),
-                    TotalQuantity = g.Sum(x => x.Quantity),
-                    ContributionPercentage = CalculatePercentage(g.Sum(x => x.SalesAmount), totalSales)
-                })
-                .OrderByDescending(x => x.TotalSales)
-                .Take(10)
-                .ToList()
+            SalesByLines = salesByLines,
+            VisitsBySalesReps = visitsBySalesReps,
+            BottomCustomersToday = bottomCustomers,
+            NegativeVisitReasons = negativeVisitReasons,
+            TopProducts = topProducts
         };
 
         return dashboard;
@@ -478,18 +623,99 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
             .Select(x => (DateTime?)x.ReportDate)
             .Max();
 
-        if (latestSalesDate == null && latestVisitsDate == null)
-            return null;
+        var latestMtdSalesDate = _context.SalesAnalyticsMtdSalesReports
+            .AsNoTracking()
+            .Select(x => (DateTime?)x.ToDate)
+            .Max();
 
-        if (latestSalesDate == null)
-            return latestVisitsDate.Value.Date;
+        var latestMtdVisitsDate = _context.SalesAnalyticsMtdVisitReports
+            .AsNoTracking()
+            .Select(x => (DateTime?)x.ToDate)
+            .Max();
 
-        if (latestVisitsDate == null)
-            return latestSalesDate.Value.Date;
+        var dates = new[]
+            {
+                latestSalesDate,
+                latestVisitsDate,
+                latestMtdSalesDate,
+                latestMtdVisitsDate
+            }
+            .Where(x => x.HasValue)
+            .Select(x => x!.Value.Date)
+            .ToList();
 
-        return latestSalesDate > latestVisitsDate
-            ? latestSalesDate.Value.Date
-            : latestVisitsDate.Value.Date;
+        return dates.Any()
+            ? dates.Max()
+            : null;
+    }
+
+    public List<BranchOptionDto> GetBranchOptions()
+    {
+        var rows = _context.SalesAnalyticsCustomers
+            .AsNoTracking()
+            .Where(x => !string.IsNullOrWhiteSpace(x.BranchCode))
+            .Select(x => new
+            {
+                x.BranchCode,
+                x.BranchName
+            })
+            .ToList();
+
+        return rows
+            .GroupBy(x => NormalizeCode(x.BranchCode))
+            .Select(g =>
+            {
+                var first = g.First();
+
+                return new BranchOptionDto
+                {
+                    BranchCode = first.BranchCode ?? string.Empty,
+                    BranchName = string.IsNullOrWhiteSpace(first.BranchName)
+                        ? first.BranchCode ?? string.Empty
+                        : first.BranchName
+                };
+            })
+            .Where(x => !string.IsNullOrWhiteSpace(x.BranchCode))
+            .OrderBy(x => x.BranchName)
+            .ToList();
+    }
+
+    private static bool IsDailySalesInBranch(
+        SalesAnalyticsDailySalesReportEntity row,
+        string selectedBranchCode,
+        Dictionary<string, string> customerBranchMap,
+        Dictionary<string, string> lineBranchMap)
+    {
+        var normalizedCustomerCode = NormalizeCode(row.CustomerCode);
+
+        if (!string.IsNullOrWhiteSpace(normalizedCustomerCode) &&
+            customerBranchMap.ContainsKey(normalizedCustomerCode))
+        {
+            return customerBranchMap[normalizedCustomerCode] == selectedBranchCode;
+        }
+
+        var normalizedLineCode = NormalizeCode(row.LineCode);
+
+        return !string.IsNullOrWhiteSpace(normalizedLineCode) &&
+               lineBranchMap.ContainsKey(normalizedLineCode) &&
+               lineBranchMap[normalizedLineCode] == selectedBranchCode;
+    }
+
+    private static string ResolveSalesDistrictCode(
+        string? customerCode,
+        string? fallbackLineCode,
+        Dictionary<string, string> customerDistrictMap)
+    {
+        var normalizedCustomerCode = NormalizeCode(customerCode);
+
+        if (!string.IsNullOrWhiteSpace(normalizedCustomerCode) &&
+            customerDistrictMap.ContainsKey(normalizedCustomerCode) &&
+            !string.IsNullOrWhiteSpace(customerDistrictMap[normalizedCustomerCode]))
+        {
+            return customerDistrictMap[normalizedCustomerCode];
+        }
+
+        return NormalizeCode(fallbackLineCode);
     }
 
     private static string NormalizeCode(string? code)
@@ -532,34 +758,45 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
         return Math.Round(((decimal)value / total) * 100, 2);
     }
 
-    public List<BranchOptionDto> GetBranchOptions()
+    private sealed class SalesToDateRow
     {
-        var rows = _context.SalesAnalyticsCustomers
-            .AsNoTracking()
-            .Where(x => !string.IsNullOrWhiteSpace(x.BranchCode))
-            .Select(x => new
-            {
-                x.BranchCode,
-                x.BranchName
-            })
-            .ToList();
+        public string? LineCode { get; set; }
+        public string? LineName { get; set; }
 
-        return rows
-            .GroupBy(x => NormalizeCode(x.BranchCode))
-            .Select(g =>
-            {
-                var first = g.First();
+        public string? CityCode { get; set; }
+        public string? CityName { get; set; }
 
-                return new BranchOptionDto
-                {
-                    BranchCode = first.BranchCode ?? string.Empty,
-                    BranchName = string.IsNullOrWhiteSpace(first.BranchName)
-                        ? first.BranchCode ?? string.Empty
-                        : first.BranchName
-                };
-            })
-            .Where(x => !string.IsNullOrWhiteSpace(x.BranchCode))
-            .OrderBy(x => x.BranchName)
-            .ToList();
+        public string CustomerCode { get; set; } = string.Empty;
+        public string CustomerName { get; set; } = string.Empty;
+
+        public string ProductCode { get; set; } = string.Empty;
+        public string ProductName { get; set; } = string.Empty;
+        public string? Unit { get; set; }
+
+        public decimal Quantity { get; set; }
+        public decimal SalesAmount { get; set; }
+    }
+
+    private sealed class VisitToDateRow
+    {
+        public string? SupervisorName { get; set; }
+        public string? CityName { get; set; }
+        public string? VisitCode { get; set; }
+
+        public string SalesRepCode { get; set; } = string.Empty;
+        public string SalesRepName { get; set; } = string.Empty;
+
+        public string CustomerCode { get; set; } = string.Empty;
+        public string CustomerName { get; set; } = string.Empty;
+
+        public string? VisitStatus { get; set; }
+        public string? NegativeReason { get; set; }
+
+        public decimal SuccessfulVisitValue { get; set; }
+
+        public DateTime? VisitStartTime { get; set; }
+        public DateTime? VisitEndTime { get; set; }
+
+        public string? VisitDurationText { get; set; }
     }
 }

@@ -198,47 +198,60 @@ public class SalesAnalyticsMasterDataRepository : ISalesAnalyticsMasterDataRepos
         }
     }
 
-    public void ReplaceDailySalesReport(List<SalesAnalyticsDailySalesImportDto> salesRows,int uploadBatchId,DateTime reportDate)
+    public void ReplaceDailySalesReport(
+    List<SalesAnalyticsDailySalesImportDto> salesRows,
+    int uploadBatchId,
+    DateTime reportDate)
     {
-        using var transaction = _context.Database.BeginTransaction();
+        var normalizedReportDate = reportDate.Date;
 
-        try
+        var oldRows = _context.SalesAnalyticsDailySalesReports
+            .Where(x =>
+                x.ReportDate >= normalizedReportDate &&
+                x.ReportDate < normalizedReportDate.AddDays(1))
+            .ToList();
+
+        if (oldRows.Any())
         {
-            var oldRows = _context.SalesAnalyticsDailySalesReports
-                .Where(x => x.ReportDate.Date == reportDate.Date)
-                .ToList();
-
-            if (oldRows.Any())
-            {
-                _context.SalesAnalyticsDailySalesReports.RemoveRange(oldRows);
-                _context.SaveChanges();
-            }
-
-            var entities = salesRows.Select(x => new SalesAnalyticsDailySalesReportEntity
-            {
-                ReportDate = reportDate.Date,
-
-                LineCode = x.LineCode.Trim(),
-                LineName = x.LineName.Trim(),
-                ProductName = x.ProductName.Trim(),
-
-                Quantity = x.Quantity,
-                SalesAmount = x.SalesAmount,
-
-                ImportedAt = DateTime.Now,
-                UploadBatchId = uploadBatchId
-            }).ToList();
-
-            _context.SalesAnalyticsDailySalesReports.AddRange(entities);
-            _context.SaveChanges();
-
-            transaction.Commit();
+            _context.SalesAnalyticsDailySalesReports.RemoveRange(oldRows);
         }
-        catch
+
+        var entities = salesRows.Select(x => new SalesAnalyticsDailySalesReportEntity
         {
-            transaction.Rollback();
-            throw;
-        }
+            ReportDate = normalizedReportDate,
+
+            LineCode = string.IsNullOrWhiteSpace(x.LineCode)
+                ? x.CityCode ?? string.Empty
+                : x.LineCode,
+
+            LineName = string.IsNullOrWhiteSpace(x.LineName)
+                ? x.CityName ?? string.Empty
+                : x.LineName,
+
+            CityCode = x.CityCode,
+            CityName = x.CityName,
+
+            CustomerCode = x.CustomerCode,
+            CustomerName = x.CustomerName,
+
+            ProductCode = x.ProductCode,
+            ProductName = x.ProductName,
+            Unit = x.Unit,
+
+            Quantity = x.Quantity,
+            SalesAmount = x.SalesAmount,
+            DiscountAmount = x.DiscountAmount,
+            TaxPercentage = x.TaxPercentage,
+            TaxAmount = x.TaxAmount,
+            TotalBeforeTax = x.TotalBeforeTax,
+            TotalAfterTax = x.TotalAfterTax,
+
+            UploadBatchId = uploadBatchId,
+            ImportedAt = DateTime.Now
+        }).ToList();
+
+        _context.SalesAnalyticsDailySalesReports.AddRange(entities);
+        _context.SaveChanges();
     }
 
     public void ReplaceDailyVisitsReport(List<SalesAnalyticsDailyVisitImportDto> visitRows,int uploadBatchId,DateTime reportDate)
@@ -294,6 +307,61 @@ public class SalesAnalyticsMasterDataRepository : ISalesAnalyticsMasterDataRepos
             transaction.Rollback();
             throw;
         }
+    }
+
+    public void ReplaceMtdVisitsReport(
+    List<SalesAnalyticsMtdVisitImportDto> visitRows,
+    int uploadBatchId,
+    DateTime toDate)
+    {
+        var normalizedToDate = toDate.Date;
+        var fromDate = new DateTime(normalizedToDate.Year, normalizedToDate.Month, 1);
+
+        var oldRows = _context.SalesAnalyticsMtdVisitReports
+            .Where(x =>
+                x.Year == normalizedToDate.Year &&
+                x.Month == normalizedToDate.Month &&
+                x.ToDate >= normalizedToDate &&
+                x.ToDate < normalizedToDate.AddDays(1))
+            .ToList();
+
+        if (oldRows.Any())
+        {
+            _context.SalesAnalyticsMtdVisitReports.RemoveRange(oldRows);
+        }
+
+        var entities = visitRows.Select(x => new SalesAnalyticsMtdVisitReportEntity
+        {
+            Year = normalizedToDate.Year,
+            Month = normalizedToDate.Month,
+            FromDate = fromDate,
+            ToDate = normalizedToDate,
+
+            VisitDate = x.VisitDate,
+            SupervisorName = x.SupervisorName,
+            CityName = x.CityName,
+            VisitCode = x.VisitCode,
+
+            SalesRepCode = x.SalesRepCode,
+            SalesRepName = x.SalesRepName,
+
+            CustomerCode = x.CustomerCode,
+            CustomerName = x.CustomerName,
+
+            VisitStatus = x.VisitStatus,
+            NegativeReason = x.NegativeReason,
+            SuccessfulVisitValue = x.SuccessfulVisitValue,
+
+            VisitStartTime = x.VisitStartTime,
+            VisitEndTime = x.VisitEndTime,
+            VisitDurationText = x.VisitDurationText,
+
+            UploadBatchId = uploadBatchId,
+            ImportedAt = DateTime.Now
+        }).ToList();
+
+        _context.SalesAnalyticsMtdVisitReports.AddRange(entities);
+        _context.SaveChanges();
     }
 
     public List<SalesAnalyticsUploadHistoryDto> GetUploadHistory(int take = 50)

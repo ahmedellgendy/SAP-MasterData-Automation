@@ -26,6 +26,7 @@
             SalesAnalyticsUploadFileType.DailySalesReport => "Daily Sales Report",
             SalesAnalyticsUploadFileType.MtdSalesReport => "MTD Sales Report",
             SalesAnalyticsUploadFileType.DailyVisitsReport => "Daily Visits Report",
+            SalesAnalyticsUploadFileType.MtdVisitsReport => "MTD Visits Report",
             SalesAnalyticsUploadFileType.MonthlyTargets => "Monthly Targets",
             _ => type.ToString()
         };
@@ -317,6 +318,23 @@
 
             <div class="upload-desc">
                 Upload SalesBuzz sales report from month start to selected date for monthly target achievement.
+            </div>
+        </a>
+
+        <a asp-controller="SalesAnalyticsMasterData"
+           asp-action="MtdVisitsReport"
+           class="upload-card">
+
+            <div class="upload-icon">
+                <i class="bi bi-calendar-check"></i>
+            </div>
+
+            <div class="upload-title">
+                MTD Visits Upload
+            </div>
+
+            <div class="upload-desc">
+                Upload SalesBuzz visits report from month start to selected date for monthly visit achievement.
             </div>
         </a>
 

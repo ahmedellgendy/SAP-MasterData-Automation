@@ -36,4 +36,13 @@ public interface ISalesAnalyticsMasterDataImportService
     Stream fileStream,
     string originalFileName,
     string? uploadedBy);
+
+    SalesAnalyticsImportResultDto ImportMtdVisitsReport(
+    Stream fileStream,
+    string originalFileName,
+    DateTime toDate,
+    string? uploadedBy);
+
+
+
 }

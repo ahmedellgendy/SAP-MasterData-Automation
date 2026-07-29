@@ -266,4 +266,50 @@ public class SalesAnalyticsMasterDataController : Controller
         return RedirectToAction(nameof(MtdSalesReport));
     }
 
+
+    [HttpGet]
+    public IActionResult MtdVisitsReport()
+    {
+        ViewBag.Today = DateTime.Today.ToString("yyyy-MM-dd");
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [RequestSizeLimit(200_000_000)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 200_000_000)]
+    public IActionResult UploadMtdVisitsReport(IFormFile file, DateTime toDate)
+    {
+        if (file == null || file.Length == 0)
+        {
+            TempData["Error"] = "Please select MTD visits report file.";
+            return RedirectToAction(nameof(MtdVisitsReport));
+        }
+
+        if (toDate == default)
+        {
+            TempData["Error"] = "Please select report To Date.";
+            return RedirectToAction(nameof(MtdVisitsReport));
+        }
+
+        using var stream = file.OpenReadStream();
+
+        var result = _importService.ImportMtdVisitsReport(
+            stream,
+            file.FileName,
+            toDate,
+            User.Identity?.Name);
+
+        if (result.Success)
+        {
+            TempData["Success"] =
+                $"MTD Visits Report uploaded successfully. Imported: {result.ImportedRows}, Failed: {result.FailedRows}";
+        }
+        else
+        {
+            TempData["Error"] = result.Message ?? "Failed to upload MTD Visits Report.";
+        }
+
+        return RedirectToAction(nameof(MtdVisitsReport));
+    }
 }

@@ -8,6 +8,7 @@ public enum SalesAnalyticsUploadFileType
     DailySalesReport = 4,
     DailyVisitsReport = 5,
     MonthlyTargets = 6,
-    MtdSalesReport = 7
+    MtdSalesReport = 7,
+    MtdVisitsReport = 8
 
 }

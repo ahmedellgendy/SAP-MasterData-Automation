@@ -3,9 +3,8 @@ using ExcelDataReader;
 using MasterDataAutomation.Application.Modules.SalesAnalytics.Dtos;
 using MasterDataAutomation.Application.Modules.SalesAnalytics.Enums;
 using MasterDataAutomation.Application.Modules.SalesAnalytics.Interfaces;
-using System.Text;
-using ExcelDataReader;
 using System.Data;
+using System.Globalization;
 using System.Text;
 
 namespace MasterDataAutomation.Infrastructure.Modules.SalesAnalytics.Services;
@@ -15,7 +14,9 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
     private readonly ISalesAnalyticsMasterDataRepository _repository;
     private readonly ISalesDistrictMonthlyTargetRepository _targetRepository;
 
-    public SalesAnalyticsMasterDataImportService(ISalesAnalyticsMasterDataRepository repository, ISalesDistrictMonthlyTargetRepository targetRepository )
+    public SalesAnalyticsMasterDataImportService(
+        ISalesAnalyticsMasterDataRepository repository,
+        ISalesDistrictMonthlyTargetRepository targetRepository)
     {
         _repository = repository;
         _targetRepository = targetRepository;
@@ -75,7 +76,6 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
             }
 
             var headers = BuildHeaderMap(worksheet, headerRow);
-
             var lastRow = worksheet.LastRowUsed()?.RowNumber() ?? headerRow;
 
             var customers = new List<SalesAnalyticsCustomerImportDto>();
@@ -105,7 +105,7 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
 
                 customers.Add(new SalesAnalyticsCustomerImportDto
                 {
-                    CustomerCode = customerCode,
+                    CustomerCode = NormalizeCode(customerCode),
                     CustomerName = customerName,
 
                     CustomerAccountGroup = GetValue(worksheet, row, headers, "Customer Account Group"),
@@ -131,7 +131,7 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
             }
 
             customers = customers
-                .GroupBy(x => x.CustomerCode)
+                .GroupBy(x => NormalizeCode(x.CustomerCode))
                 .Select(x => x.First())
                 .ToList();
 
@@ -176,9 +176,9 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
     }
 
     public SalesAnalyticsImportResultDto ImportSalesRepsMaster(
-    Stream fileStream,
-    string originalFileName,
-    string? uploadedBy)
+        Stream fileStream,
+        string originalFileName,
+        string? uploadedBy)
     {
         var uploadBatchId = _repository.CreateUploadBatch(
             SalesAnalyticsUploadFileType.SalesRepMaster,
@@ -229,7 +229,6 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
             }
 
             var headers = BuildHeaderMap(worksheet, headerRow);
-
             var lastRow = worksheet.LastRowUsed()?.RowNumber() ?? headerRow;
 
             var salesReps = new List<SalesAnalyticsSalesRepImportDto>();
@@ -259,7 +258,7 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
 
                 salesReps.Add(new SalesAnalyticsSalesRepImportDto
                 {
-                    SalesRepCode = salesRepCode,
+                    SalesRepCode = NormalizeCode(salesRepCode),
                     SalesRepName = salesRepName,
 
                     BranchCode = GetValue(worksheet, row, headers, "SOff."),
@@ -277,7 +276,7 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
             }
 
             salesReps = salesReps
-                .GroupBy(x => x.SalesRepCode)
+                .GroupBy(x => NormalizeCode(x.SalesRepCode))
                 .Select(x => x.First())
                 .ToList();
 
@@ -322,13 +321,11 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
     }
 
     public SalesAnalyticsImportResultDto ImportDailySalesReport(
-    Stream fileStream,
-    string originalFileName,
-    DateTime reportDate,
-    string? uploadedBy)
+        Stream fileStream,
+        string originalFileName,
+        DateTime reportDate,
+        string? uploadedBy)
     {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-
         var uploadBatchId = _repository.CreateUploadBatch(
             SalesAnalyticsUploadFileType.DailySalesReport,
             originalFileName,
@@ -337,23 +334,12 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
 
         try
         {
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
             using var reader = ExcelReaderFactory.CreateReader(fileStream);
+            var dataSet = reader.AsDataSet();
 
-            var dataSet = reader.AsDataSet(new ExcelDataSetConfiguration
-            {
-                ConfigureDataTable = _ => new ExcelDataTableConfiguration
-                {
-                    UseHeaderRow = false
-                }
-            });
-
-            var table = dataSet.Tables
-                .Cast<DataTable>()
-                .FirstOrDefault(x => x.TableName.Equals("Sheet2", StringComparison.OrdinalIgnoreCase))
-                ?? dataSet.Tables.Cast<DataTable>().Skip(1).FirstOrDefault()
-                ?? dataSet.Tables.Cast<DataTable>().FirstOrDefault();
-
-            if (table == null)
+            if (dataSet.Tables.Count == 0)
             {
                 _repository.CompleteUploadBatch(
                     uploadBatchId,
@@ -361,101 +347,144 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
                     0,
                     0,
                     0,
-                    "Excel file does not contain any sheets.");
+                    "No sheets found in the uploaded daily sales report.");
 
                 return new SalesAnalyticsImportResultDto
                 {
                     Success = false,
-                    Message = "Excel file does not contain any sheets."
+                    Message = "No sheets found in the uploaded daily sales report.",
+                    TotalRows = 0,
+                    ImportedRows = 0,
+                    FailedRows = 0
                 };
             }
-
-            var headerRowIndex = FindDailySalesHeaderRow(table);
-
-            if (headerRowIndex == -1)
-            {
-                _repository.CompleteUploadBatch(
-                    uploadBatchId,
-                    SalesAnalyticsUploadStatus.Failed,
-                    0,
-                    0,
-                    0,
-                    "Could not find required headers: الكود, الخط, الكمية, اسم الصنف, القيمة.");
-
-                return new SalesAnalyticsImportResultDto
-                {
-                    Success = false,
-                    Message = "Could not find required headers: الكود, الخط, الكمية, اسم الصنف, القيمة."
-                };
-            }
-
-            var headers = BuildDataTableHeaderMap(table, headerRowIndex);
 
             var salesRows = new List<SalesAnalyticsDailySalesImportDto>();
-
-            var totalRows = 0;
             var failedRows = 0;
 
-            for (var row = headerRowIndex + 1; row < table.Rows.Count; row++)
+            string? currentCityCode = null;
+            string? currentCityName = null;
+            string? currentCustomerCode = null;
+            string? currentCustomerName = null;
+
+            foreach (DataTable table in dataSet.Tables)
             {
-                var lineCode = GetTableValue(table, row, headers, "الكود");
-                var lineName = GetTableValue(table, row, headers, "الخط");
-                var productName = GetTableValue(table, row, headers, "اسم الصنف");
-
-                var quantityText = GetTableValue(table, row, headers, "الكمية");
-                var salesAmountText = GetTableValue(table, row, headers, "القيمة");
-
-                if (string.IsNullOrWhiteSpace(lineCode) &&
-                    string.IsNullOrWhiteSpace(lineName) &&
-                    string.IsNullOrWhiteSpace(productName))
+                for (var rowIndex = 0; rowIndex < table.Rows.Count; rowIndex++)
                 {
-                    continue;
+                    var groupType = GetCellText(table, rowIndex, 44);
+
+                    if (IsSameText(groupType, "المدينة"))
+                    {
+                        currentCityCode = NormalizeCode(GetCellText(table, rowIndex, 14));
+                        currentCityName = GetCellText(table, rowIndex, 28).Trim();
+                        continue;
+                    }
+
+                    if (IsSameText(groupType, "العميل"))
+                    {
+                        currentCustomerCode = NormalizeCode(GetCellText(table, rowIndex, 14));
+                        currentCustomerName = GetCellText(table, rowIndex, 28).Trim();
+                        continue;
+                    }
+
+                    var productCode = GetCellText(table, rowIndex, 48);
+                    var productName = GetFirstAvailableCellText(table, rowIndex, 40, 39);
+                    var unit = GetCellText(table, rowIndex, 37);
+
+                    if (string.IsNullOrWhiteSpace(productCode) ||
+                        string.IsNullOrWhiteSpace(productName))
+                    {
+                        continue;
+                    }
+
+                    var quantity = ParseDecimal(GetCellText(table, rowIndex, 31));
+                    var salesAmount = ParseDecimal(GetCellText(table, rowIndex, 25));
+                    var discountAmount = ParseDecimal(GetCellText(table, rowIndex, 21));
+                    var taxPercentage = ParseDecimal(GetCellText(table, rowIndex, 4));
+                    var taxAmount = ParseDecimal(GetCellText(table, rowIndex, 16));
+                    var totalBeforeTax = ParseDecimal(GetCellText(table, rowIndex, 10));
+                    var totalAfterTax = ParseDecimal(GetCellText(table, rowIndex, 0));
+
+                    if (string.IsNullOrWhiteSpace(currentCustomerCode) ||
+                        string.IsNullOrWhiteSpace(currentCustomerName))
+                    {
+                        failedRows++;
+                        continue;
+                    }
+
+                    if (salesAmount == 0 && totalAfterTax == 0 && quantity == 0)
+                    {
+                        continue;
+                    }
+
+                    salesRows.Add(new SalesAnalyticsDailySalesImportDto
+                    {
+                        LineCode = currentCityCode ?? string.Empty,
+                        LineName = currentCityName ?? string.Empty,
+
+                        CityCode = currentCityCode,
+                        CityName = currentCityName,
+
+                        CustomerCode = currentCustomerCode,
+                        CustomerName = currentCustomerName,
+
+                        ProductCode = NormalizeCode(productCode),
+                        ProductName = productName.Trim(),
+                        Unit = unit.Trim(),
+
+                        Quantity = quantity,
+                        SalesAmount = salesAmount,
+                        DiscountAmount = discountAmount,
+                        TaxPercentage = taxPercentage,
+                        TaxAmount = taxAmount,
+                        TotalBeforeTax = totalBeforeTax,
+                        TotalAfterTax = totalAfterTax
+                    });
                 }
+            }
 
-                totalRows++;
+            if (!salesRows.Any())
+            {
+                _repository.CompleteUploadBatch(
+                    uploadBatchId,
+                    SalesAnalyticsUploadStatus.Failed,
+                    0,
+                    0,
+                    failedRows,
+                    "Could not detect any daily sales rows in this Crystal Report.");
 
-                var quantity = ParseDecimal(quantityText);
-                var salesAmount = ParseDecimal(salesAmountText);
-
-                if (string.IsNullOrWhiteSpace(lineCode) ||
-                    string.IsNullOrWhiteSpace(lineName) ||
-                    string.IsNullOrWhiteSpace(productName))
+                return new SalesAnalyticsImportResultDto
                 {
-                    failedRows++;
-                    continue;
-                }
-
-                salesRows.Add(new SalesAnalyticsDailySalesImportDto
-                {
-                    ReportDate = reportDate.Date,
-                    LineCode = lineCode,
-                    LineName = lineName,
-                    ProductName = productName,
-                    Quantity = quantity,
-                    SalesAmount = salesAmount
-                });
+                    Success = false,
+                    Message = "Could not detect any daily sales rows. تأكد إن التقرير هو تفاصيل تحليل المبيعات - العميل / المدينة - القيمة.",
+                    TotalRows = 0,
+                    ImportedRows = 0,
+                    FailedRows = failedRows
+                };
             }
 
             _repository.ReplaceDailySalesReport(salesRows, uploadBatchId, reportDate.Date);
 
-            var status = failedRows > 0
-                ? SalesAnalyticsUploadStatus.PartiallyImported
-                : SalesAnalyticsUploadStatus.Success;
+            var totalRows = salesRows.Count + failedRows;
 
             _repository.CompleteUploadBatch(
                 uploadBatchId,
-                status,
+                failedRows > 0
+                    ? SalesAnalyticsUploadStatus.PartiallyImported
+                    : SalesAnalyticsUploadStatus.Success,
                 totalRows,
                 salesRows.Count,
                 failedRows);
 
             return new SalesAnalyticsImportResultDto
             {
-                Success = true,
+                Success = failedRows == 0,
+                Message = failedRows == 0
+                    ? "Daily sales report imported successfully."
+                    : "Daily sales report imported with some skipped rows.",
                 TotalRows = totalRows,
                 ImportedRows = salesRows.Count,
-                FailedRows = failedRows,
-                Message = $"Daily sales report imported successfully. Imported: {salesRows.Count}, Failed: {failedRows}"
+                FailedRows = failedRows
             };
         }
         catch (Exception ex)
@@ -471,21 +500,24 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
             return new SalesAnalyticsImportResultDto
             {
                 Success = false,
-                Message = ex.Message
+                Message = ex.Message,
+                TotalRows = 0,
+                ImportedRows = 0,
+                FailedRows = 0
             };
         }
     }
 
     public SalesAnalyticsImportResultDto ImportMtdSalesReport(
-    Stream fileStream,
-    string originalFileName,
-    DateTime toDate,
-    string? uploadedBy)
+        Stream fileStream,
+        string originalFileName,
+        DateTime toDate,
+        string? uploadedBy)
     {
         var uploadBatchId = _repository.CreateUploadBatch(
             SalesAnalyticsUploadFileType.MtdSalesReport,
             originalFileName,
-            toDate,
+            toDate.Date,
             uploadedBy);
 
         try
@@ -596,7 +628,27 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
                 }
             }
 
-            _repository.ReplaceMtdSalesReport(salesRows, uploadBatchId, toDate);
+            if (!salesRows.Any())
+            {
+                _repository.CompleteUploadBatch(
+                    uploadBatchId,
+                    SalesAnalyticsUploadStatus.Failed,
+                    0,
+                    0,
+                    failedRows,
+                    "Could not detect any MTD sales rows in this Crystal Report.");
+
+                return new SalesAnalyticsImportResultDto
+                {
+                    Success = false,
+                    Message = "Could not detect any MTD sales rows. تأكد إن التقرير هو تفاصيل تحليل المبيعات - العميل / المدينة - القيمة.",
+                    TotalRows = 0,
+                    ImportedRows = 0,
+                    FailedRows = failedRows
+                };
+            }
+
+            _repository.ReplaceMtdSalesReport(salesRows, uploadBatchId, toDate.Date);
 
             var totalRows = salesRows.Count + failedRows;
 
@@ -642,13 +694,11 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
     }
 
     public SalesAnalyticsImportResultDto ImportDailyVisitsReport(
-    Stream fileStream,
-    string originalFileName,
-    DateTime reportDate,
-    string? uploadedBy)
+        Stream fileStream,
+        string originalFileName,
+        DateTime reportDate,
+        string? uploadedBy)
     {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-
         var uploadBatchId = _repository.CreateUploadBatch(
             SalesAnalyticsUploadFileType.DailyVisitsReport,
             originalFileName,
@@ -657,23 +707,12 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
 
         try
         {
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
             using var reader = ExcelReaderFactory.CreateReader(fileStream);
+            var dataSet = reader.AsDataSet();
 
-            var dataSet = reader.AsDataSet(new ExcelDataSetConfiguration
-            {
-                ConfigureDataTable = _ => new ExcelDataTableConfiguration
-                {
-                    UseHeaderRow = false
-                }
-            });
-
-            var table = dataSet.Tables
-                .Cast<DataTable>()
-                .FirstOrDefault(x => x.TableName.Equals("Sheet2", StringComparison.OrdinalIgnoreCase))
-                ?? dataSet.Tables.Cast<DataTable>().Skip(1).FirstOrDefault()
-                ?? dataSet.Tables.Cast<DataTable>().FirstOrDefault();
-
-            if (table == null)
+            if (dataSet.Tables.Count == 0)
             {
                 _repository.CompleteUploadBatch(
                     uploadBatchId,
@@ -681,116 +720,150 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
                     0,
                     0,
                     0,
-                    "Excel file does not contain any sheets.");
+                    "No sheets found in the uploaded daily visits report.");
 
                 return new SalesAnalyticsImportResultDto
                 {
                     Success = false,
-                    Message = "Excel file does not contain any sheets."
+                    Message = "No sheets found in the uploaded daily visits report.",
+                    TotalRows = 0,
+                    ImportedRows = 0,
+                    FailedRows = 0
                 };
             }
-
-            var headerRowIndex = FindDailyVisitsHeaderRow(table);
-
-            if (headerRowIndex == -1)
-            {
-                _repository.CompleteUploadBatch(
-                    uploadBatchId,
-                    SalesAnalyticsUploadStatus.Failed,
-                    0,
-                    0,
-                    0,
-                    "Could not find required visits report headers.");
-
-                return new SalesAnalyticsImportResultDto
-                {
-                    Success = false,
-                    Message = "Could not find required headers: كود المندوب, اسم المندوب, كود العميل, اسم العميل, حالة الزيارة."
-                };
-            }
-
-            var headers = BuildDataTableHeaderMap(table, headerRowIndex);
 
             var visitRows = new List<SalesAnalyticsDailyVisitImportDto>();
-
-            var totalRows = 0;
             var failedRows = 0;
 
-            for (var row = headerRowIndex + 1; row < table.Rows.Count; row++)
+            string? currentSalesRepCode = null;
+            string? currentSalesRepName = null;
+
+            foreach (DataTable table in dataSet.Tables)
             {
-                var salesRepCode = GetTableValue(table, row, headers, "كود المندوب");
-                var salesRepName = GetTableValue(table, row, headers, "اسم المندوب");
-
-                var customerCode = GetTableValue(table, row, headers, "كود العميل");
-                var customerName = GetTableValue(table, row, headers, "اسم العميل");
-
-                if (string.IsNullOrWhiteSpace(salesRepCode) &&
-                    string.IsNullOrWhiteSpace(salesRepName) &&
-                    string.IsNullOrWhiteSpace(customerCode) &&
-                    string.IsNullOrWhiteSpace(customerName))
+                for (var rowIndex = 0; rowIndex < table.Rows.Count; rowIndex++)
                 {
-                    continue;
+                    if (ContainsNormalizedText(GetCellText(table, rowIndex, 49), "كود المندوب"))
+                    {
+                        var repName = GetCellText(table, rowIndex, 55);
+
+                        if (!string.IsNullOrWhiteSpace(repName))
+                            currentSalesRepName = repName.Trim();
+
+                        continue;
+                    }
+
+                    if (ContainsNormalizedText(GetCellText(table, rowIndex, 23), "كود الموزع") ||
+                        ContainsNormalizedText(GetCellText(table, rowIndex, 37), "الموزع"))
+                    {
+                        var repCode = GetCellText(table, rowIndex, 40);
+
+                        if (!string.IsNullOrWhiteSpace(repCode))
+                            currentSalesRepCode = NormalizeCode(repCode);
+
+                        continue;
+                    }
+
+                    var detailMarker = GetCellText(table, rowIndex, 1);
+
+                    if (!ContainsNormalizedText(detailMarker, "عرض"))
+                        continue;
+
+                    var successfulVisitValue = ParseDecimal(GetCellText(table, rowIndex, 7));
+                    var negativeReason = GetCellText(table, rowIndex, 10);
+                    var visitStatus = GetCellText(table, rowIndex, 20);
+                    var durationText = GetCellText(table, rowIndex, 24);
+
+                    var visitEndTime = ParseCrystalDateTime(GetCellText(table, rowIndex, 28));
+                    var visitStartTime = ParseCrystalDateTime(GetCellText(table, rowIndex, 34));
+
+                    var cityName = GetCellText(table, rowIndex, 50);
+                    var customerName = GetCellText(table, rowIndex, 54);
+                    var customerCode = GetCellText(table, rowIndex, 60);
+                    var visitCode = GetCellText(table, rowIndex, 64);
+
+                    if (string.IsNullOrWhiteSpace(customerCode) &&
+                        string.IsNullOrWhiteSpace(customerName) &&
+                        string.IsNullOrWhiteSpace(visitCode))
+                    {
+                        continue;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(currentSalesRepCode) ||
+                        string.IsNullOrWhiteSpace(currentSalesRepName) ||
+                        string.IsNullOrWhiteSpace(customerCode) ||
+                        string.IsNullOrWhiteSpace(customerName))
+                    {
+                        failedRows++;
+                        continue;
+                    }
+
+                    visitRows.Add(new SalesAnalyticsDailyVisitImportDto
+                    {
+                        ReportDate = reportDate.Date,
+
+                        SupervisorName = null,
+                        CityName = cityName,
+                        VisitCode = visitCode,
+
+                        SalesRepCode = currentSalesRepCode,
+                        SalesRepName = currentSalesRepName,
+
+                        CustomerCode = NormalizeCode(customerCode),
+                        CustomerName = customerName.Trim(),
+
+                        VisitStatus = visitStatus,
+                        NegativeReason = negativeReason,
+                        SuccessfulVisitValue = successfulVisitValue,
+
+                        VisitStartTime = visitStartTime,
+                        VisitEndTime = visitEndTime,
+                        VisitDurationText = durationText
+                    });
                 }
+            }
 
-                totalRows++;
+            if (!visitRows.Any())
+            {
+                _repository.CompleteUploadBatch(
+                    uploadBatchId,
+                    SalesAnalyticsUploadStatus.Failed,
+                    0,
+                    0,
+                    failedRows,
+                    "Could not detect any visit detail rows in this Crystal Report.");
 
-                if (string.IsNullOrWhiteSpace(salesRepCode) ||
-                    string.IsNullOrWhiteSpace(salesRepName) ||
-                    string.IsNullOrWhiteSpace(customerCode) ||
-                    string.IsNullOrWhiteSpace(customerName))
+                return new SalesAnalyticsImportResultDto
                 {
-                    failedRows++;
-                    continue;
-                }
-
-                var successfulVisitValueText = GetTableValue(table, row, headers, "قيمه الزياره الناجحه");
-
-                visitRows.Add(new SalesAnalyticsDailyVisitImportDto
-                {
-                    ReportDate = reportDate.Date,
-
-                    SupervisorName = GetTableValue(table, row, headers, "المشرف"),
-                    CityName = GetTableValue(table, row, headers, "المدينة"),
-                    VisitCode = GetTableValue(table, row, headers, "كود الزيارة"),
-
-                    SalesRepCode = salesRepCode,
-                    SalesRepName = salesRepName,
-
-                    CustomerCode = customerCode,
-                    CustomerName = customerName,
-
-                    VisitStatus = GetTableValue(table, row, headers, "حالة الزيارة"),
-                    NegativeReason = GetTableValue(table, row, headers, "سبب الزيارة السلبيه"),
-
-                    SuccessfulVisitValue = ParseDecimal(successfulVisitValueText),
-
-                    VisitStartTime = ParseDateTime(GetTableValue(table, row, headers, "بداية الزيارة")),
-                    VisitEndTime = ParseDateTime(GetTableValue(table, row, headers, "نهاية الزيارة")),
-
-                    VisitDurationText = GetTableValue(table, row, headers, "الفرق بين الزيارات")
-                });
+                    Success = false,
+                    Message = "Could not detect any visit detail rows. تأكد إن التقرير هو تفاصيل الزيارات من SalesBuzz.",
+                    TotalRows = 0,
+                    ImportedRows = 0,
+                    FailedRows = failedRows
+                };
             }
 
             _repository.ReplaceDailyVisitsReport(visitRows, uploadBatchId, reportDate.Date);
 
-            var status = failedRows > 0
-                ? SalesAnalyticsUploadStatus.PartiallyImported
-                : SalesAnalyticsUploadStatus.Success;
+            var totalRows = visitRows.Count + failedRows;
 
             _repository.CompleteUploadBatch(
                 uploadBatchId,
-                status,
+                failedRows > 0
+                    ? SalesAnalyticsUploadStatus.PartiallyImported
+                    : SalesAnalyticsUploadStatus.Success,
                 totalRows,
                 visitRows.Count,
                 failedRows);
 
             return new SalesAnalyticsImportResultDto
             {
-                Success = true,
+                Success = failedRows == 0,
+                Message = failedRows == 0
+                    ? "Daily visits report imported successfully."
+                    : "Daily visits report imported with some skipped rows.",
                 TotalRows = totalRows,
                 ImportedRows = visitRows.Count,
-                FailedRows = failedRows,
-                Message = $"Daily visits report imported successfully. Imported: {visitRows.Count}, Failed: {failedRows}"
+                FailedRows = failedRows
             };
         }
         catch (Exception ex)
@@ -806,15 +879,18 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
             return new SalesAnalyticsImportResultDto
             {
                 Success = false,
-                Message = ex.Message
+                Message = ex.Message,
+                TotalRows = 0,
+                ImportedRows = 0,
+                FailedRows = 0
             };
         }
     }
 
     public SalesAnalyticsImportResultDto ImportMonthlyTargets(
-    Stream fileStream,
-    string originalFileName,
-    string? uploadedBy)
+        Stream fileStream,
+        string originalFileName,
+        string? uploadedBy)
     {
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
@@ -877,7 +953,6 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
             }
 
             var headers = BuildDataTableHeaderMap(table, headerRowIndex);
-
             var salesDistrictOptions = _targetRepository.GetSalesDistrictOptions();
 
             var totalRows = 0;
@@ -988,8 +1063,202 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
         }
     }
 
+    public SalesAnalyticsImportResultDto ImportMtdVisitsReport(
+        Stream fileStream,
+        string originalFileName,
+        DateTime toDate,
+        string? uploadedBy)
+    {
+        var uploadBatchId = _repository.CreateUploadBatch(
+            SalesAnalyticsUploadFileType.MtdVisitsReport,
+            originalFileName,
+            toDate.Date,
+            uploadedBy);
+
+        try
+        {
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+            using var reader = ExcelReaderFactory.CreateReader(fileStream);
+            var dataSet = reader.AsDataSet();
+
+            if (dataSet.Tables.Count == 0)
+            {
+                _repository.CompleteUploadBatch(
+                    uploadBatchId,
+                    SalesAnalyticsUploadStatus.Failed,
+                    0,
+                    0,
+                    0,
+                    "No sheets found in the uploaded MTD visits report.");
+
+                return new SalesAnalyticsImportResultDto
+                {
+                    Success = false,
+                    Message = "No sheets found in the uploaded MTD visits report.",
+                    TotalRows = 0,
+                    ImportedRows = 0,
+                    FailedRows = 0
+                };
+            }
+
+            var visitRows = new List<SalesAnalyticsMtdVisitImportDto>();
+            var failedRows = 0;
+
+            string? currentSalesRepCode = null;
+            string? currentSalesRepName = null;
+
+            foreach (DataTable table in dataSet.Tables)
+            {
+                for (var rowIndex = 0; rowIndex < table.Rows.Count; rowIndex++)
+                {
+                    if (ContainsNormalizedText(GetCellText(table, rowIndex, 49), "كود المندوب"))
+                    {
+                        var repName = GetCellText(table, rowIndex, 55);
+
+                        if (!string.IsNullOrWhiteSpace(repName))
+                            currentSalesRepName = repName.Trim();
+
+                        continue;
+                    }
+
+                    if (ContainsNormalizedText(GetCellText(table, rowIndex, 23), "كود الموزع") ||
+                        ContainsNormalizedText(GetCellText(table, rowIndex, 37), "الموزع"))
+                    {
+                        var repCode = GetCellText(table, rowIndex, 40);
+
+                        if (!string.IsNullOrWhiteSpace(repCode))
+                            currentSalesRepCode = NormalizeCode(repCode);
+
+                        continue;
+                    }
+
+                    var detailMarker = GetCellText(table, rowIndex, 1);
+
+                    if (!ContainsNormalizedText(detailMarker, "عرض"))
+                        continue;
+
+                    var successfulVisitValue = ParseDecimal(GetCellText(table, rowIndex, 7));
+                    var negativeReason = GetCellText(table, rowIndex, 10);
+                    var visitStatus = GetCellText(table, rowIndex, 20);
+                    var durationText = GetCellText(table, rowIndex, 24);
+
+                    var visitEndTime = ParseCrystalDateTime(GetCellText(table, rowIndex, 28));
+                    var visitStartTime = ParseCrystalDateTime(GetCellText(table, rowIndex, 34));
+
+                    var cityName = GetCellText(table, rowIndex, 50);
+                    var customerName = GetCellText(table, rowIndex, 54);
+                    var customerCode = GetCellText(table, rowIndex, 60);
+                    var visitCode = GetCellText(table, rowIndex, 64);
+
+                    if (string.IsNullOrWhiteSpace(customerCode) &&
+                        string.IsNullOrWhiteSpace(customerName) &&
+                        string.IsNullOrWhiteSpace(visitCode))
+                    {
+                        continue;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(currentSalesRepCode) ||
+                        string.IsNullOrWhiteSpace(currentSalesRepName) ||
+                        string.IsNullOrWhiteSpace(customerCode) ||
+                        string.IsNullOrWhiteSpace(customerName))
+                    {
+                        failedRows++;
+                        continue;
+                    }
+
+                    visitRows.Add(new SalesAnalyticsMtdVisitImportDto
+                    {
+                        VisitDate = visitStartTime?.Date ?? toDate.Date,
+
+                        SupervisorName = null,
+                        CityName = cityName,
+                        VisitCode = visitCode,
+
+                        SalesRepCode = currentSalesRepCode,
+                        SalesRepName = currentSalesRepName,
+
+                        CustomerCode = NormalizeCode(customerCode),
+                        CustomerName = customerName.Trim(),
+
+                        VisitStatus = visitStatus,
+                        NegativeReason = negativeReason,
+                        SuccessfulVisitValue = successfulVisitValue,
+
+                        VisitStartTime = visitStartTime,
+                        VisitEndTime = visitEndTime,
+                        VisitDurationText = durationText
+                    });
+                }
+            }
+
+            if (!visitRows.Any())
+            {
+                _repository.CompleteUploadBatch(
+                    uploadBatchId,
+                    SalesAnalyticsUploadStatus.Failed,
+                    0,
+                    0,
+                    failedRows,
+                    "Could not detect any visit detail rows in this Crystal Report.");
+
+                return new SalesAnalyticsImportResultDto
+                {
+                    Success = false,
+                    Message = "Could not detect any visit detail rows. التقرير ده Crystal Report ومحتاج نفس فورمات تفاصيل الزيارات.",
+                    TotalRows = 0,
+                    ImportedRows = 0,
+                    FailedRows = failedRows
+                };
+            }
+
+            _repository.ReplaceMtdVisitsReport(visitRows, uploadBatchId, toDate.Date);
+
+            var totalRows = visitRows.Count + failedRows;
+
+            _repository.CompleteUploadBatch(
+                uploadBatchId,
+                failedRows > 0
+                    ? SalesAnalyticsUploadStatus.PartiallyImported
+                    : SalesAnalyticsUploadStatus.Success,
+                totalRows,
+                visitRows.Count,
+                failedRows);
+
+            return new SalesAnalyticsImportResultDto
+            {
+                Success = failedRows == 0,
+                Message = failedRows == 0
+                    ? "MTD visits report imported successfully."
+                    : "MTD visits report imported with some skipped rows.",
+                TotalRows = totalRows,
+                ImportedRows = visitRows.Count,
+                FailedRows = failedRows
+            };
+        }
+        catch (Exception ex)
+        {
+            _repository.CompleteUploadBatch(
+                uploadBatchId,
+                SalesAnalyticsUploadStatus.Failed,
+                0,
+                0,
+                0,
+                ex.Message);
+
+            return new SalesAnalyticsImportResultDto
+            {
+                Success = false,
+                Message = ex.Message,
+                TotalRows = 0,
+                ImportedRows = 0,
+                FailedRows = 0
+            };
+        }
+    }
 
     #region Helper Methods
+
     private static int FindHeaderRow(IXLWorksheet worksheet)
     {
         var lastRow = worksheet.LastRowUsed()?.RowNumber() ?? 0;
@@ -1034,7 +1303,11 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
         return headers;
     }
 
-    private static string GetValue(IXLWorksheet worksheet,int row,Dictionary<string, int> headers,string headerName)
+    private static string GetValue(
+        IXLWorksheet worksheet,
+        int row,
+        Dictionary<string, int> headers,
+        string headerName)
     {
         if (!headers.TryGetValue(headerName, out var column))
             return string.Empty;
@@ -1042,7 +1315,11 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
         return worksheet.Cell(row, column).GetString().Trim();
     }
 
-    private static DateTime? GetDateValue(IXLWorksheet worksheet,int row,Dictionary<string, int> headers,string headerName)
+    private static DateTime? GetDateValue(
+        IXLWorksheet worksheet,
+        int row,
+        Dictionary<string, int> headers,
+        string headerName)
     {
         if (!headers.TryGetValue(headerName, out var column))
             return null;
@@ -1083,60 +1360,6 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
         return -1;
     }
 
-    private static Dictionary<string, int> BuildDataTableHeaderMap(DataTable table, int headerRowIndex)
-    {
-        var headers = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-        for (var col = 0; col < table.Columns.Count; col++)
-        {
-            var header = NormalizeHeader(table.Rows[headerRowIndex][col]?.ToString());
-
-            if (string.IsNullOrWhiteSpace(header))
-                continue;
-
-            if (!headers.ContainsKey(header))
-            {
-                headers.Add(header, col);
-            }
-        }
-
-        return headers;
-    }
-
-    private static string GetTableValue(DataTable table,int row,Dictionary<string, int> headers,string headerName)
-    {
-        var normalizedHeader = NormalizeHeader(headerName);
-
-        if (!headers.TryGetValue(normalizedHeader, out var column))
-            return string.Empty;
-
-        return table.Rows[row][column]?.ToString()?.Trim() ?? string.Empty;
-    }
-
-    private static string NormalizeHeader(string? value)
-    {
-        return value?
-            .Trim()
-            .Replace("\n", " ")
-            .Replace("\r", " ")
-            .Replace("  ", " ")
-            ?? string.Empty;
-    }
-
-    private static decimal ParseDecimal(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return 0;
-
-        value = value.Trim()
-            .Replace(",", "");
-
-        if (decimal.TryParse(value, out var result))
-            return result;
-
-        return 0;
-    }
-
     private static int FindDailyVisitsHeaderRow(DataTable table)
     {
         var rowsToCheck = Math.Min(table.Rows.Count, 20);
@@ -1158,19 +1381,6 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
         }
 
         return -1;
-    }
-
-    private static DateTime? ParseDateTime(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return null;
-
-        value = value.Trim();
-
-        if (DateTime.TryParse(value, out var result))
-            return result;
-
-        return null;
     }
 
     private static int FindMonthlyTargetsHeaderRow(DataTable table)
@@ -1196,26 +1406,38 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
         return -1;
     }
 
-    private static int ParseInt(string? value)
+    private static Dictionary<string, int> BuildDataTableHeaderMap(DataTable table, int headerRowIndex)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            return 0;
+        var headers = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-        value = value.Trim()
-            .Replace(",", "");
+        for (var col = 0; col < table.Columns.Count; col++)
+        {
+            var header = NormalizeHeader(table.Rows[headerRowIndex][col]?.ToString());
 
-        if (int.TryParse(value, out var result))
-            return result;
+            if (string.IsNullOrWhiteSpace(header))
+                continue;
 
-        return 0;
+            if (!headers.ContainsKey(header))
+            {
+                headers.Add(header, col);
+            }
+        }
+
+        return headers;
     }
 
-    private static string NormalizeCode(string? code)
+    private static string GetTableValue(
+        DataTable table,
+        int row,
+        Dictionary<string, int> headers,
+        string headerName)
     {
-        if (string.IsNullOrWhiteSpace(code))
+        var normalizedHeader = NormalizeHeader(headerName);
+
+        if (!headers.TryGetValue(normalizedHeader, out var column))
             return string.Empty;
 
-        return code.Trim().TrimStart('0');
+        return table.Rows[row][column]?.ToString()?.Trim() ?? string.Empty;
     }
 
     private static string GetCellText(DataTable table, int rowIndex, int columnIndex)
@@ -1245,9 +1467,122 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
         return string.Empty;
     }
 
+    private static string GetFirstAvailableTableValue(
+        DataTable table,
+        int row,
+        Dictionary<string, int> headers,
+        params string[] headerNames)
+    {
+        foreach (var headerName in headerNames)
+        {
+            var value = GetTableValue(table, row, headers, headerName);
+
+            if (!string.IsNullOrWhiteSpace(value))
+                return value;
+        }
+
+        return string.Empty;
+    }
+
+    private static string NormalizeHeader(string? value)
+    {
+        return value?
+            .Trim()
+            .Replace("\n", " ")
+            .Replace("\r", " ")
+            .Replace("  ", " ")
+            ?? string.Empty;
+    }
+
+    private static string NormalizeCode(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return string.Empty;
+
+        return code.Trim().TrimStart('0');
+    }
+
+    private static decimal ParseDecimal(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return 0;
+
+        value = value.Trim()
+            .Replace(",", "");
+
+        if (decimal.TryParse(value, out var result))
+            return result;
+
+        return 0;
+    }
+
+    private static int ParseInt(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return 0;
+
+        value = value.Trim()
+            .Replace(",", "");
+
+        if (int.TryParse(value, out var result))
+            return result;
+
+        return 0;
+    }
+
+    private static DateTime? ParseDateTime(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        value = value.Trim();
+
+        if (DateTime.TryParse(value, out var result))
+            return result;
+
+        return null;
+    }
+
     private static bool IsSameText(string? value, string expected)
     {
         return NormalizeHeader(value) == NormalizeHeader(expected);
+    }
+
+    private static bool ContainsNormalizedText(string? value, string expected)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+
+        return NormalizeHeader(value).Contains(NormalizeHeader(expected));
+    }
+
+    private static DateTime? ParseCrystalDateTime(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var cleanedValue = value.Trim();
+
+        if (DateTime.TryParse(cleanedValue, out var dateTimeValue))
+            return dateTimeValue;
+
+        if (double.TryParse(
+                cleanedValue,
+                NumberStyles.Any,
+                CultureInfo.InvariantCulture,
+                out var oaDateValue))
+        {
+            try
+            {
+                return DateTime.FromOADate(oaDateValue);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     #endregion

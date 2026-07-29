@@ -4,12 +4,28 @@
 @{
     ViewData["Title"] = "CEO Sales Analytics";
 
+    var targetSummary = Model.TargetSummary;
+
+    var visibleAlerts = Model.Alerts
+        .Where(x => x.Title != "No Daily Data Uploaded")
+        .ToList();
+
     var hasData =
+        targetSummary.ActualSalesToDate > 0 ||
+        targetSummary.ActualVisits > 0 ||
+        targetSummary.TotalMonthlyTarget > 0 ||
+        Model.TargetAchievements.Any() ||
+        Model.LowestTargetAchievements.Any() ||
+        Model.BestTargetAchievements.Any();
+
+    var hasSelectedDayActivity =
         Model.Kpis.TotalSales > 0 ||
         Model.Kpis.TotalVisits > 0 ||
         Model.SalesByLines.Any() ||
         Model.VisitsBySalesReps.Any() ||
-        Model.TargetAchievements.Any();
+        Model.NegativeVisitReasons.Any() ||
+        Model.BottomCustomersToday.Any() ||
+        Model.TopProducts.Any();
 
     var branches = ViewBag.Branches as List<BranchOptionDto>
         ?? new List<BranchOptionDto>();
@@ -51,6 +67,7 @@
         color: rgba(255,255,255,.78);
         font-size: 14px;
         font-weight: 600;
+        line-height: 1.7;
     }
 
     .date-filter {
@@ -114,6 +131,7 @@
         font-size: 12px;
         font-weight: 700;
         margin-top: 6px;
+        line-height: 1.6;
     }
 
     .section-grid {
@@ -233,11 +251,25 @@
         line-height: 1.7;
     }
 
-
         .target-note i {
             font-size: 18px;
             margin-top: 2px;
         }
+
+    .daily-note {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        color: #475569;
+        border-radius: 14px;
+        padding: 14px 16px;
+        font-size: 13px;
+        font-weight: 800;
+        margin-bottom: 18px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        line-height: 1.7;
+    }
 
     .alerts-grid {
         display: grid;
@@ -311,6 +343,7 @@
             background: #dbeafe;
             color: #1e3a8a;
         }
+
     @@media (max-width: 1100px) {
         .kpi-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -344,7 +377,8 @@
                 CEO Sales Analytics Dashboard
             </div>
             <div class="hero-subtitle">
-                Executive overview for sales, visits, customers, products, targets, and field activity.
+                Executive overview from the beginning of the selected month up to the selected date.
+                الداشبورد يعرض الوضع الحقيقي حتى التاريخ المختار.
             </div>
         </div>
 
@@ -384,10 +418,10 @@
         </form>
     </div>
 
-    @if (Model.Alerts.Any())
+    @if (visibleAlerts.Any())
     {
         <div class="alerts-grid">
-            @foreach (var alert in Model.Alerts)
+            @foreach (var alert in visibleAlerts)
             {
                 var alertClass = alert.Severity switch
                 {
@@ -418,80 +452,22 @@
     @if (!hasData)
     {
         <div class="empty-state">
-            No sales analytics data found for this date. اختار تاريخ التقرير اللي اترفع، مثلًا 2026-07-22.
+            No sales analytics data found for this date. اختار تاريخ عليه داتا مرفوعة.
         </div>
     }
 
     <div class="kpi-grid">
 
         <div class="kpi-card">
-            <div class="kpi-label">Total Sales</div>
-            <div class="kpi-value">@Money(Model.Kpis.TotalSales)</div>
-            <div class="kpi-hint">From daily SalesBuzz sales report</div>
+            <div class="kpi-label">Sales To Date</div>
+            <div class="kpi-value">@Money(targetSummary.ActualSalesToDate)</div>
+            <div class="kpi-hint">Sales from month start up to selected date</div>
         </div>
-
-        <div class="kpi-card">
-            <div class="kpi-label">Total Quantity</div>
-            <div class="kpi-value">@Number(Model.Kpis.TotalQuantity)</div>
-            <div class="kpi-hint">Total sold quantity</div>
-        </div>
-
-        <div class="kpi-card">
-            <div class="kpi-label">Total Visits</div>
-            <div class="kpi-value">@Model.Kpis.TotalVisits</div>
-            <div class="kpi-hint">All recorded visits</div>
-        </div>
-
-        <div class="kpi-card">
-            <div class="kpi-label">Positive Visit %</div>
-            <div class="kpi-value">@Percent(Model.Kpis.PositiveVisitPercentage)</div>
-            <div class="kpi-hint">
-                @Model.Kpis.PositiveVisits positive / @Model.Kpis.NegativeVisits negative
-            </div>
-        </div>
-
-        <div class="kpi-card">
-            <div class="kpi-label">Positive Visits</div>
-            <div class="kpi-value">@Model.Kpis.PositiveVisits</div>
-            <div class="kpi-hint">Successful visits</div>
-        </div>
-
-        <div class="kpi-card">
-            <div class="kpi-label">Negative Visits</div>
-            <div class="kpi-value">@Model.Kpis.NegativeVisits</div>
-            <div class="kpi-hint">Visits without sales</div>
-        </div>
-
-        <div class="kpi-card">
-            <div class="kpi-label">Active Sales Reps</div>
-            <div class="kpi-value">@Model.Kpis.ActiveSalesReps</div>
-            <div class="kpi-hint">Reps appeared in visits report</div>
-        </div>
-
-        <div class="kpi-card">
-            <div class="kpi-label">Average Visit Value</div>
-            <div class="kpi-value">@Money(Model.Kpis.AverageVisitValue)</div>
-            <div class="kpi-hint">Average successful visit value</div>
-        </div>
-
-    </div>
-
-    @{
-        var targetSummary = Model.TargetSummary;
-    }
-
-    <div class="kpi-grid">
 
         <div class="kpi-card">
             <div class="kpi-label">Monthly Target</div>
             <div class="kpi-value">@Money(targetSummary.TotalMonthlyTarget)</div>
             <div class="kpi-hint">Total target for selected month</div>
-        </div>
-
-        <div class="kpi-card">
-            <div class="kpi-label">Actual Sales MTD</div>
-            <div class="kpi-value">@Money(targetSummary.ActualSalesToDate)</div>
-            <div class="kpi-hint">Uploaded sales from month start to selected date</div>
         </div>
 
         <div class="kpi-card">
@@ -513,6 +489,14 @@
     <div class="kpi-grid">
 
         <div class="kpi-card">
+            <div class="kpi-label">Visits To Date</div>
+            <div class="kpi-value">@targetSummary.ActualVisits</div>
+            <div class="kpi-hint">
+                Actual visits from month start up to selected date
+            </div>
+        </div>
+
+        <div class="kpi-card">
             <div class="kpi-label">Visit Achievement</div>
             <div class="kpi-value">@Percent(targetSummary.VisitAchievementPercentage)</div>
             <div class="kpi-hint">
@@ -527,15 +511,11 @@
         </div>
 
         <div class="kpi-card">
-            <div class="kpi-label">On Track Lines</div>
-            <div class="kpi-value">@targetSummary.OnTrackLinesCount</div>
-            <div class="kpi-hint">Lines from 75% to 99%</div>
-        </div>
-
-        <div class="kpi-card">
             <div class="kpi-label">Achieved Lines</div>
             <div class="kpi-value">@targetSummary.AchievedLinesCount</div>
-            <div class="kpi-hint">Lines achieved 100% or more</div>
+            <div class="kpi-hint">
+                On track lines: @targetSummary.OnTrackLinesCount
+            </div>
         </div>
 
     </div>
@@ -543,8 +523,8 @@
     <div class="target-note">
         <i class="bi bi-info-circle"></i>
         <div>
-            Target achievement is calculated based only on uploaded sales and visits reports from the beginning of the selected month up to the selected date.
-            لو الشهر كامل لسه متمش رفع كل أيامه، النسب هتظهر أقل من الحقيقة.
+            This dashboard is calculated from uploaded sales and visits data from the beginning of the selected month up to the selected date.
+            الداتا اللي رفعتها من أول الشهر تعتبر رصيد افتتاحي، وبعد كده أي رفع يومي جديد هيتجمع فوقها تلقائيًا.
         </div>
     </div>
 
@@ -694,217 +674,244 @@
         </div>
 
     </div>
-    <div class="section-grid">
 
-        <div class="panel">
-            <div class="panel-title">
-                <i class="bi bi-graph-up-arrow"></i>
-                Sales by Line
+    @if (hasSelectedDayActivity)
+    {
+        <div class="daily-note">
+            <i class="bi bi-calendar-day"></i>
+            <div>
+                The following operational tables show activity for the selected day only, if daily files were uploaded for that date.
+                الجداول التالية تظهر تفاصيل اليوم المختار فقط لو تم رفع ملفات يومية لهذا اليوم.
             </div>
+        </div>
 
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Line</th>
-                            <th>Sales</th>
-                            <th>Quantity</th>
-                            <th>Contribution</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model.SalesByLines)
-                        {
+        <div class="section-grid">
+
+            @if (Model.SalesByLines.Any())
+            {
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="bi bi-graph-up-arrow"></i>
+                        Selected Day Sales by Line
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Line</th>
+                                    <th>Sales</th>
+                                    <th>Quantity</th>
+                                    <th>Contribution</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.SalesByLines)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="line-name">@item.LineName</div>
+                                            <div class="muted-code">@item.LineCode</div>
+                                        </td>
+                                        <td>@Money(item.TotalSales)</td>
+                                        <td>@Number(item.TotalQuantity)</td>
+                                        <td>@Percent(item.ContributionPercentage)</td>
+                                        <td>
+                                            <div class="progress-line">
+                                                <div class="progress-fill"
+                                                     style="width:@Math.Min(item.ContributionPercentage, 100)%">
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            @if (Model.NegativeVisitReasons.Any())
+            {
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Selected Day Negative Visit Reasons
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Reason</th>
+                                    <th>Count</th>
+                                    <th>%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.NegativeVisitReasons)
+                                {
+                                    <tr>
+                                        <td>@item.Reason</td>
+                                        <td>@item.Count</td>
+                                        <td>
+                                            <span class="badge-soft badge-negative">
+                                                @Percent(item.Percentage)
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+        </div>
+
+        <div class="section-grid">
+
+            @if (Model.VisitsBySalesReps.Any())
+            {
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="bi bi-people"></i>
+                        Selected Day Visits by Sales Rep
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Sales Rep</th>
+                                    <th>Total</th>
+                                    <th>Positive</th>
+                                    <th>Negative</th>
+                                    <th>Positive %</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.VisitsBySalesReps)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="line-name">@item.SalesRepName</div>
+                                            <div class="muted-code">@item.SalesRepCode</div>
+                                        </td>
+                                        <td>@item.TotalVisits</td>
+                                        <td>
+                                            <span class="badge-soft badge-positive">
+                                                @item.PositiveVisits
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge-soft badge-negative">
+                                                @item.NegativeVisits
+                                            </span>
+                                        </td>
+                                        <td>@Percent(item.PositiveVisitPercentage)</td>
+                                        <td>@Money(item.TotalVisitValue)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            @if (Model.BottomCustomersToday.Any())
+            {
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="bi bi-arrow-down-circle"></i>
+                        Selected Day Bottom Customers
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Rep</th>
+                                    <th>Value</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.BottomCustomersToday)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="customer-name">@item.CustomerName</div>
+                                            <div class="muted-code">@item.CustomerCode</div>
+                                            @if (!string.IsNullOrWhiteSpace(item.NegativeReason))
+                                            {
+                                                <div class="muted-code">@item.NegativeReason</div>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div>@item.SalesRepName</div>
+                                            <div class="muted-code">@item.SalesRepCode</div>
+                                        </td>
+                                        <td>@Money(item.SalesValue)</td>
+                                        <td>
+                                            <span class="badge-soft @(item.SalesValue > 0 ? "badge-positive" : "badge-negative")">
+                                                @(string.IsNullOrWhiteSpace(item.VisitStatus) ? "-" : item.VisitStatus)
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+        </div>
+
+        @if (Model.TopProducts.Any())
+        {
+            <div class="panel">
+                <div class="panel-title">
+                    <i class="bi bi-box-seam"></i>
+                    Selected Day Top Products
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
                             <tr>
-                                <td>
-                                    <div class="line-name">@item.LineName</div>
-                                    <div class="muted-code">@item.LineCode</div>
-                                </td>
-                                <td>@Money(item.TotalSales)</td>
-                                <td>@Number(item.TotalQuantity)</td>
-                                <td>@Percent(item.ContributionPercentage)</td>
-                                <td>
-                                    <div class="progress-line">
-                                        <div class="progress-fill"
-                                             style="width:@Math.Min(item.ContributionPercentage, 100)%">
+                                <th>Product</th>
+                                <th>Total Sales</th>
+                                <th>Total Quantity</th>
+                                <th>Contribution</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.TopProducts)
+                            {
+                                <tr>
+                                    <td class="product-name">@item.ProductName</td>
+                                    <td>@Money(item.TotalSales)</td>
+                                    <td>@Number(item.TotalQuantity)</td>
+                                    <td>@Percent(item.ContributionPercentage)</td>
+                                    <td>
+                                        <div class="progress-line">
+                                            <div class="progress-fill"
+                                                 style="width:@Math.Min(item.ContributionPercentage, 100)%">
+                                            </div>
                                         </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title">
-                <i class="bi bi-exclamation-triangle"></i>
-                Negative Visit Reasons
-            </div>
-
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Reason</th>
-                            <th>Count</th>
-                            <th>%</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model.NegativeVisitReasons)
-                        {
-                            <tr>
-                                <td>@item.Reason</td>
-                                <td>@item.Count</td>
-                                <td>
-                                    <span class="badge-soft badge-negative">
-                                        @Percent(item.Percentage)
-                                    </span>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-    </div>
-
-    <div class="section-grid">
-
-        <div class="panel">
-            <div class="panel-title">
-                <i class="bi bi-people"></i>
-                Visits by Sales Rep
-            </div>
-
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Sales Rep</th>
-                            <th>Total</th>
-                            <th>Positive</th>
-                            <th>Negative</th>
-                            <th>Positive %</th>
-                            <th>Value</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model.VisitsBySalesReps)
-                        {
-                            <tr>
-                                <td>
-                                    <div class="line-name">@item.SalesRepName</div>
-                                    <div class="muted-code">@item.SalesRepCode</div>
-                                </td>
-                                <td>@item.TotalVisits</td>
-                                <td>
-                                    <span class="badge-soft badge-positive">
-                                        @item.PositiveVisits
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge-soft badge-negative">
-                                        @item.NegativeVisits
-                                    </span>
-                                </td>
-                                <td>@Percent(item.PositiveVisitPercentage)</td>
-                                <td>@Money(item.TotalVisitValue)</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title">
-                <i class="bi bi-arrow-down-circle"></i>
-                Bottom 5 Customers Today
-            </div>
-
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Customer</th>
-                            <th>Rep</th>
-                            <th>Value</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model.BottomCustomersToday)
-                        {
-                            <tr>
-                                <td>
-                                    <div class="customer-name">@item.CustomerName</div>
-                                    <div class="muted-code">@item.CustomerCode</div>
-                                    @if (!string.IsNullOrWhiteSpace(item.NegativeReason))
-                                    {
-                                        <div class="muted-code">@item.NegativeReason</div>
-                                    }
-                                </td>
-                                <td>
-                                    <div>@item.SalesRepName</div>
-                                    <div class="muted-code">@item.SalesRepCode</div>
-                                </td>
-                                <td>@Money(item.SalesValue)</td>
-                                <td>
-                                    <span class="badge-soft @(item.SalesValue > 0 ? "badge-positive" : "badge-negative")">
-                                        @(string.IsNullOrWhiteSpace(item.VisitStatus) ? "-" : item.VisitStatus)
-                                    </span>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-    </div>
-
-    <div class="panel">
-        <div class="panel-title">
-            <i class="bi bi-box-seam"></i>
-            Top Products
-        </div>
-
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Product</th>
-                        <th>Total Sales</th>
-                        <th>Total Quantity</th>
-                        <th>Contribution</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model.TopProducts)
-                    {
-                        <tr>
-                            <td class="product-name">@item.ProductName</td>
-                            <td>@Money(item.TotalSales)</td>
-                            <td>@Number(item.TotalQuantity)</td>
-                            <td>@Percent(item.ContributionPercentage)</td>
-                            <td>
-                                <div class="progress-line">
-                                    <div class="progress-fill"
-                                         style="width:@Math.Min(item.ContributionPercentage, 100)%">
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
+        }
+    }
 
 </div>

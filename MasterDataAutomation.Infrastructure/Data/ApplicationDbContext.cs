@@ -38,6 +38,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<SalesAnalyticsDailyVisitReportEntity> SalesAnalyticsDailyVisitReports { get; set; }
     public DbSet<SalesDistrictMonthlyTargetEntity> SalesDistrictMonthlyTargets { get; set; }
     public DbSet<SalesAnalyticsMtdSalesReportEntity> SalesAnalyticsMtdSalesReports { get; set; }
+    public DbSet<SalesAnalyticsMtdVisitReportEntity> SalesAnalyticsMtdVisitReports { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -463,30 +464,64 @@ public class ApplicationDbContext : DbContext
             entity.HasKey(x => x.Id);
 
             entity.Property(x => x.LineCode)
-                .IsRequired()
-                .HasMaxLength(50);
+                .HasMaxLength(50)
+                .IsRequired();
 
             entity.Property(x => x.LineName)
-                .IsRequired()
-                .HasMaxLength(150);
+                .HasMaxLength(250)
+                .IsRequired();
 
-            entity.Property(x => x.ProductName)
-                .IsRequired()
+            entity.Property(x => x.CityCode)
+                .HasMaxLength(50);
+
+            entity.Property(x => x.CityName)
                 .HasMaxLength(250);
 
+            entity.Property(x => x.CustomerCode)
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(x => x.CustomerName)
+                .HasMaxLength(250)
+                .IsRequired();
+
+            entity.Property(x => x.ProductCode)
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(x => x.ProductName)
+                .HasMaxLength(250)
+                .IsRequired();
+
+            entity.Property(x => x.Unit)
+                .HasMaxLength(50);
+
             entity.Property(x => x.Quantity)
-                .HasPrecision(18, 3);
+                .HasPrecision(18, 2);
 
             entity.Property(x => x.SalesAmount)
                 .HasPrecision(18, 2);
 
-            entity.Property(x => x.ImportedAt)
-                .HasDefaultValueSql("GETDATE()");
+            entity.Property(x => x.DiscountAmount)
+                .HasPrecision(18, 2);
+
+            entity.Property(x => x.TaxPercentage)
+                .HasPrecision(18, 2);
+
+            entity.Property(x => x.TaxAmount)
+                .HasPrecision(18, 2);
+
+            entity.Property(x => x.TotalBeforeTax)
+                .HasPrecision(18, 2);
+
+            entity.Property(x => x.TotalAfterTax)
+                .HasPrecision(18, 2);
 
             entity.HasIndex(x => x.ReportDate);
             entity.HasIndex(x => x.LineCode);
-            entity.HasIndex(x => x.ProductName);
-            entity.HasIndex(x => x.UploadBatchId);
+            entity.HasIndex(x => x.CityCode);
+            entity.HasIndex(x => x.CustomerCode);
+            entity.HasIndex(x => x.ProductCode);
         });
         modelBuilder.Entity<SalesAnalyticsDailyVisitReportEntity>(entity =>
         {
@@ -641,6 +676,59 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(x => x.CityCode);
 
             entity.HasIndex(x => x.ProductCode);
+        });
+        modelBuilder.Entity<SalesAnalyticsMtdVisitReportEntity>(entity =>
+        {
+            entity.ToTable("SalesAnalyticsMtdVisitReports");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.SupervisorName)
+                .HasMaxLength(250);
+
+            entity.Property(x => x.CityName)
+                .HasMaxLength(250);
+
+            entity.Property(x => x.VisitCode)
+                .HasMaxLength(100);
+
+            entity.Property(x => x.SalesRepCode)
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(x => x.SalesRepName)
+                .HasMaxLength(250)
+                .IsRequired();
+
+            entity.Property(x => x.CustomerCode)
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(x => x.CustomerName)
+                .HasMaxLength(250)
+                .IsRequired();
+
+            entity.Property(x => x.VisitStatus)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.NegativeReason)
+                .HasMaxLength(500);
+
+            entity.Property(x => x.VisitDurationText)
+                .HasMaxLength(100);
+
+            entity.Property(x => x.SuccessfulVisitValue)
+                .HasPrecision(18, 2);
+
+            entity.HasIndex(x => new { x.Year, x.Month, x.ToDate });
+
+            entity.HasIndex(x => x.VisitDate);
+
+            entity.HasIndex(x => x.CustomerCode);
+
+            entity.HasIndex(x => x.SalesRepCode);
+
+            entity.HasIndex(x => x.VisitCode);
         });
 
     }
