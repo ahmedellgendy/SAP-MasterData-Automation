@@ -9,13 +9,10 @@ public class SalesAnalyticsDashboardController : Controller
 {
     private readonly ISalesAnalyticsDashboardRepository _dashboardRepository;
 
-    public SalesAnalyticsDashboardController(
-        ISalesAnalyticsDashboardRepository dashboardRepository)
+    public SalesAnalyticsDashboardController(ISalesAnalyticsDashboardRepository dashboardRepository)
     {
         _dashboardRepository = dashboardRepository;
     }
-
-
 
     [HttpGet]
     public IActionResult Index(DateTime? reportDate, string? branchCode)

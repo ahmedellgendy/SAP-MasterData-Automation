@@ -380,6 +380,47 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
             .Take(10)
             .ToList();
 
+        var branchPerformances = allTargetAchievements
+    .GroupBy(x => new
+    {
+        BranchCode = NormalizeCode(x.BranchCode),
+        BranchName = string.IsNullOrWhiteSpace(x.BranchName)
+            ? NormalizeCode(x.BranchCode)
+            : x.BranchName
+    })
+    .Select(g =>
+    {
+        var monthlyTarget = g.Sum(x => x.MonthlyTarget);
+        var actualSales = g.Sum(x => x.ActualSales);
+        var remainingTarget = Math.Max(monthlyTarget - actualSales, 0);
+
+        var plannedVisits = g.Sum(x => x.PlannedVisits);
+        var actualVisits = g.Sum(x => x.ActualVisits);
+
+        return new BranchPerformanceDto
+        {
+            BranchCode = g.Key.BranchCode,
+            BranchName = g.Key.BranchName ?? string.Empty,
+
+            MonthlyTarget = monthlyTarget,
+            ActualSales = actualSales,
+            AchievementPercentage = CalculatePercentage(actualSales, monthlyTarget),
+            RemainingTarget = remainingTarget,
+            RequiredDailySales = Math.Round(remainingTarget / remainingDays, 2),
+
+            PlannedVisits = plannedVisits,
+            ActualVisits = actualVisits,
+            VisitAchievementPercentage = CalculatePercentage(actualVisits, plannedVisits),
+
+            TotalLinesCount = g.Count(),
+            CriticalLinesCount = g.Count(x => x.Status == "Critical"),
+            OnTrackLinesCount = g.Count(x => x.Status == "On Track"),
+            AchievedLinesCount = g.Count(x => x.Status == "Achieved")
+        };
+    })
+    .OrderByDescending(x => x.ActualSales)
+    .ToList();
+
         var alerts = new List<CeoAlertDto>();
 
         if (targetSummary.TotalMonthlyTarget > 0 && targetSummary.AchievementPercentage < 50)
@@ -585,18 +626,22 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
                 PositiveVisits = positiveVisitsToDate,
                 NegativeVisits = negativeVisitsToDate,
                 PositiveVisitPercentage = CalculatePercentage(positiveVisitsToDate, totalVisitsToDate),
+
                 ActiveSalesReps = visitsToDateRows
-                    .Where(x => !string.IsNullOrWhiteSpace(x.SalesRepCode))
-                    .Select(x => x.SalesRepCode)
-                    .Distinct()
-                    .Count(),
+            .Where(x => !string.IsNullOrWhiteSpace(x.SalesRepCode))
+            .Select(x => x.SalesRepCode)
+            .Distinct()
+            .Count(),
+
                 AverageVisitValue = positiveVisitsToDate == 0
-                    ? 0
-                    : Math.Round(totalVisitValueToDate / positiveVisitsToDate, 2)
+            ? 0
+            : Math.Round(totalVisitValueToDate / positiveVisitsToDate, 2)
             },
 
             TargetSummary = targetSummary,
             Alerts = alerts,
+            BranchPerformances = branchPerformances,
+
             TargetAchievements = lowestTargetAchievements,
             LowestTargetAchievements = lowestTargetAchievements,
             BestTargetAchievements = bestTargetAchievements,

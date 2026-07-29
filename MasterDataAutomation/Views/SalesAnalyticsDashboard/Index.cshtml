@@ -1,5 +1,6 @@
 ﻿@model MasterDataAutomation.Application.Modules.SalesAnalytics.DashboardDtos.SalesAnalyticsDashboardDto
 @using MasterDataAutomation.Application.Modules.SalesAnalytics.DashboardDtos
+@using System.Text.Json
 
 @{
     ViewData["Title"] = "CEO Sales Analytics";
@@ -344,6 +345,54 @@
             color: #1e3a8a;
         }
 
+    .chart-grid {
+        display: grid;
+        grid-template-columns: 1.2fr .8fr;
+        gap: 18px;
+        margin-bottom: 18px;
+    }
+
+    .chart-box {
+        height: 330px;
+        position: relative;
+    }
+
+    .branch-status-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .branch-status-card {
+        background: #fff;
+        border-radius: 18px;
+        padding: 18px;
+        border: 1px solid #edf0f5;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+    }
+
+    .branch-name {
+        font-size: 16px;
+        font-weight: 950;
+        color: #0f172a;
+        margin-bottom: 4px;
+    }
+
+    .branch-sales {
+        font-size: 22px;
+        font-weight: 950;
+        color: #0b2a5b;
+        margin-bottom: 6px;
+    }
+
+    .branch-meta {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.7;
+    }
+
     @@media (max-width: 1100px) {
         .kpi-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -356,6 +405,14 @@
         .alerts-grid {
             grid-template-columns: 1fr;
         }
+
+        .chart-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .branch-status-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
     }
 
     @@media (max-width: 650px) {
@@ -365,6 +422,10 @@
 
         .hero-title {
             font-size: 22px;
+        }
+
+        .branch-status-grid {
+            grid-template-columns: 1fr;
         }
     }
 </style>
@@ -520,12 +581,90 @@
 
     </div>
 
-    <div class="target-note">
-        <i class="bi bi-info-circle"></i>
-        <div>
-            This dashboard is calculated from uploaded sales and visits data from the beginning of the selected month up to the selected date.
-            الداتا اللي رفعتها من أول الشهر تعتبر رصيد افتتاحي، وبعد كده أي رفع يومي جديد هيتجمع فوقها تلقائيًا.
+    @if (Model.BranchPerformances.Any())
+    {
+        <div class="branch-status-grid">
+            @foreach (var branch in Model.BranchPerformances)
+            {
+                <div class="branch-status-card">
+                    <div class="branch-name">
+                        @(string.IsNullOrWhiteSpace(branch.BranchName) ? "Unknown Branch" : branch.BranchName)
+                    </div>
+
+                    <div class="muted-code">
+                        @branch.BranchCode
+                    </div>
+
+                    <div class="branch-sales">
+                        @Money(branch.ActualSales)
+                    </div>
+
+                    <div class="branch-meta">
+                        Target: @Money(branch.MonthlyTarget)
+                        <br />
+                        Achievement: @Percent(branch.AchievementPercentage)
+                        <br />
+                        Visits: @branch.ActualVisits / @branch.PlannedVisits
+                        <br />
+                        Critical Lines: @branch.CriticalLinesCount
+                    </div>
+                </div>
+            }
         </div>
+    }
+
+   
+
+    <div class="chart-grid">
+
+        <div class="panel">
+            <div class="panel-title">
+                <i class="bi bi-bar-chart-line"></i>
+                Target Achievement by Sales District
+            </div>
+
+            <div class="chart-box">
+                <canvas id="targetAchievementChart"></canvas>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">
+                <i class="bi bi-pie-chart"></i>
+                Visits Status To Date
+            </div>
+
+            <div class="chart-box">
+                <canvas id="visitsStatusChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="chart-grid">
+
+        <div class="panel">
+            <div class="panel-title">
+                <i class="bi bi-box-seam"></i>
+                Top Products To Date
+            </div>
+
+            <div class="chart-box">
+                <canvas id="topProductsChart"></canvas>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">
+                <i class="bi bi-building"></i>
+                Branch Achievement To Date
+            </div>
+
+            <div class="chart-box">
+                <canvas id="branchAchievementChart"></canvas>
+            </div>
+        </div>
+
     </div>
 
     <div class="section-grid">
@@ -692,7 +831,7 @@
                 <div class="panel">
                     <div class="panel-title">
                         <i class="bi bi-graph-up-arrow"></i>
-                        Selected Day Sales by Line
+                        Sales by Line To Date
                     </div>
 
                     <div class="table-responsive">
@@ -737,7 +876,7 @@
                 <div class="panel">
                     <div class="panel-title">
                         <i class="bi bi-exclamation-triangle"></i>
-                        Selected Day Negative Visit Reasons
+                        Negative Visit Reasons To Date
                     </div>
 
                     <div class="table-responsive">
@@ -777,7 +916,7 @@
                 <div class="panel">
                     <div class="panel-title">
                         <i class="bi bi-people"></i>
-                        Selected Day Visits by Sales Rep
+                        Visits by Sales Rep To Date
                     </div>
 
                     <div class="table-responsive">
@@ -826,7 +965,7 @@
                 <div class="panel">
                     <div class="panel-title">
                         <i class="bi bi-arrow-down-circle"></i>
-                        Selected Day Bottom Customers
+                        Bottom 5 Customers To Date
                     </div>
 
                     <div class="table-responsive">
@@ -876,7 +1015,7 @@
             <div class="panel">
                 <div class="panel-title">
                     <i class="bi bi-box-seam"></i>
-                    Selected Day Top Products
+                    Top Products To Date
                 </div>
 
                 <div class="table-responsive">
@@ -913,5 +1052,160 @@
             </div>
         }
     }
+
+
+    @{
+        var targetChartLabels = Model.BestTargetAchievements
+        .Take(10)
+        .Select(x => string.IsNullOrWhiteSpace(x.SalesDistrictName)
+        ? x.SalesDistrictCode
+        : x.SalesDistrictName)
+        .ToList();
+
+        var targetChartValues = Model.BestTargetAchievements
+        .Take(10)
+        .Select(x => x.AchievementPercentage)
+        .ToList();
+
+        var productChartLabels = Model.TopProducts
+        .Take(10)
+        .Select(x => x.ProductName)
+        .ToList();
+
+        var productChartValues = Model.TopProducts
+        .Take(10)
+        .Select(x => x.TotalSales)
+        .ToList();
+
+        var branchChartLabels = Model.BranchPerformances
+        .Take(10)
+        .Select(x => string.IsNullOrWhiteSpace(x.BranchName)
+        ? x.BranchCode
+        : x.BranchName)
+        .ToList();
+
+        var branchChartValues = Model.BranchPerformances
+        .Take(10)
+        .Select(x => x.AchievementPercentage)
+        .ToList();
+
+        var visitStatusLabels = new List<string> { "Positive Visits", "Negative Visits" };
+        var visitStatusValues = new List<int>
+        {
+        Model.Kpis.PositiveVisits,
+        Model.Kpis.NegativeVisits
+        };
+    }
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        const targetAchievementLabels = @Html.Raw(JsonSerializer.Serialize(targetChartLabels));
+        const targetAchievementValues = @Html.Raw(JsonSerializer.Serialize(targetChartValues));
+
+        const productLabels = @Html.Raw(JsonSerializer.Serialize(productChartLabels));
+        const productValues = @Html.Raw(JsonSerializer.Serialize(productChartValues));
+
+        const branchLabels = @Html.Raw(JsonSerializer.Serialize(branchChartLabels));
+        const branchValues = @Html.Raw(JsonSerializer.Serialize(branchChartValues));
+
+        const visitStatusLabels = @Html.Raw(JsonSerializer.Serialize(visitStatusLabels));
+        const visitStatusValues = @Html.Raw(JsonSerializer.Serialize(visitStatusValues));
+
+        function createBarChart(canvasId, labels, values, labelText) {
+            const element = document.getElementById(canvasId);
+
+            if (!element || labels.length === 0) {
+                return;
+            }
+
+            new Chart(element, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: labelText,
+                        data: values,
+                        backgroundColor: '#0b2a5b',
+                        borderColor: '#0b2a5b',
+                        borderWidth: 1,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 0
+                            }
+                        },
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function createDoughnutChart(canvasId, labels, values) {
+            const element = document.getElementById(canvasId);
+
+            if (!element || labels.length === 0) {
+                return;
+            }
+
+            new Chart(element, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: ['#16a34a', '#dc2626'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%'
+                }
+            });
+        }
+
+        createBarChart(
+            'targetAchievementChart',
+            targetAchievementLabels,
+            targetAchievementValues,
+            'Achievement %'
+        );
+
+        createDoughnutChart(
+            'visitsStatusChart',
+            visitStatusLabels,
+            visitStatusValues
+        );
+
+        createBarChart(
+            'topProductsChart',
+            productLabels,
+            productValues,
+            'Sales'
+        );
+
+        createBarChart(
+            'branchAchievementChart',
+            branchLabels,
+            branchValues,
+            'Achievement %'
+        );
+    </script>
 
 </div>
