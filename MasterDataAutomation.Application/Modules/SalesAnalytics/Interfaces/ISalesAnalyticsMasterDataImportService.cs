@@ -20,6 +20,12 @@ public interface ISalesAnalyticsMasterDataImportService
     DateTime reportDate,
     string? uploadedBy);
 
+    SalesAnalyticsImportResultDto ImportMtdSalesReport(
+    Stream fileStream,
+    string originalFileName,
+    DateTime toDate,
+    string? uploadedBy);
+
     SalesAnalyticsImportResultDto ImportDailyVisitsReport(
     Stream fileStream,
     string originalFileName,

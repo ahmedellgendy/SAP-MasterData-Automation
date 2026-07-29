@@ -1,0 +1,154 @@
+﻿@{
+    ViewData["Title"] = "MTD Sales Upload";
+}
+
+<style>
+    .upload-page {
+        max-width: 950px;
+        margin: 0 auto;
+    }
+
+    .upload-hero {
+        background: linear-gradient(135deg, #0b2a5b, #123a78);
+        color: #fff;
+        border-radius: 20px;
+        padding: 26px;
+        margin-bottom: 22px;
+        box-shadow: 0 14px 32px rgba(15, 23, 42, .16);
+    }
+
+    .upload-title {
+        font-size: 28px;
+        font-weight: 950;
+        margin-bottom: 8px;
+    }
+
+    .upload-subtitle {
+        color: rgba(255,255,255,.78);
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.7;
+    }
+
+    .upload-card {
+        background: #fff;
+        border-radius: 18px;
+        padding: 24px;
+        border: 1px solid #edf0f5;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+    }
+
+    .form-label {
+        font-weight: 900;
+        color: #0f172a;
+        margin-bottom: 8px;
+    }
+
+    .form-control {
+        border-radius: 12px;
+        padding: 12px;
+        font-weight: 700;
+    }
+
+    .btn-main {
+        background: #0b2a5b;
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        padding: 12px 18px;
+        font-weight: 900;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-main:hover {
+            color: #fff;
+            background: #123a78;
+        }
+
+    .note-box {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e3a8a;
+        border-radius: 14px;
+        padding: 14px 16px;
+        font-size: 13px;
+        font-weight: 800;
+        margin-bottom: 18px;
+        line-height: 1.7;
+    }
+
+    .alert {
+        border-radius: 14px;
+        font-weight: 800;
+    }
+</style>
+
+<div class="upload-page">
+
+    <div class="upload-hero">
+        <div class="upload-title">
+            MTD Sales Upload
+        </div>
+
+        <div class="upload-subtitle">
+            Upload SalesBuzz sales analysis report from the beginning of the month up to selected date.
+            ده يستخدم في Target Achievement و Actual Sales MTD، مش مبيعات اليوم فقط.
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Error"]
+        </div>
+    }
+
+    <div class="note-box">
+        <i class="bi bi-info-circle"></i>
+        استخدم الصفحة دي فقط مع التقرير اللي متسحب من SalesBuzz من يوم 1 في الشهر لحد تاريخ معين.
+        لو التقرير يوم واحد فقط، ارفعه من Daily Sales Upload.
+    </div>
+
+    <div class="upload-card">
+        <form asp-controller="SalesAnalyticsMasterData"
+              asp-action="UploadMtdSalesReport"
+              method="post"
+              enctype="multipart/form-data">
+
+            @Html.AntiForgeryToken()
+
+            <div class="mb-3">
+                <label class="form-label">Report To Date</label>
+                <input type="date"
+                       name="toDate"
+                       value="@ViewBag.Today"
+                       class="form-control"
+                       required />
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label">MTD SalesBuzz Sales Analysis File</label>
+                <input type="file"
+                       name="file"
+                       class="form-control"
+                       accept=".xls,.xlsx"
+                       required />
+            </div>
+
+            <button type="submit" class="btn-main">
+                <i class="bi bi-cloud-upload"></i>
+                Upload MTD Sales Report
+            </button>
+        </form>
+    </div>
+
+</div>

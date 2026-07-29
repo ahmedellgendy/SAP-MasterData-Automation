@@ -318,4 +318,58 @@ public class SalesAnalyticsMasterDataRepository : ISalesAnalyticsMasterDataRepos
             })
             .ToList();
     }
+
+    public void ReplaceMtdSalesReport(
+    List<SalesAnalyticsMtdSalesImportDto> salesRows,
+    int uploadBatchId,
+    DateTime toDate)
+    {
+        var normalizedToDate = toDate.Date;
+        var fromDate = new DateTime(normalizedToDate.Year, normalizedToDate.Month, 1);
+
+        var oldRows = _context.SalesAnalyticsMtdSalesReports
+            .Where(x =>
+                x.Year == normalizedToDate.Year &&
+                x.Month == normalizedToDate.Month &&
+                x.ToDate >= normalizedToDate &&
+                x.ToDate < normalizedToDate.AddDays(1))
+            .ToList();
+
+        if (oldRows.Any())
+        {
+            _context.SalesAnalyticsMtdSalesReports.RemoveRange(oldRows);
+        }
+
+        var entities = salesRows.Select(x => new SalesAnalyticsMtdSalesReportEntity
+        {
+            Year = normalizedToDate.Year,
+            Month = normalizedToDate.Month,
+            FromDate = fromDate,
+            ToDate = normalizedToDate,
+
+            CityCode = x.CityCode,
+            CityName = x.CityName,
+
+            CustomerCode = x.CustomerCode,
+            CustomerName = x.CustomerName,
+
+            ProductCode = x.ProductCode,
+            ProductName = x.ProductName,
+            Unit = x.Unit,
+
+            Quantity = x.Quantity,
+            SalesAmount = x.SalesAmount,
+            DiscountAmount = x.DiscountAmount,
+            TaxPercentage = x.TaxPercentage,
+            TaxAmount = x.TaxAmount,
+            TotalBeforeTax = x.TotalBeforeTax,
+            TotalAfterTax = x.TotalAfterTax,
+
+            UploadBatchId = uploadBatchId,
+            ImportedAt = DateTime.Now
+        }).ToList();
+
+        _context.SalesAnalyticsMtdSalesReports.AddRange(entities);
+        _context.SaveChanges();
+    }
 }

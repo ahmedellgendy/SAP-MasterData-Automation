@@ -476,6 +476,171 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
         }
     }
 
+    public SalesAnalyticsImportResultDto ImportMtdSalesReport(
+    Stream fileStream,
+    string originalFileName,
+    DateTime toDate,
+    string? uploadedBy)
+    {
+        var uploadBatchId = _repository.CreateUploadBatch(
+            SalesAnalyticsUploadFileType.MtdSalesReport,
+            originalFileName,
+            toDate,
+            uploadedBy);
+
+        try
+        {
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+            using var reader = ExcelReaderFactory.CreateReader(fileStream);
+            var dataSet = reader.AsDataSet();
+
+            if (dataSet.Tables.Count == 0)
+            {
+                _repository.CompleteUploadBatch(
+                    uploadBatchId,
+                    SalesAnalyticsUploadStatus.Failed,
+                    0,
+                    0,
+                    0,
+                    "No sheets found in the uploaded MTD sales report.");
+
+                return new SalesAnalyticsImportResultDto
+                {
+                    Success = false,
+                    Message = "No sheets found in the uploaded MTD sales report.",
+                    TotalRows = 0,
+                    ImportedRows = 0,
+                    FailedRows = 0
+                };
+            }
+
+            var salesRows = new List<SalesAnalyticsMtdSalesImportDto>();
+            var failedRows = 0;
+
+            string? currentCityCode = null;
+            string? currentCityName = null;
+            string? currentCustomerCode = null;
+            string? currentCustomerName = null;
+
+            foreach (DataTable table in dataSet.Tables)
+            {
+                for (var rowIndex = 0; rowIndex < table.Rows.Count; rowIndex++)
+                {
+                    var groupType = GetCellText(table, rowIndex, 44);
+
+                    if (IsSameText(groupType, "المدينة"))
+                    {
+                        currentCityCode = NormalizeCode(GetCellText(table, rowIndex, 14));
+                        currentCityName = GetCellText(table, rowIndex, 28).Trim();
+                        continue;
+                    }
+
+                    if (IsSameText(groupType, "العميل"))
+                    {
+                        currentCustomerCode = NormalizeCode(GetCellText(table, rowIndex, 14));
+                        currentCustomerName = GetCellText(table, rowIndex, 28).Trim();
+                        continue;
+                    }
+
+                    var productCode = GetCellText(table, rowIndex, 48);
+                    var productName = GetFirstAvailableCellText(table, rowIndex, 40, 39);
+                    var unit = GetCellText(table, rowIndex, 37);
+
+                    if (string.IsNullOrWhiteSpace(productCode) ||
+                        string.IsNullOrWhiteSpace(productName))
+                    {
+                        continue;
+                    }
+
+                    var quantity = ParseDecimal(GetCellText(table, rowIndex, 31));
+                    var salesAmount = ParseDecimal(GetCellText(table, rowIndex, 25));
+                    var discountAmount = ParseDecimal(GetCellText(table, rowIndex, 21));
+                    var taxPercentage = ParseDecimal(GetCellText(table, rowIndex, 4));
+                    var taxAmount = ParseDecimal(GetCellText(table, rowIndex, 16));
+                    var totalBeforeTax = ParseDecimal(GetCellText(table, rowIndex, 10));
+                    var totalAfterTax = ParseDecimal(GetCellText(table, rowIndex, 0));
+
+                    if (string.IsNullOrWhiteSpace(currentCustomerCode) ||
+                        string.IsNullOrWhiteSpace(currentCustomerName))
+                    {
+                        failedRows++;
+                        continue;
+                    }
+
+                    if (salesAmount == 0 && totalAfterTax == 0 && quantity == 0)
+                    {
+                        continue;
+                    }
+
+                    salesRows.Add(new SalesAnalyticsMtdSalesImportDto
+                    {
+                        CityCode = currentCityCode,
+                        CityName = currentCityName,
+
+                        CustomerCode = currentCustomerCode,
+                        CustomerName = currentCustomerName,
+
+                        ProductCode = NormalizeCode(productCode),
+                        ProductName = productName.Trim(),
+                        Unit = unit.Trim(),
+
+                        Quantity = quantity,
+                        SalesAmount = salesAmount,
+                        DiscountAmount = discountAmount,
+                        TaxPercentage = taxPercentage,
+                        TaxAmount = taxAmount,
+                        TotalBeforeTax = totalBeforeTax,
+                        TotalAfterTax = totalAfterTax
+                    });
+                }
+            }
+
+            _repository.ReplaceMtdSalesReport(salesRows, uploadBatchId, toDate);
+
+            var totalRows = salesRows.Count + failedRows;
+
+            _repository.CompleteUploadBatch(
+                uploadBatchId,
+                failedRows > 0
+                    ? SalesAnalyticsUploadStatus.PartiallyImported
+                    : SalesAnalyticsUploadStatus.Success,
+                totalRows,
+                salesRows.Count,
+                failedRows);
+
+            return new SalesAnalyticsImportResultDto
+            {
+                Success = failedRows == 0,
+                Message = failedRows == 0
+                    ? "MTD sales report imported successfully."
+                    : "MTD sales report imported with some skipped rows.",
+                TotalRows = totalRows,
+                ImportedRows = salesRows.Count,
+                FailedRows = failedRows
+            };
+        }
+        catch (Exception ex)
+        {
+            _repository.CompleteUploadBatch(
+                uploadBatchId,
+                SalesAnalyticsUploadStatus.Failed,
+                0,
+                0,
+                0,
+                ex.Message);
+
+            return new SalesAnalyticsImportResultDto
+            {
+                Success = false,
+                Message = ex.Message,
+                TotalRows = 0,
+                ImportedRows = 0,
+                FailedRows = 0
+            };
+        }
+    }
+
     public SalesAnalyticsImportResultDto ImportDailyVisitsReport(
     Stream fileStream,
     string originalFileName,
@@ -1051,6 +1216,38 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
             return string.Empty;
 
         return code.Trim().TrimStart('0');
+    }
+
+    private static string GetCellText(DataTable table, int rowIndex, int columnIndex)
+    {
+        if (rowIndex < 0 || rowIndex >= table.Rows.Count)
+            return string.Empty;
+
+        if (columnIndex < 0 || columnIndex >= table.Columns.Count)
+            return string.Empty;
+
+        return table.Rows[rowIndex][columnIndex]?.ToString()?.Trim() ?? string.Empty;
+    }
+
+    private static string GetFirstAvailableCellText(
+        DataTable table,
+        int rowIndex,
+        params int[] columnIndexes)
+    {
+        foreach (var columnIndex in columnIndexes)
+        {
+            var value = GetCellText(table, rowIndex, columnIndex);
+
+            if (!string.IsNullOrWhiteSpace(value))
+                return value;
+        }
+
+        return string.Empty;
+    }
+
+    private static bool IsSameText(string? value, string expected)
+    {
+        return NormalizeHeader(value) == NormalizeHeader(expected);
     }
 
     #endregion

@@ -460,6 +460,12 @@
                     CEO Dashboard
                 </a>
 
+                <a asp-controller="SalesAnalyticsDataQuality"
+                   asp-action="Index">
+                    <i class="bi bi-shield-check"></i>
+                    Data Quality Report
+                </a>
+
                 <a asp-controller="SalesAnalyticsMasterData"
                    asp-action="UploadCenter">
                     <i class="bi bi-cloud-upload"></i>
@@ -488,6 +494,12 @@
                    asp-action="DailySalesReport">
                     <i class="bi bi-file-earmark-spreadsheet"></i>
                     Daily Sales Upload
+                </a>
+
+                <a asp-controller="SalesAnalyticsMasterData"
+                   asp-action="MtdSalesReport">
+                    <i class="bi bi-calendar-range"></i>
+                    MTD Sales Upload
                 </a>
 
                 <a asp-controller="SalesAnalyticsMasterData"

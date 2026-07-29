@@ -30,6 +30,11 @@ public interface ISalesAnalyticsMasterDataRepository
     int uploadBatchId,
     DateTime reportDate);
 
+    void ReplaceMtdSalesReport(
+    List<SalesAnalyticsMtdSalesImportDto> salesRows,
+    int uploadBatchId,
+    DateTime toDate);
+
     void ReplaceDailyVisitsReport(
     List<SalesAnalyticsDailyVisitImportDto> visitRows,
     int uploadBatchId,

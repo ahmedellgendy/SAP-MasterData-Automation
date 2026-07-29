@@ -24,6 +24,7 @@
             SalesAnalyticsUploadFileType.SalesRepMaster => "Sales Rep Master",
             SalesAnalyticsUploadFileType.RepRouteAssignment => "Rep Route Assignment",
             SalesAnalyticsUploadFileType.DailySalesReport => "Daily Sales Report",
+            SalesAnalyticsUploadFileType.MtdSalesReport => "MTD Sales Report",
             SalesAnalyticsUploadFileType.DailyVisitsReport => "Daily Visits Report",
             SalesAnalyticsUploadFileType.MonthlyTargets => "Monthly Targets",
             _ => type.ToString()
@@ -299,6 +300,23 @@
 
             <div class="upload-desc">
                 Upload SalesBuzz visits report to calculate visits, positive visits, negative reasons, and rep activity.
+            </div>
+        </a>
+
+        <a asp-controller="SalesAnalyticsMasterData"
+           asp-action="MtdSalesReport"
+           class="upload-card">
+
+            <div class="upload-icon">
+                <i class="bi bi-calendar-range"></i>
+            </div>
+
+            <div class="upload-title">
+                MTD Sales Upload
+            </div>
+
+            <div class="upload-desc">
+                Upload SalesBuzz sales report from month start to selected date for monthly target achievement.
             </div>
         </a>
 

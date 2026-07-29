@@ -1,6 +1,7 @@
 ﻿using MasterDataAutomation.Application.Modules.SalesAnalytics.DashboardDtos;
 using MasterDataAutomation.Application.Modules.SalesAnalytics.Interfaces;
 using MasterDataAutomation.Infrastructure.Data;
+using MasterDataAutomation.Infrastructure.Data.Entities.SalesAnalytics;
 using Microsoft.EntityFrameworkCore;
 
 namespace MasterDataAutomation.Infrastructure.Modules.SalesAnalytics.Persistence;
@@ -39,6 +40,24 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
             .AsNoTracking()
             .Where(x => x.ReportDate >= monthStart && x.ReportDate < nextDate)
             .ToList();
+
+        var latestMtdToDate = _context.SalesAnalyticsMtdSalesReports
+            .AsNoTracking()
+            .Where(x =>
+                x.Year == date.Year &&
+                x.Month == date.Month &&
+                x.ToDate <= date)
+            .Max(x => (DateTime?)x.ToDate);
+
+        var mtdSalesRows = latestMtdToDate == null
+            ? new List<SalesAnalyticsMtdSalesReportEntity>()
+            : _context.SalesAnalyticsMtdSalesReports
+                .AsNoTracking()
+                .Where(x =>
+                    x.Year == date.Year &&
+                    x.Month == date.Month &&
+                    x.ToDate == latestMtdToDate.Value)
+                .ToList();
 
         var monthVisitRows = _context.SalesAnalyticsDailyVisitReports
             .AsNoTracking()
@@ -112,6 +131,12 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
             monthlyTargets = monthlyTargets
                 .Where(x => NormalizeCode(x.BranchCode) == selectedBranchCode)
                 .ToList();
+
+            mtdSalesRows = mtdSalesRows
+                .Where(x =>
+                    customerBranchMap.ContainsKey(NormalizeCode(x.CustomerCode)) &&
+                    customerBranchMap[NormalizeCode(x.CustomerCode)] == selectedBranchCode)
+                .ToList();
         }
 
         var totalSales = salesRows.Sum(x => x.SalesAmount);
@@ -123,11 +148,21 @@ public class SalesAnalyticsDashboardRepository : ISalesAnalyticsDashboardReposit
 
         var totalVisitValue = visitRows.Sum(x => x.SuccessfulVisitValue);
 
-        var salesByLineMonth = monthSalesRows
-            .GroupBy(x => NormalizeCode(x.LineCode))
-            .ToDictionary(
-                g => g.Key,
-                g => g.Sum(x => x.SalesAmount));
+        var salesByLineMonth = mtdSalesRows
+               .Select(x => new
+               {
+                   Sales = x,
+                   NormalizedCustomerCode = NormalizeCode(x.CustomerCode)
+               })
+               .Where(x =>
+                   !string.IsNullOrWhiteSpace(x.NormalizedCustomerCode) &&
+                   customerDistrictMap.ContainsKey(x.NormalizedCustomerCode))
+               .GroupBy(x => NormalizeCode(customerDistrictMap[x.NormalizedCustomerCode]))
+               .ToDictionary(
+                   g => g.Key,
+                   g => g.Sum(x => x.Sales.TotalAfterTax > 0
+                       ? x.Sales.TotalAfterTax
+                       : x.Sales.SalesAmount));
 
         var visitsByLineMonth = monthVisitRows
             .Select(x => new

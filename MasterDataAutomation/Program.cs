@@ -19,6 +19,7 @@ using MasterDataAutomation.Infrastructure.Services;
 using MasterDataAutomation.Infrastructure.Settings;
 using MasterDataAutomation.Infrastructure.Validators;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -29,6 +30,19 @@ namespace MasterDataAutomation
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.Limits.MaxRequestBodySize = 200 * 1024 * 1024; // 200 MB
+            });
+
+            builder.Services.Configure<FormOptions>(options =>
+            {
+                options.MultipartBodyLengthLimit = 200 * 1024 * 1024; // 200 MB
+                options.ValueLengthLimit = int.MaxValue;
+                options.MultipartHeadersLengthLimit = int.MaxValue;
+            });
+
 
             builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -69,6 +83,9 @@ namespace MasterDataAutomation
             builder.Services.AddScoped<ISalesAnalyticsMasterDataImportService, SalesAnalyticsMasterDataImportService>();
             builder.Services.AddScoped<ISalesAnalyticsDashboardRepository, SalesAnalyticsDashboardRepository>();
             builder.Services.AddScoped<ISalesDistrictMonthlyTargetRepository, SalesDistrictMonthlyTargetRepository>();
+            builder.Services.AddScoped<ISalesAnalyticsDataQualityRepository, SalesAnalyticsDataQualityRepository>();
+
+
 
             builder.Services.AddDistributedMemoryCache();
             builder.Services.AddSession();
