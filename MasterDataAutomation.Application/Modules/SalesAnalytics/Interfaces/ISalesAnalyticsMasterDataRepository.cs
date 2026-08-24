@@ -33,6 +33,7 @@ public interface ISalesAnalyticsMasterDataRepository
     void ReplaceMtdSalesReport(
     List<SalesAnalyticsMtdSalesImportDto> salesRows,
     int uploadBatchId,
+    DateTime fromDate,
     DateTime toDate);
 
     void ReplaceDailyVisitsReport(
@@ -43,6 +44,7 @@ public interface ISalesAnalyticsMasterDataRepository
     void ReplaceMtdVisitsReport(
     List<SalesAnalyticsMtdVisitImportDto> visitRows,
     int uploadBatchId,
+    DateTime fromDate,
     DateTime toDate);
 
     List<SalesAnalyticsUploadHistoryDto> GetUploadHistory(int take = 50);

@@ -1,5 +1,16 @@
 ﻿@{
-    ViewData["Title"] = "MTD Sales Upload";
+    ViewData["Title"] = "Sales Range Upload";
+
+    var today =
+        ViewBag.Today as string
+        ?? DateTime.Today.ToString("yyyy-MM-dd");
+
+    var monthStart =
+        new DateTime(
+            DateTime.Today.Year,
+            DateTime.Today.Month,
+            1)
+        .ToString("yyyy-MM-dd");
 }
 
 <style>
@@ -79,23 +90,57 @@
         line-height: 1.7;
     }
 
+    .warning-box {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        color: #9a3412;
+        border-radius: 14px;
+        padding: 14px 16px;
+        font-size: 13px;
+        font-weight: 800;
+        margin-bottom: 18px;
+        line-height: 1.7;
+    }
+
+    .date-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .date-help {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 700;
+        margin-top: 6px;
+        line-height: 1.6;
+    }
+
     .alert {
         border-radius: 14px;
         font-weight: 800;
+    }
+
+    @@media (max-width: 700px) {
+        .date-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
 <div class="upload-page">
 
     <div class="upload-hero">
+
         <div class="upload-title">
-            MTD Sales Upload
+            Sales Range Upload
         </div>
 
         <div class="upload-subtitle">
-            Upload SalesBuzz sales analysis report from the beginning of the month up to selected date.
-            ده يستخدم في Target Achievement و Actual Sales MTD، مش مبيعات اليوم فقط.
+            Upload a SalesBuzz sales report for a specific date range within the same month.
+            The selected period must match the report period exactly.
         </div>
+
     </div>
 
     @if (TempData["Success"] != null)
@@ -112,43 +157,187 @@
         </div>
     }
 
-    <div class="note-box">
-        <i class="bi bi-info-circle"></i>
-        استخدم الصفحة دي فقط مع التقرير اللي متسحب من SalesBuzz من يوم 1 في الشهر لحد تاريخ معين.
-        لو التقرير يوم واحد فقط، ارفعه من Daily Sales Upload.
+    <div class="note-box" dir="rtl" style="text-align:right;">
+        <i class="bi bi-info-circle me-1"></i>
+
+        استخدم هذه الصفحة لرفع تقرير مبيعات يغطي فترة محددة داخل نفس الشهر.
+        يمكن استخدام التقرير لاستكمال الأيام التي لم يتم رفعها من خلال Daily Sales.
+
+    </div>
+
+    <div class="warning-box" dir="rtl" style="text-align:right;">
+        
+
+        <i class="bi bi-exclamation-triangle me-1"></i>
+
+        يجب أن يتطابق تاريخ البداية وتاريخ النهاية مع الفترة الفعلية
+        التي تم استخراج التقرير بها من SalesBuzz.
+
     </div>
 
     <div class="upload-card">
+
         <form asp-controller="SalesAnalyticsMasterData"
               asp-action="UploadMtdSalesReport"
               method="post"
-              enctype="multipart/form-data">
+              enctype="multipart/form-data"
+              id="salesRangeUploadForm">
 
             @Html.AntiForgeryToken()
 
-            <div class="mb-3">
-                <label class="form-label">Report To Date</label>
-                <input type="date"
-                       name="toDate"
-                       value="@ViewBag.Today"
-                       class="form-control"
-                       required />
+            <div class="date-grid">
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Report From Date
+                    </label>
+
+                    <input type="date"
+                           id="fromDate"
+                           name="fromDate"
+                           value="@monthStart"
+                           class="form-control"
+                           required />
+
+                    <div class="date-help" accesskey dir="rtl"
+                        style="text-align:right;">
+                        تاريخ بداية الفترة داخل التقرير.
+                    </div>
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Report To Date
+                    </label>
+
+                    <input type="date"
+                           id="toDate"
+                           name="toDate"
+                           value="@today"
+                           class="form-control"
+                           required />
+
+                    <div class="date-help" dir="rtl" style="text-align:right;">
+                        style="text-align:right;">
+                        تاريخ نهاية الفترة داخل التقرير.
+                    </div>
+
+                </div>
+
             </div>
 
             <div class="mb-4">
-                <label class="form-label">MTD SalesBuzz Sales Analysis File</label>
+
+                <label class="form-label">
+                    SalesBuzz Sales Report
+                </label>
+
                 <input type="file"
                        name="file"
                        class="form-control"
                        accept=".xls,.xlsx"
                        required />
+
             </div>
 
-            <button type="submit" class="btn-main">
+            <button type="submit"
+                    class="btn-main">
+
                 <i class="bi bi-cloud-upload"></i>
-                Upload MTD Sales Report
+
+                Upload Sales Range
+
             </button>
+
         </form>
+
     </div>
 
 </div>
+
+@section Scripts {
+
+    <script>
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
+
+                const form =
+                    document.getElementById(
+                        "salesRangeUploadForm");
+
+                const fromDate =
+                    document.getElementById(
+                        "fromDate");
+
+                const toDate =
+                    document.getElementById(
+                        "toDate");
+
+                if (!form || !fromDate || !toDate) {
+                    return;
+                }
+
+                function validateRange() {
+
+                    if (
+                        !fromDate.value ||
+                        !toDate.value) {
+
+                        return true;
+                    }
+
+                    if (
+                        fromDate.value >
+                        toDate.value) {
+
+                        alert(
+                            "تاريخ البداية لا يمكن أن يكون بعد تاريخ النهاية.");
+
+                        return false;
+                    }
+
+                    const from =
+                        new Date(fromDate.value);
+
+                    const to =
+                        new Date(toDate.value);
+
+                    if (
+                        from.getFullYear() !==
+                        to.getFullYear()
+                        ||
+                        from.getMonth() !==
+                        to.getMonth()) {
+
+                        alert(
+                            "الفترة يجب أن تكون داخل نفس الشهر.");
+
+                        return false;
+                    }
+
+                    return true;
+                }
+
+                form.addEventListener(
+                    "submit",
+                    function (event) {
+
+                        if (!validateRange()) {
+                            event.preventDefault();
+                        }
+                    });
+
+                fromDate.addEventListener(
+                    "change",
+                    function () {
+
+                        toDate.min =
+                            fromDate.value;
+                    });
+            });
+    </script>
+}

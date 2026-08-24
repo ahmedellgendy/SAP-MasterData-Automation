@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MasterDataAutomation.Web.Controllers.SalesAnalytics;
 
-[Authorize(Roles = "Admin,Manager")]
+[Authorize(Roles = "Admin,ExecutiveManager,CEO")]
 public class SalesAnalyticsDashboardController : Controller
 {
     private readonly ISalesAnalyticsDashboardRepository _dashboardRepository;

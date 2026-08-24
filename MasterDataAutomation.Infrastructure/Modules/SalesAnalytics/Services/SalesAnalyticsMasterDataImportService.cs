@@ -509,10 +509,11 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
     }
 
     public SalesAnalyticsImportResultDto ImportMtdSalesReport(
-        Stream fileStream,
-        string originalFileName,
-        DateTime toDate,
-        string? uploadedBy)
+    Stream fileStream,
+    string originalFileName,
+    DateTime fromDate,
+    DateTime toDate,
+    string? uploadedBy)
     {
         var uploadBatchId = _repository.CreateUploadBatch(
             SalesAnalyticsUploadFileType.MtdSalesReport,
@@ -522,12 +523,210 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
 
         try
         {
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            Encoding.RegisterProvider(
+                CodePagesEncodingProvider.Instance);
 
-            using var reader = ExcelReaderFactory.CreateReader(fileStream);
-            var dataSet = reader.AsDataSet();
+            using var reader =
+                ExcelReaderFactory.CreateReader(fileStream);
 
-            if (dataSet.Tables.Count == 0)
+            var salesRows =
+                new List<SalesAnalyticsMtdSalesImportDto>();
+
+            var failedRows = 0;
+
+            string? currentCityCode = null;
+            string? currentCityName = null;
+
+            string? currentCustomerCode = null;
+            string? currentCustomerName = null;
+
+            var hasAnySheet = false;
+
+            do
+            {
+                hasAnySheet = true;
+
+                while (reader.Read())
+                {
+                    var groupType =
+                        GetReaderCellText(
+                            reader,
+                            44);
+
+                    if (IsSameText(
+                        groupType,
+                        "المدينة"))
+                    {
+                        currentCityCode =
+                            NormalizeCode(
+                                GetReaderCellText(
+                                    reader,
+                                    14));
+
+                        currentCityName =
+                            GetReaderCellText(
+                                reader,
+                                28)
+                            .Trim();
+
+                        continue;
+                    }
+
+                    if (IsSameText(
+                        groupType,
+                        "العميل"))
+                    {
+                        currentCustomerCode =
+                            NormalizeCode(
+                                GetReaderCellText(
+                                    reader,
+                                    14));
+
+                        currentCustomerName =
+                            GetReaderCellText(
+                                reader,
+                                28)
+                            .Trim();
+
+                        continue;
+                    }
+
+                    var productCode =
+                        GetReaderCellText(
+                            reader,
+                            48);
+
+                    var productName =
+                        GetFirstAvailableReaderCellText(
+                            reader,
+                            40,
+                            39);
+
+                    var unit =
+                        GetReaderCellText(
+                            reader,
+                            37);
+
+                    if (
+                        string.IsNullOrWhiteSpace(
+                            productCode) ||
+                        string.IsNullOrWhiteSpace(
+                            productName))
+                    {
+                        continue;
+                    }
+
+                    var quantity =
+                        ParseDecimal(
+                            GetReaderCellText(
+                                reader,
+                                31));
+
+                    var salesAmount =
+                        ParseDecimal(
+                            GetReaderCellText(
+                                reader,
+                                25));
+
+                    var discountAmount =
+                        ParseDecimal(
+                            GetReaderCellText(
+                                reader,
+                                21));
+
+                    var taxPercentage =
+                        ParseDecimal(
+                            GetReaderCellText(
+                                reader,
+                                4));
+
+                    var taxAmount =
+                        ParseDecimal(
+                            GetReaderCellText(
+                                reader,
+                                16));
+
+                    var totalBeforeTax =
+                        ParseDecimal(
+                            GetReaderCellText(
+                                reader,
+                                10));
+
+                    var totalAfterTax =
+                        ParseDecimal(
+                            GetReaderCellText(
+                                reader,
+                                0));
+
+                    if (
+                        string.IsNullOrWhiteSpace(
+                            currentCustomerCode) ||
+                        string.IsNullOrWhiteSpace(
+                            currentCustomerName))
+                    {
+                        failedRows++;
+                        continue;
+                    }
+
+                    if (
+                        salesAmount == 0 &&
+                        totalAfterTax == 0 &&
+                        quantity == 0)
+                    {
+                        continue;
+                    }
+
+                    salesRows.Add(
+                        new SalesAnalyticsMtdSalesImportDto
+                        {
+                            CityCode =
+                                currentCityCode,
+
+                            CityName =
+                                currentCityName,
+
+                            CustomerCode =
+                                currentCustomerCode,
+
+                            CustomerName =
+                                currentCustomerName,
+
+                            ProductCode =
+                                NormalizeCode(
+                                    productCode),
+
+                            ProductName =
+                                productName.Trim(),
+
+                            Unit =
+                                unit.Trim(),
+
+                            Quantity =
+                                quantity,
+
+                            SalesAmount =
+                                salesAmount,
+
+                            DiscountAmount =
+                                discountAmount,
+
+                            TaxPercentage =
+                                taxPercentage,
+
+                            TaxAmount =
+                                taxAmount,
+
+                            TotalBeforeTax =
+                                totalBeforeTax,
+
+                            TotalAfterTax =
+                                totalAfterTax
+                        });
+                }
+            }
+            while (reader.NextResult());
+
+            if (!hasAnySheet)
             {
                 _repository.CompleteUploadBatch(
                     uploadBatchId,
@@ -535,97 +734,17 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
                     0,
                     0,
                     0,
-                    "No sheets found in the uploaded MTD sales report.");
+                    "No sheets found in the uploaded Sales Range report.");
 
                 return new SalesAnalyticsImportResultDto
                 {
                     Success = false,
-                    Message = "No sheets found in the uploaded MTD sales report.",
+                    Message =
+                        "No sheets found in the uploaded Sales Range report.",
                     TotalRows = 0,
                     ImportedRows = 0,
                     FailedRows = 0
                 };
-            }
-
-            var salesRows = new List<SalesAnalyticsMtdSalesImportDto>();
-            var failedRows = 0;
-
-            string? currentCityCode = null;
-            string? currentCityName = null;
-            string? currentCustomerCode = null;
-            string? currentCustomerName = null;
-
-            foreach (DataTable table in dataSet.Tables)
-            {
-                for (var rowIndex = 0; rowIndex < table.Rows.Count; rowIndex++)
-                {
-                    var groupType = GetCellText(table, rowIndex, 44);
-
-                    if (IsSameText(groupType, "المدينة"))
-                    {
-                        currentCityCode = NormalizeCode(GetCellText(table, rowIndex, 14));
-                        currentCityName = GetCellText(table, rowIndex, 28).Trim();
-                        continue;
-                    }
-
-                    if (IsSameText(groupType, "العميل"))
-                    {
-                        currentCustomerCode = NormalizeCode(GetCellText(table, rowIndex, 14));
-                        currentCustomerName = GetCellText(table, rowIndex, 28).Trim();
-                        continue;
-                    }
-
-                    var productCode = GetCellText(table, rowIndex, 48);
-                    var productName = GetFirstAvailableCellText(table, rowIndex, 40, 39);
-                    var unit = GetCellText(table, rowIndex, 37);
-
-                    if (string.IsNullOrWhiteSpace(productCode) ||
-                        string.IsNullOrWhiteSpace(productName))
-                    {
-                        continue;
-                    }
-
-                    var quantity = ParseDecimal(GetCellText(table, rowIndex, 31));
-                    var salesAmount = ParseDecimal(GetCellText(table, rowIndex, 25));
-                    var discountAmount = ParseDecimal(GetCellText(table, rowIndex, 21));
-                    var taxPercentage = ParseDecimal(GetCellText(table, rowIndex, 4));
-                    var taxAmount = ParseDecimal(GetCellText(table, rowIndex, 16));
-                    var totalBeforeTax = ParseDecimal(GetCellText(table, rowIndex, 10));
-                    var totalAfterTax = ParseDecimal(GetCellText(table, rowIndex, 0));
-
-                    if (string.IsNullOrWhiteSpace(currentCustomerCode) ||
-                        string.IsNullOrWhiteSpace(currentCustomerName))
-                    {
-                        failedRows++;
-                        continue;
-                    }
-
-                    if (salesAmount == 0 && totalAfterTax == 0 && quantity == 0)
-                    {
-                        continue;
-                    }
-
-                    salesRows.Add(new SalesAnalyticsMtdSalesImportDto
-                    {
-                        CityCode = currentCityCode,
-                        CityName = currentCityName,
-
-                        CustomerCode = currentCustomerCode,
-                        CustomerName = currentCustomerName,
-
-                        ProductCode = NormalizeCode(productCode),
-                        ProductName = productName.Trim(),
-                        Unit = unit.Trim(),
-
-                        Quantity = quantity,
-                        SalesAmount = salesAmount,
-                        DiscountAmount = discountAmount,
-                        TaxPercentage = taxPercentage,
-                        TaxAmount = taxAmount,
-                        TotalBeforeTax = totalBeforeTax,
-                        TotalAfterTax = totalAfterTax
-                    });
-                }
             }
 
             if (!salesRows.Any())
@@ -636,40 +755,60 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
                     0,
                     0,
                     failedRows,
-                    "Could not detect any MTD sales rows in this Crystal Report.");
+                    "Could not detect any sales rows in this Crystal Report.");
 
                 return new SalesAnalyticsImportResultDto
                 {
                     Success = false,
-                    Message = "Could not detect any MTD sales rows. تأكد إن التقرير هو تفاصيل تحليل المبيعات - العميل / المدينة - القيمة.",
+
+                    Message =
+                        "Could not detect any sales rows. تأكد إن التقرير هو تفاصيل تحليل المبيعات - العميل / المدينة - القيمة.",
+
                     TotalRows = 0,
                     ImportedRows = 0,
                     FailedRows = failedRows
                 };
             }
 
-            _repository.ReplaceMtdSalesReport(salesRows, uploadBatchId, toDate.Date);
+            _repository.ReplaceMtdSalesReport(
+                salesRows,
+                uploadBatchId,
+                fromDate.Date,
+                toDate.Date);
 
-            var totalRows = salesRows.Count + failedRows;
+            var totalRows =
+                salesRows.Count +
+                failedRows;
+
+            var status =
+                failedRows > 0
+                    ? SalesAnalyticsUploadStatus.PartiallyImported
+                    : SalesAnalyticsUploadStatus.Success;
 
             _repository.CompleteUploadBatch(
                 uploadBatchId,
-                failedRows > 0
-                    ? SalesAnalyticsUploadStatus.PartiallyImported
-                    : SalesAnalyticsUploadStatus.Success,
+                status,
                 totalRows,
                 salesRows.Count,
                 failedRows);
 
             return new SalesAnalyticsImportResultDto
             {
-                Success = failedRows == 0,
-                Message = failedRows == 0
-                    ? "MTD sales report imported successfully."
-                    : "MTD sales report imported with some skipped rows.",
-                TotalRows = totalRows,
-                ImportedRows = salesRows.Count,
-                FailedRows = failedRows
+                Success = true,
+
+                Message =
+                    failedRows == 0
+                        ? "Sales Range report imported successfully."
+                        : "Sales Range report imported with some skipped rows.",
+
+                TotalRows =
+                    totalRows,
+
+                ImportedRows =
+                    salesRows.Count,
+
+                FailedRows =
+                    failedRows
             };
         }
         catch (Exception ex)
@@ -1064,10 +1203,11 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
     }
 
     public SalesAnalyticsImportResultDto ImportMtdVisitsReport(
-        Stream fileStream,
-        string originalFileName,
-        DateTime toDate,
-        string? uploadedBy)
+     Stream fileStream,
+     string originalFileName,
+     DateTime fromDate,
+     DateTime toDate,
+     string? uploadedBy)
     {
         var uploadBatchId = _repository.CreateUploadBatch(
             SalesAnalyticsUploadFileType.MtdVisitsReport,
@@ -1077,12 +1217,236 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
 
         try
         {
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            Encoding.RegisterProvider(
+                CodePagesEncodingProvider.Instance);
 
-            using var reader = ExcelReaderFactory.CreateReader(fileStream);
-            var dataSet = reader.AsDataSet();
+            using var reader =
+                ExcelReaderFactory.CreateReader(fileStream);
 
-            if (dataSet.Tables.Count == 0)
+            var visitRows =
+                new List<SalesAnalyticsMtdVisitImportDto>();
+
+            var failedRows = 0;
+
+            string? currentSalesRepCode = null;
+            string? currentSalesRepName = null;
+
+            var hasAnySheet = false;
+
+            do
+            {
+                hasAnySheet = true;
+
+                while (reader.Read())
+                {
+                    // =========================================
+                    // Sales Rep Name
+                    // =========================================
+
+                    if (
+                        ContainsNormalizedText(
+                            GetReaderCellText(
+                                reader,
+                                49),
+                            "كود المندوب"))
+                    {
+                        var repName =
+                            GetReaderCellText(
+                                reader,
+                                55);
+
+                        if (
+                            !string.IsNullOrWhiteSpace(
+                                repName))
+                        {
+                            currentSalesRepName =
+                                repName.Trim();
+                        }
+
+                        continue;
+                    }
+
+                    // =========================================
+                    // Sales Rep Code
+                    // =========================================
+
+                    if (
+                        ContainsNormalizedText(
+                            GetReaderCellText(
+                                reader,
+                                23),
+                            "كود الموزع")
+                        ||
+                        ContainsNormalizedText(
+                            GetReaderCellText(
+                                reader,
+                                37),
+                            "الموزع"))
+                    {
+                        var repCode =
+                            GetReaderCellText(
+                                reader,
+                                40);
+
+                        if (
+                            !string.IsNullOrWhiteSpace(
+                                repCode))
+                        {
+                            currentSalesRepCode =
+                                NormalizeCode(
+                                    repCode);
+                        }
+
+                        continue;
+                    }
+
+                    // =========================================
+                    // Visit Detail
+                    // =========================================
+
+                    var detailMarker =
+                        GetReaderCellText(
+                            reader,
+                            1);
+
+                    if (
+                        !ContainsNormalizedText(
+                            detailMarker,
+                            "عرض"))
+                    {
+                        continue;
+                    }
+
+                    var successfulVisitValue =
+                        ParseDecimal(
+                            GetReaderCellText(
+                                reader,
+                                7));
+
+                    var negativeReason =
+                        GetReaderCellText(
+                            reader,
+                            10);
+
+                    var visitStatus =
+                        GetReaderCellText(
+                            reader,
+                            20);
+
+                    var durationText =
+                        GetReaderCellText(
+                            reader,
+                            24);
+
+                    var visitEndTime =
+                        ParseCrystalDateTime(
+                            GetReaderCellText(
+                                reader,
+                                28));
+
+                    var visitStartTime =
+                        ParseCrystalDateTime(
+                            GetReaderCellText(
+                                reader,
+                                34));
+
+                    var cityName =
+                        GetReaderCellText(
+                            reader,
+                            50);
+
+                    var customerName =
+                        GetReaderCellText(
+                            reader,
+                            54);
+
+                    var customerCode =
+                        GetReaderCellText(
+                            reader,
+                            60);
+
+                    var visitCode =
+                        GetReaderCellText(
+                            reader,
+                            64);
+
+                    if (
+                        string.IsNullOrWhiteSpace(
+                            customerCode) &&
+                        string.IsNullOrWhiteSpace(
+                            customerName) &&
+                        string.IsNullOrWhiteSpace(
+                            visitCode))
+                    {
+                        continue;
+                    }
+
+                    if (
+                        string.IsNullOrWhiteSpace(
+                            currentSalesRepCode) ||
+                        string.IsNullOrWhiteSpace(
+                            currentSalesRepName) ||
+                        string.IsNullOrWhiteSpace(
+                            customerCode) ||
+                        string.IsNullOrWhiteSpace(
+                            customerName))
+                    {
+                        failedRows++;
+                        continue;
+                    }
+
+                    visitRows.Add(
+                        new SalesAnalyticsMtdVisitImportDto
+                        {
+                            VisitDate =
+                                visitStartTime?.Date
+                                ?? toDate.Date,
+
+                            SupervisorName =
+                                null,
+
+                            CityName =
+                                cityName,
+
+                            VisitCode =
+                                visitCode,
+
+                            SalesRepCode =
+                                currentSalesRepCode,
+
+                            SalesRepName =
+                                currentSalesRepName,
+
+                            CustomerCode =
+                                NormalizeCode(
+                                    customerCode),
+
+                            CustomerName =
+                                customerName.Trim(),
+
+                            VisitStatus =
+                                visitStatus,
+
+                            NegativeReason =
+                                negativeReason,
+
+                            SuccessfulVisitValue =
+                                successfulVisitValue,
+
+                            VisitStartTime =
+                                visitStartTime,
+
+                            VisitEndTime =
+                                visitEndTime,
+
+                            VisitDurationText =
+                                durationText
+                        });
+                }
+            }
+            while (reader.NextResult());
+
+            if (!hasAnySheet)
             {
                 _repository.CompleteUploadBatch(
                     uploadBatchId,
@@ -1090,106 +1454,17 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
                     0,
                     0,
                     0,
-                    "No sheets found in the uploaded MTD visits report.");
+                    "No sheets found in the uploaded Visits Range report.");
 
                 return new SalesAnalyticsImportResultDto
                 {
                     Success = false,
-                    Message = "No sheets found in the uploaded MTD visits report.",
+                    Message =
+                        "No sheets found in the uploaded Visits Range report.",
                     TotalRows = 0,
                     ImportedRows = 0,
                     FailedRows = 0
                 };
-            }
-
-            var visitRows = new List<SalesAnalyticsMtdVisitImportDto>();
-            var failedRows = 0;
-
-            string? currentSalesRepCode = null;
-            string? currentSalesRepName = null;
-
-            foreach (DataTable table in dataSet.Tables)
-            {
-                for (var rowIndex = 0; rowIndex < table.Rows.Count; rowIndex++)
-                {
-                    if (ContainsNormalizedText(GetCellText(table, rowIndex, 49), "كود المندوب"))
-                    {
-                        var repName = GetCellText(table, rowIndex, 55);
-
-                        if (!string.IsNullOrWhiteSpace(repName))
-                            currentSalesRepName = repName.Trim();
-
-                        continue;
-                    }
-
-                    if (ContainsNormalizedText(GetCellText(table, rowIndex, 23), "كود الموزع") ||
-                        ContainsNormalizedText(GetCellText(table, rowIndex, 37), "الموزع"))
-                    {
-                        var repCode = GetCellText(table, rowIndex, 40);
-
-                        if (!string.IsNullOrWhiteSpace(repCode))
-                            currentSalesRepCode = NormalizeCode(repCode);
-
-                        continue;
-                    }
-
-                    var detailMarker = GetCellText(table, rowIndex, 1);
-
-                    if (!ContainsNormalizedText(detailMarker, "عرض"))
-                        continue;
-
-                    var successfulVisitValue = ParseDecimal(GetCellText(table, rowIndex, 7));
-                    var negativeReason = GetCellText(table, rowIndex, 10);
-                    var visitStatus = GetCellText(table, rowIndex, 20);
-                    var durationText = GetCellText(table, rowIndex, 24);
-
-                    var visitEndTime = ParseCrystalDateTime(GetCellText(table, rowIndex, 28));
-                    var visitStartTime = ParseCrystalDateTime(GetCellText(table, rowIndex, 34));
-
-                    var cityName = GetCellText(table, rowIndex, 50);
-                    var customerName = GetCellText(table, rowIndex, 54);
-                    var customerCode = GetCellText(table, rowIndex, 60);
-                    var visitCode = GetCellText(table, rowIndex, 64);
-
-                    if (string.IsNullOrWhiteSpace(customerCode) &&
-                        string.IsNullOrWhiteSpace(customerName) &&
-                        string.IsNullOrWhiteSpace(visitCode))
-                    {
-                        continue;
-                    }
-
-                    if (string.IsNullOrWhiteSpace(currentSalesRepCode) ||
-                        string.IsNullOrWhiteSpace(currentSalesRepName) ||
-                        string.IsNullOrWhiteSpace(customerCode) ||
-                        string.IsNullOrWhiteSpace(customerName))
-                    {
-                        failedRows++;
-                        continue;
-                    }
-
-                    visitRows.Add(new SalesAnalyticsMtdVisitImportDto
-                    {
-                        VisitDate = visitStartTime?.Date ?? toDate.Date,
-
-                        SupervisorName = null,
-                        CityName = cityName,
-                        VisitCode = visitCode,
-
-                        SalesRepCode = currentSalesRepCode,
-                        SalesRepName = currentSalesRepName,
-
-                        CustomerCode = NormalizeCode(customerCode),
-                        CustomerName = customerName.Trim(),
-
-                        VisitStatus = visitStatus,
-                        NegativeReason = negativeReason,
-                        SuccessfulVisitValue = successfulVisitValue,
-
-                        VisitStartTime = visitStartTime,
-                        VisitEndTime = visitEndTime,
-                        VisitDurationText = durationText
-                    });
-                }
             }
 
             if (!visitRows.Any())
@@ -1205,35 +1480,55 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
                 return new SalesAnalyticsImportResultDto
                 {
                     Success = false,
-                    Message = "Could not detect any visit detail rows. التقرير ده Crystal Report ومحتاج نفس فورمات تفاصيل الزيارات.",
+
+                    Message =
+                        "Could not detect any visit detail rows. التقرير ده Crystal Report ومحتاج نفس فورمات تفاصيل الزيارات.",
+
                     TotalRows = 0,
                     ImportedRows = 0,
                     FailedRows = failedRows
                 };
             }
 
-            _repository.ReplaceMtdVisitsReport(visitRows, uploadBatchId, toDate.Date);
+            _repository.ReplaceMtdVisitsReport(
+                visitRows,
+                uploadBatchId,
+                fromDate.Date,
+                toDate.Date);
 
-            var totalRows = visitRows.Count + failedRows;
+            var totalRows =
+                visitRows.Count +
+                failedRows;
+
+            var status =
+                failedRows > 0
+                    ? SalesAnalyticsUploadStatus.PartiallyImported
+                    : SalesAnalyticsUploadStatus.Success;
 
             _repository.CompleteUploadBatch(
                 uploadBatchId,
-                failedRows > 0
-                    ? SalesAnalyticsUploadStatus.PartiallyImported
-                    : SalesAnalyticsUploadStatus.Success,
+                status,
                 totalRows,
                 visitRows.Count,
                 failedRows);
 
             return new SalesAnalyticsImportResultDto
             {
-                Success = failedRows == 0,
-                Message = failedRows == 0
-                    ? "MTD visits report imported successfully."
-                    : "MTD visits report imported with some skipped rows.",
-                TotalRows = totalRows,
-                ImportedRows = visitRows.Count,
-                FailedRows = failedRows
+                Success = true,
+
+                Message =
+                    failedRows == 0
+                        ? "Visits Range report imported successfully."
+                        : "Visits Range report imported with some skipped rows.",
+
+                TotalRows =
+                    totalRows,
+
+                ImportedRows =
+                    visitRows.Count,
+
+                FailedRows =
+                    failedRows
             };
         }
         catch (Exception ex)
@@ -1585,5 +1880,57 @@ public class SalesAnalyticsMasterDataImportService : ISalesAnalyticsMasterDataIm
         return null;
     }
 
+
+
+    private static string GetReaderCellText(
+    IExcelDataReader reader,
+    int columnIndex)
+    {
+        if (
+            columnIndex < 0 ||
+            columnIndex >= reader.FieldCount)
+        {
+            return string.Empty;
+        }
+
+        var value =
+            reader.GetValue(columnIndex);
+
+        if (
+            value == null ||
+            value == DBNull.Value)
+        {
+            return string.Empty;
+        }
+
+        return value
+            .ToString()?
+            .Trim()
+            ?? string.Empty;
+    }
+
+    private static string GetFirstAvailableReaderCellText(
+        IExcelDataReader reader,
+        params int[] columnIndexes)
+    {
+        foreach (
+            var columnIndex
+            in columnIndexes)
+        {
+            var value =
+                GetReaderCellText(
+                    reader,
+                    columnIndex);
+
+            if (
+                !string.IsNullOrWhiteSpace(
+                    value))
+            {
+                return value;
+            }
+        }
+
+        return string.Empty;
+    }
     #endregion
 }

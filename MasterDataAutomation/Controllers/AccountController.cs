@@ -40,12 +40,14 @@ public class AccountController : Controller
             return View(model);
         }
 
+        var userRole = user.Role?.Trim() ?? string.Empty;
+
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Name, user.UserName),
             new Claim("FullName", user.FullName),
-            new Claim(ClaimTypes.Role, user.Role)
+            new Claim(ClaimTypes.Role, userRole)
         };
 
         var identity = new ClaimsIdentity(
@@ -58,21 +60,23 @@ public class AccountController : Controller
             CookieAuthenticationDefaults.AuthenticationScheme,
             principal);
 
-        if (user.Role == "Manager" || user.Role == "Admin")
-            return RedirectToAction("Index", "ManagerDashboard");
-
-        return user.Role switch
+        return userRole switch
         {
             "Admin" => RedirectToAction("Index", "ManagerDashboard"),
 
-            "Sales" => RedirectToAction("Index", "SalesDashboard"),
-
             "Manager" => RedirectToAction("Index", "ManagerDashboard"),
 
+            "Sales" => RedirectToAction("Index", "SalesDashboard"),
+
             "AccountsUser" => RedirectToAction("Index", "ProductRequests"),
+
             "AccountsManager" => RedirectToAction("Index", "ProductAccountsManager"),
+
             "ExecutiveManager" => RedirectToAction("Index", "ProductExecutiveManager"),
 
+            "Executive Manager" => RedirectToAction("Index", "SalesAnalyticsDashboard"),
+
+            "CEO" => RedirectToAction("Index", "SalesAnalyticsDashboard"),
 
             _ => RedirectToAction("AccessDenied", "Account")
         };

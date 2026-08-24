@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MasterDataAutomation.Web.Controllers.SalesAnalytics;
 
-[Authorize(Roles = "Admin,Manager")]
+[Authorize(Roles = "Admin,Manager,CEO")]
 public class SalesAnalyticsDataQualityController : Controller
 {
     private readonly ISalesAnalyticsDataQualityRepository _dataQualityRepository;

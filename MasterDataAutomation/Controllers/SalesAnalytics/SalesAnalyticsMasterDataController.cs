@@ -231,46 +231,114 @@ public class SalesAnalyticsMasterDataController : Controller
     [ValidateAntiForgeryToken]
     [RequestSizeLimit(200_000_000)]
     [RequestFormLimits(MultipartBodyLengthLimit = 200_000_000)]
-    public IActionResult UploadMtdSalesReport(IFormFile file, DateTime toDate)
+    public IActionResult UploadMtdSalesReport(
+    IFormFile file,
+    DateTime fromDate,
+    DateTime toDate)
     {
         if (file == null || file.Length == 0)
         {
-            TempData["Error"] = "Please select MTD sales report file.";
-            return RedirectToAction(nameof(MtdSalesReport));
+            TempData["Error"] =
+                "Please select Sales Range report file.";
+
+            return RedirectToAction(
+                nameof(MtdSalesReport));
+        }
+
+        if (fromDate == default)
+        {
+            TempData["Error"] =
+                "Please select report From Date.";
+
+            return RedirectToAction(
+                nameof(MtdSalesReport));
         }
 
         if (toDate == default)
         {
-            TempData["Error"] = "Please select report To Date.";
-            return RedirectToAction(nameof(MtdSalesReport));
+            TempData["Error"] =
+                "Please select report To Date.";
+
+            return RedirectToAction(
+                nameof(MtdSalesReport));
         }
 
-        using var stream = file.OpenReadStream();
+        if (fromDate.Date > toDate.Date)
+        {
+            TempData["Error"] =
+                "From Date cannot be after To Date.";
 
-        var result = _importService.ImportMtdSalesReport(
-            stream,
-            file.FileName,
-            toDate,
-            User.Identity?.Name);
+            return RedirectToAction(
+                nameof(MtdSalesReport));
+        }
+
+        // مهم:
+        // نخلي الـRange داخل نفس الشهر حاليًا
+        // لأن حسابات الـDashboard والTargets شهرية.
+        if (
+            fromDate.Year != toDate.Year ||
+            fromDate.Month != toDate.Month)
+        {
+            TempData["Error"] =
+                "Sales Range must be within the same month.";
+
+            return RedirectToAction(
+                nameof(MtdSalesReport));
+        }
+
+        var extension =
+            Path.GetExtension(
+                file.FileName)
+            .ToLowerInvariant();
+
+        if (
+            extension != ".xlsx" &&
+            extension != ".xls")
+        {
+            TempData["Error"] =
+                "Only Excel files are allowed.";
+
+            return RedirectToAction(
+                nameof(MtdSalesReport));
+        }
+
+        using var stream =
+            file.OpenReadStream();
+
+        var result =
+            _importService.ImportMtdSalesReport(
+                stream,
+                file.FileName,
+                fromDate.Date,
+                toDate.Date,
+                User.Identity?.Name);
 
         if (result.Success)
         {
             TempData["Success"] =
-                $"MTD Sales Report uploaded successfully. Imported: {result.ImportedRows}, Failed: {result.FailedRows}";
+                $"Sales Range uploaded successfully. " +
+                $"Period: {fromDate:dd/MM/yyyy} - {toDate:dd/MM/yyyy}. " +
+                $"Imported: {result.ImportedRows}, " +
+                $"Failed: {result.FailedRows}";
         }
         else
         {
-            TempData["Error"] = result.Message ?? "Failed to upload MTD Sales Report.";
+            TempData["Error"] =
+                result.Message ??
+                "Failed to upload Sales Range report.";
         }
 
-        return RedirectToAction(nameof(MtdSalesReport));
+        return RedirectToAction(
+            nameof(MtdSalesReport));
     }
 
 
     [HttpGet]
     public IActionResult MtdVisitsReport()
     {
-        ViewBag.Today = DateTime.Today.ToString("yyyy-MM-dd");
+        ViewBag.Today =
+            DateTime.Today.ToString("yyyy-MM-dd");
+
         return View();
     }
 
@@ -278,38 +346,101 @@ public class SalesAnalyticsMasterDataController : Controller
     [ValidateAntiForgeryToken]
     [RequestSizeLimit(200_000_000)]
     [RequestFormLimits(MultipartBodyLengthLimit = 200_000_000)]
-    public IActionResult UploadMtdVisitsReport(IFormFile file, DateTime toDate)
+    public IActionResult UploadMtdVisitsReport(
+    IFormFile file,
+    DateTime fromDate,
+    DateTime toDate)
     {
         if (file == null || file.Length == 0)
         {
-            TempData["Error"] = "Please select MTD visits report file.";
-            return RedirectToAction(nameof(MtdVisitsReport));
+            TempData["Error"] =
+                "Please select Visits Range report file.";
+
+            return RedirectToAction(
+                nameof(MtdVisitsReport));
+        }
+
+        if (fromDate == default)
+        {
+            TempData["Error"] =
+                "Please select report From Date.";
+
+            return RedirectToAction(
+                nameof(MtdVisitsReport));
         }
 
         if (toDate == default)
         {
-            TempData["Error"] = "Please select report To Date.";
-            return RedirectToAction(nameof(MtdVisitsReport));
+            TempData["Error"] =
+                "Please select report To Date.";
+
+            return RedirectToAction(
+                nameof(MtdVisitsReport));
         }
 
-        using var stream = file.OpenReadStream();
+        if (fromDate.Date > toDate.Date)
+        {
+            TempData["Error"] =
+                "From Date cannot be after To Date.";
 
-        var result = _importService.ImportMtdVisitsReport(
-            stream,
-            file.FileName,
-            toDate,
-            User.Identity?.Name);
+            return RedirectToAction(
+                nameof(MtdVisitsReport));
+        }
+
+        if (
+            fromDate.Year != toDate.Year ||
+            fromDate.Month != toDate.Month)
+        {
+            TempData["Error"] =
+                "Visits Range must be within the same month.";
+
+            return RedirectToAction(
+                nameof(MtdVisitsReport));
+        }
+
+        var extension =
+            Path.GetExtension(
+                file.FileName)
+            .ToLowerInvariant();
+
+        if (
+            extension != ".xlsx" &&
+            extension != ".xls")
+        {
+            TempData["Error"] =
+                "Only Excel files are allowed.";
+
+            return RedirectToAction(
+                nameof(MtdVisitsReport));
+        }
+
+        using var stream =
+            file.OpenReadStream();
+
+        var result =
+            _importService.ImportMtdVisitsReport(
+                stream,
+                file.FileName,
+                fromDate.Date,
+                toDate.Date,
+                User.Identity?.Name);
 
         if (result.Success)
         {
             TempData["Success"] =
-                $"MTD Visits Report uploaded successfully. Imported: {result.ImportedRows}, Failed: {result.FailedRows}";
+                $"Visits Range uploaded successfully. " +
+                $"Period: {fromDate:dd/MM/yyyy} - {toDate:dd/MM/yyyy}. " +
+                $"Imported: {result.ImportedRows}, " +
+                $"Failed: {result.FailedRows}";
         }
         else
         {
-            TempData["Error"] = result.Message ?? "Failed to upload MTD Visits Report.";
+            TempData["Error"] =
+                result.Message ??
+                "Failed to upload Visits Range report.";
         }
 
-        return RedirectToAction(nameof(MtdVisitsReport));
+        return RedirectToAction(
+            nameof(MtdVisitsReport));
     }
 }

@@ -312,56 +312,119 @@ public class SalesAnalyticsMasterDataRepository : ISalesAnalyticsMasterDataRepos
     public void ReplaceMtdVisitsReport(
     List<SalesAnalyticsMtdVisitImportDto> visitRows,
     int uploadBatchId,
+    DateTime fromDate,
     DateTime toDate)
     {
+        const int batchSize = 1000;
+
+        var normalizedFromDate = fromDate.Date;
         var normalizedToDate = toDate.Date;
-        var fromDate = new DateTime(normalizedToDate.Year, normalizedToDate.Month, 1);
 
-        var oldRows = _context.SalesAnalyticsMtdVisitReports
-            .Where(x =>
-                x.Year == normalizedToDate.Year &&
-                x.Month == normalizedToDate.Month &&
-                x.ToDate >= normalizedToDate &&
-                x.ToDate < normalizedToDate.AddDays(1))
-            .ToList();
+        using var transaction =
+            _context.Database.BeginTransaction();
 
-        if (oldRows.Any())
+        try
         {
-            _context.SalesAnalyticsMtdVisitReports.RemoveRange(oldRows);
+            _context.SalesAnalyticsMtdVisitReports
+                .Where(x =>
+                    x.FromDate >= normalizedFromDate &&
+                    x.FromDate < normalizedFromDate.AddDays(1) &&
+                    x.ToDate >= normalizedToDate &&
+                    x.ToDate < normalizedToDate.AddDays(1))
+                .ExecuteDelete();
+
+            for (
+                var offset = 0;
+                offset < visitRows.Count;
+                offset += batchSize)
+            {
+                var batch =
+                    visitRows
+                        .Skip(offset)
+                        .Take(batchSize)
+                        .Select(x =>
+                            new SalesAnalyticsMtdVisitReportEntity
+                            {
+                                Year =
+                                    normalizedToDate.Year,
+
+                                Month =
+                                    normalizedToDate.Month,
+
+                                FromDate =
+                                    normalizedFromDate,
+
+                                ToDate =
+                                    normalizedToDate,
+
+                                VisitDate =
+                                    x.VisitDate,
+
+                                SupervisorName =
+                                    x.SupervisorName,
+
+                                CityName =
+                                    x.CityName,
+
+                                VisitCode =
+                                    x.VisitCode,
+
+                                SalesRepCode =
+                                    x.SalesRepCode,
+
+                                SalesRepName =
+                                    x.SalesRepName,
+
+                                CustomerCode =
+                                    x.CustomerCode,
+
+                                CustomerName =
+                                    x.CustomerName,
+
+                                VisitStatus =
+                                    x.VisitStatus,
+
+                                NegativeReason =
+                                    x.NegativeReason,
+
+                                SuccessfulVisitValue =
+                                    x.SuccessfulVisitValue,
+
+                                VisitStartTime =
+                                    x.VisitStartTime,
+
+                                VisitEndTime =
+                                    x.VisitEndTime,
+
+                                VisitDurationText =
+                                    x.VisitDurationText,
+
+                                UploadBatchId =
+                                    uploadBatchId,
+
+                                ImportedAt =
+                                    DateTime.Now
+                            })
+                        .ToList();
+
+                _context
+                    .SalesAnalyticsMtdVisitReports
+                    .AddRange(batch);
+
+                _context.SaveChanges();
+
+                _context
+                    .ChangeTracker
+                    .Clear();
+            }
+
+            transaction.Commit();
         }
-
-        var entities = visitRows.Select(x => new SalesAnalyticsMtdVisitReportEntity
+        catch
         {
-            Year = normalizedToDate.Year,
-            Month = normalizedToDate.Month,
-            FromDate = fromDate,
-            ToDate = normalizedToDate,
-
-            VisitDate = x.VisitDate,
-            SupervisorName = x.SupervisorName,
-            CityName = x.CityName,
-            VisitCode = x.VisitCode,
-
-            SalesRepCode = x.SalesRepCode,
-            SalesRepName = x.SalesRepName,
-
-            CustomerCode = x.CustomerCode,
-            CustomerName = x.CustomerName,
-
-            VisitStatus = x.VisitStatus,
-            NegativeReason = x.NegativeReason,
-            SuccessfulVisitValue = x.SuccessfulVisitValue,
-
-            VisitStartTime = x.VisitStartTime,
-            VisitEndTime = x.VisitEndTime,
-            VisitDurationText = x.VisitDurationText,
-
-            UploadBatchId = uploadBatchId,
-            ImportedAt = DateTime.Now
-        }).ToList();
-
-        _context.SalesAnalyticsMtdVisitReports.AddRange(entities);
-        _context.SaveChanges();
+            transaction.Rollback();
+            throw;
+        }
     }
 
     public List<SalesAnalyticsUploadHistoryDto> GetUploadHistory(int take = 50)
@@ -390,54 +453,120 @@ public class SalesAnalyticsMasterDataRepository : ISalesAnalyticsMasterDataRepos
     public void ReplaceMtdSalesReport(
     List<SalesAnalyticsMtdSalesImportDto> salesRows,
     int uploadBatchId,
+    DateTime fromDate,
     DateTime toDate)
     {
+        const int batchSize = 1000;
+
+        var normalizedFromDate = fromDate.Date;
         var normalizedToDate = toDate.Date;
-        var fromDate = new DateTime(normalizedToDate.Year, normalizedToDate.Month, 1);
 
-        var oldRows = _context.SalesAnalyticsMtdSalesReports
-            .Where(x =>
-                x.Year == normalizedToDate.Year &&
-                x.Month == normalizedToDate.Month &&
-                x.ToDate >= normalizedToDate &&
-                x.ToDate < normalizedToDate.AddDays(1))
-            .ToList();
+        using var transaction =
+            _context.Database.BeginTransaction();
 
-        if (oldRows.Any())
+        try
         {
-            _context.SalesAnalyticsMtdSalesReports.RemoveRange(oldRows);
+            _context.SalesAnalyticsMtdSalesReports
+                .Where(x =>
+                    x.FromDate >= normalizedFromDate &&
+                    x.FromDate < normalizedFromDate.AddDays(1) &&
+                    x.ToDate >= normalizedToDate &&
+                    x.ToDate < normalizedToDate.AddDays(1))
+                .ExecuteDelete();
+
+            for (
+                var offset = 0;
+                offset < salesRows.Count;
+                offset += batchSize)
+            {
+                var batch =
+                    salesRows
+                        .Skip(offset)
+                        .Take(batchSize)
+                        .Select(x =>
+                            new SalesAnalyticsMtdSalesReportEntity
+                            {
+                                Year =
+                                    normalizedToDate.Year,
+
+                                Month =
+                                    normalizedToDate.Month,
+
+                                FromDate =
+                                    normalizedFromDate,
+
+                                ToDate =
+                                    normalizedToDate,
+
+                                CityCode =
+                                    x.CityCode,
+
+                                CityName =
+                                    x.CityName,
+
+                                CustomerCode =
+                                    x.CustomerCode,
+
+                                CustomerName =
+                                    x.CustomerName,
+
+                                ProductCode =
+                                    x.ProductCode,
+
+                                ProductName =
+                                    x.ProductName,
+
+                                Unit =
+                                    x.Unit,
+
+                                Quantity =
+                                    x.Quantity,
+
+                                SalesAmount =
+                                    x.SalesAmount,
+
+                                DiscountAmount =
+                                    x.DiscountAmount,
+
+                                TaxPercentage =
+                                    x.TaxPercentage,
+
+                                TaxAmount =
+                                    x.TaxAmount,
+
+                                TotalBeforeTax =
+                                    x.TotalBeforeTax,
+
+                                TotalAfterTax =
+                                    x.TotalAfterTax,
+
+                                UploadBatchId =
+                                    uploadBatchId,
+
+                                ImportedAt =
+                                    DateTime.Now
+                            })
+                        .ToList();
+
+                _context
+                    .SalesAnalyticsMtdSalesReports
+                    .AddRange(batch);
+
+                _context.SaveChanges();
+
+                _context
+                    .ChangeTracker
+                    .Clear();
+            }
+
+            transaction.Commit();
         }
-
-        var entities = salesRows.Select(x => new SalesAnalyticsMtdSalesReportEntity
+        catch
         {
-            Year = normalizedToDate.Year,
-            Month = normalizedToDate.Month,
-            FromDate = fromDate,
-            ToDate = normalizedToDate,
-
-            CityCode = x.CityCode,
-            CityName = x.CityName,
-
-            CustomerCode = x.CustomerCode,
-            CustomerName = x.CustomerName,
-
-            ProductCode = x.ProductCode,
-            ProductName = x.ProductName,
-            Unit = x.Unit,
-
-            Quantity = x.Quantity,
-            SalesAmount = x.SalesAmount,
-            DiscountAmount = x.DiscountAmount,
-            TaxPercentage = x.TaxPercentage,
-            TaxAmount = x.TaxAmount,
-            TotalBeforeTax = x.TotalBeforeTax,
-            TotalAfterTax = x.TotalAfterTax,
-
-            UploadBatchId = uploadBatchId,
-            ImportedAt = DateTime.Now
-        }).ToList();
-
-        _context.SalesAnalyticsMtdSalesReports.AddRange(entities);
-        _context.SaveChanges();
+            transaction.Rollback();
+            throw;
+        }
     }
+
+
 }

@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MasterDataAutomation.Web.Controllers.SalesAnalytics;
 
-[Authorize(Roles = "Admin,Manager")]
+[Authorize(Roles = "Admin,Manager,CEO")]
 public class SalesAnalyticsTargetsController : Controller
 {
     private readonly ISalesDistrictMonthlyTargetRepository _targetRepository;

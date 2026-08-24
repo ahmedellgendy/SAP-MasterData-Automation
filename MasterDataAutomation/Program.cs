@@ -21,6 +21,7 @@ using MasterDataAutomation.Infrastructure.Validators;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.DataProtection;
 
 
 namespace MasterDataAutomation
@@ -30,6 +31,22 @@ namespace MasterDataAutomation
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            var dataProtectionKeysPath =
+           Path.Combine(
+               builder.Environment.ContentRootPath,
+               "App_Data",
+               "DataProtectionKeys");
+
+            Directory.CreateDirectory(
+                dataProtectionKeysPath);
+
+            builder.Services
+                .AddDataProtection()
+                .PersistKeysToFileSystem(
+                    new DirectoryInfo(
+                        dataProtectionKeysPath))
+                .SetApplicationName("FridayOps");
 
             builder.WebHost.ConfigureKestrel(options =>
             {
@@ -51,13 +68,23 @@ namespace MasterDataAutomation
             builder.Services.Configure<SapSettings>(
             builder.Configuration.GetSection("SapSettings"));
 
-            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
-    {
-        options.LoginPath = "/Account/Login";
-        options.AccessDeniedPath = "/Account/AccessDenied";
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
-    });
+            builder.Services
+                  .AddAuthentication(
+                      CookieAuthenticationDefaults.AuthenticationScheme)
+                  .AddCookie(options =>
+                  {
+                      options.LoginPath =
+                          "/Account/Login";
+
+                      options.AccessDeniedPath =
+                          "/Account/AccessDenied";
+
+                      options.ExpireTimeSpan =
+                          TimeSpan.FromHours(8);
+
+                      options.SlidingExpiration =
+                          true;
+                  });
 
             builder.Services.AddAuthorization();
 
