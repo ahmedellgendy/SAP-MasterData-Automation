@@ -1,0 +1,2817 @@
+﻿@model MasterDataAutomation.Application.Modules.SalesAnalytics.DashboardDtos.SalesAnalyticsDashboardDto
+@using MasterDataAutomation.Application.Modules.SalesAnalytics.DashboardDtos
+@using System.Text.Json
+@using System.Globalization
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+
+<script defer
+        src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js">
+</script>
+
+@{
+    ViewData["Title"] = "لوحة الإدارة التنفيذية للمبيعات";
+
+    var targetSummary = Model.TargetSummary;
+
+    // =========================================================
+    // Selected Date
+    // =========================================================
+
+    DateTime selectedDate;
+
+    if (!DateTime.TryParse(
+        ViewBag.SelectedDate as string,
+        out selectedDate))
+    {
+        selectedDate = Model.ReportDate.Date;
+    }
+
+    selectedDate = selectedDate.Date;
+
+    var selectedMonthDays =
+        DateTime.DaysInMonth(
+            selectedDate.Year,
+            selectedDate.Month);
+
+    var elapsedDays =
+        Math.Max(
+            Math.Min(
+                selectedDate.Day,
+                selectedMonthDays),
+            1);
+
+    // =========================================================
+    // Availability Flags
+    // =========================================================
+
+    var hasSales =
+        Model.Kpis.TotalSales != 0 ||
+        Model.TopProducts.Any() ||
+        Model.SalesByLines.Any();
+
+    var hasTargets =
+        targetSummary.TotalMonthlyTarget > 0;
+
+    var hasVisits =
+        Model.Kpis.TotalVisits > 0;
+
+    // =========================================================
+    // Expected Monthly Pace
+    // =========================================================
+
+    var expectedPacePercentage =
+        Math.Round(
+            (decimal)elapsedDays /
+            selectedMonthDays *
+            100,
+            2);
+
+    var expectedSalesToDate =
+        !hasTargets
+            ? 0
+            : Math.Round(
+                targetSummary.TotalMonthlyTarget *
+                elapsedDays /
+                selectedMonthDays,
+                2);
+
+    var salesPaceGap =
+        !hasTargets
+            ? 0
+            : Model.Kpis.TotalSales -
+              expectedSalesToDate;
+
+    var salesPaceGapPercentage =
+        !hasTargets
+            ? 0
+            : Math.Round(
+                salesPaceGap /
+                targetSummary.TotalMonthlyTarget *
+                100,
+                2);
+
+    var isAheadOfPace =
+        hasTargets &&
+        salesPaceGap >= 0;
+
+    var actualDailyRunRate =
+        elapsedDays <= 0
+            ? 0
+            : Math.Round(
+                Model.Kpis.TotalSales /
+                elapsedDays,
+                2);
+
+    // =========================================================
+    // Branch Filter
+    // =========================================================
+
+    var branches =
+        ViewBag.Branches as List<BranchOptionDto>
+        ?? new List<BranchOptionDto>();
+
+    var selectedBranchCode =
+        ViewBag.SelectedBranchCode as string
+        ?? string.Empty;
+
+    // =========================================================
+    // Sales Overview
+    // =========================================================
+
+    var topSalesDistrict =
+        Model.SalesByLines
+            .OrderByDescending(x => x.TotalSales)
+            .FirstOrDefault();
+
+    var topProduct =
+        Model.TopProducts
+            .OrderByDescending(x => x.TotalSales)
+            .FirstOrDefault();
+
+    // =========================================================
+    // Branch Performance
+    // =========================================================
+
+    var operationalBranches =
+        Model.BranchPerformances
+            .Where(x =>
+                x.ActualSales != 0 ||
+                x.ActualVisits > 0)
+            .OrderByDescending(x =>
+                x.AchievementPercentage)
+            .ThenByDescending(x =>
+                x.ActualSales)
+            .ToList();
+
+    var branchesWithoutOperationalData =
+        Model.BranchPerformances
+            .Where(x =>
+                x.MonthlyTarget > 0 &&
+                x.ActualSales == 0 &&
+                x.ActualVisits == 0)
+            .OrderBy(x =>
+                x.BranchName)
+            .ToList();
+
+    var leadingBranch =
+        operationalBranches
+            .FirstOrDefault();
+
+    var weakestOperationalBranch =
+        operationalBranches
+            .OrderBy(x =>
+                x.AchievementPercentage)
+            .ThenByDescending(x =>
+                x.MonthlyTarget)
+            .FirstOrDefault();
+
+    // =========================================================
+    // Sales Rep Performance
+    // =========================================================
+
+    var bestSalesReps =
+        Model.VisitsBySalesReps
+            .Where(x =>
+                x.TotalVisits > 0)
+            .OrderByDescending(x =>
+                x.TotalVisitValue)
+            .ThenByDescending(x =>
+                x.PositiveVisitPercentage)
+            .Take(5)
+            .ToList();
+
+    var salesRepsNeedAttention =
+        Model.VisitsBySalesReps
+            .Where(x =>
+                x.TotalVisits >= 10)
+            .OrderBy(x =>
+                x.PositiveVisitPercentage)
+            .ThenByDescending(x =>
+                x.NegativeVisits)
+            .Take(5)
+            .ToList();
+
+    // =========================================================
+    // Customers Without Sales
+    // =========================================================
+
+    var noSalesCustomers =
+        Model.BottomCustomersToday
+            .Where(x =>
+                x.HasNoSales)
+            .OrderBy(x =>
+                x.RiskLevel == "حرج"
+                    ? 1
+                    : x.RiskLevel ==
+                      "يحتاج متابعة عاجلة"
+                        ? 2
+                        : 3)
+            .ThenByDescending(x =>
+                x.NegativeVisits)
+            .ThenByDescending(x =>
+                x.TotalVisits)
+            .Take(5)
+            .ToList();
+
+    var criticalNoSalesCustomers =
+        Model.BottomCustomersToday
+            .Count(x =>
+                x.HasNoSales &&
+                x.RiskLevel == "حرج");
+
+    var topNegativeReason =
+        Model.NegativeVisitReasons
+            .FirstOrDefault();
+
+    // =========================================================
+    // Executive Attention
+    // =========================================================
+
+    var attentionItems =
+        new List<(
+            string Title,
+            string Message,
+            string Severity,
+            string Icon)>();
+
+    if (
+        hasTargets &&
+        !isAheadOfPace)
+    {
+        attentionItems.Add((
+            "المبيعات أقل من المعدل المتوقع",
+            $"الفجوة الحالية عن المبيعات المتوقعة حتى التاريخ المحدد تبلغ {Money(Math.Abs(salesPaceGap))}.",
+            "Critical",
+            "bi-graph-down-arrow"
+        ));
+    }
+
+    if (
+        hasTargets &&
+        targetSummary.CriticalLinesCount > 0)
+    {
+        attentionItems.Add((
+            "مناطق بيع حرجة",
+            $"يوجد {targetSummary.CriticalLinesCount:N0} منطقة بيع بنسبة تحقيق أقل من 50%.",
+            "Critical",
+            "bi-exclamation-octagon-fill"
+        ));
+    }
+
+    if (
+        hasTargets &&
+        hasVisits &&
+        targetSummary.PlannedVisits > 0 &&
+        targetSummary.VisitAchievementPercentage <
+        expectedPacePercentage)
+    {
+        var visitGap =
+            expectedPacePercentage -
+            targetSummary.VisitAchievementPercentage;
+
+        attentionItems.Add((
+            "النشاط الميداني أقل من المعدل المطلوب",
+            $"تحقيق الزيارات أقل من المعدل المتوقع بفارق {Percent(visitGap)}.",
+            "Warning",
+            "bi-geo-alt-fill"
+        ));
+    }
+
+    if (
+        hasTargets &&
+        weakestOperationalBranch != null &&
+        weakestOperationalBranch.AchievementPercentage <
+        expectedPacePercentage)
+    {
+        attentionItems.Add((
+            $"فرع {weakestOperationalBranch.BranchName} يحتاج متابعة",
+            $"نسبة التحقيق الحالية {Percent(weakestOperationalBranch.AchievementPercentage)} مقابل معدل متوقع {Percent(expectedPacePercentage)}.",
+            weakestOperationalBranch.AchievementPercentage < 50
+                ? "Critical"
+                : "Warning",
+            "bi-buildings-fill"
+        ));
+    }
+
+    if (
+        hasVisits &&
+        criticalNoSalesCustomers > 0)
+    {
+        attentionItems.Add((
+            "عملاء بدون مبيعات يحتاجون تدخلًا",
+            $"يوجد {criticalNoSalesCustomers:N0} عميل مصنف كحالة حرجة ضمن العملاء الذين تمت زيارتهم بدون مبيعات.",
+            "Warning",
+            "bi-person-x-fill"
+        ));
+    }
+
+    if (
+        hasVisits &&
+        topNegativeReason != null)
+    {
+        attentionItems.Add((
+            "سبب سلبي متكرر",
+            $"أكثر أسباب الزيارات السلبية تكرارًا هو «{topNegativeReason.Reason}» بعدد {topNegativeReason.Count:N0} زيارة.",
+            "Info",
+            "bi-chat-left-text-fill"
+        ));
+    }
+
+    var prioritizedAttentionItems =
+        attentionItems
+            .OrderBy(x =>
+                x.Severity == "Critical"
+                    ? 1
+                    : x.Severity == "Warning"
+                        ? 2
+                        : 3)
+            .Take(6)
+            .ToList();
+
+    // =========================================================
+    // Executive Insights
+    // =========================================================
+
+    var executiveInsights =
+        new List<string>();
+
+    if (hasSales)
+    {
+        executiveInsights.Add(
+            $"إجمالي المبيعات الفعلية حتى التاريخ المحدد بلغ {Money(Model.Kpis.TotalSales)}.");
+    }
+
+    if (
+        hasSales &&
+        topSalesDistrict != null)
+    {
+        executiveInsights.Add(
+            $"أعلى منطقة بيع مساهمة في المبيعات هي {topSalesDistrict.LineName} بقيمة {Money(topSalesDistrict.TotalSales)}.");
+    }
+
+    if (
+        hasSales &&
+        topProduct != null)
+    {
+        executiveInsights.Add(
+            $"أعلى منتج من حيث المبيعات هو {topProduct.ProductName} بقيمة {Money(topProduct.TotalSales)}.");
+    }
+
+    if (hasTargets)
+    {
+        executiveInsights.Add(
+            isAheadOfPace
+                ? $"المبيعات أعلى من المعدل المتوقع حتى الآن بفارق {Money(Math.Abs(salesPaceGap))}."
+                : $"المبيعات أقل من المعدل المتوقع حتى الآن بفارق {Money(Math.Abs(salesPaceGap))}.");
+    }
+    else
+    {
+        executiveInsights.Add(
+            "لم يتم رفع تارجت للشهر المحدد حتى الآن؛ تحليلات المبيعات الفعلية ما زالت متاحة بصورة مستقلة.");
+    }
+
+    if (hasVisits)
+    {
+        executiveInsights.Add(
+            $"إجمالي الزيارات حتى التاريخ المحدد بلغ {Model.Kpis.TotalVisits:N0} زيارة بنسبة إيجابية {Percent(Model.Kpis.PositiveVisitPercentage)}.");
+    }
+    else
+    {
+        executiveInsights.Add(
+            "لم يتم رفع بيانات زيارات تغطي الفترة المحددة حتى الآن.");
+    }
+
+    if (
+        hasTargets &&
+        leadingBranch != null)
+    {
+        executiveInsights.Add(
+            $"أفضل فرع بين الفروع التي لديها بيانات تشغيلية هو {leadingBranch.BranchName} بنسبة تحقيق {Percent(leadingBranch.AchievementPercentage)}.");
+    }
+
+    // =========================================================
+    // Chart Data
+    // =========================================================
+
+    var salesDistrictChartLabels =
+        Model.SalesByLines
+            .Take(10)
+            .Select(x =>
+                string.IsNullOrWhiteSpace(x.LineName)
+                    ? x.LineCode
+                    : x.LineName)
+            .ToList();
+
+    var salesDistrictChartValues =
+        Model.SalesByLines
+            .Take(10)
+            .Select(x =>
+                x.TotalSales)
+            .ToList();
+
+    var productChartLabels =
+        Model.TopProducts
+            .Take(8)
+            .Select(x =>
+                x.ProductName)
+            .ToList();
+
+    var productChartValues =
+        Model.TopProducts
+            .Take(8)
+            .Select(x =>
+                x.TotalSales)
+            .ToList();
+
+    var targetChartLabels =
+        Model.BestTargetAchievements
+            .Take(10)
+            .Select(x =>
+                string.IsNullOrWhiteSpace(
+                    x.SalesDistrictName)
+                    ? x.SalesDistrictCode
+                    : x.SalesDistrictName)
+            .ToList();
+
+    var targetChartValues =
+        Model.BestTargetAchievements
+            .Take(10)
+            .Select(x =>
+                x.AchievementPercentage)
+            .ToList();
+
+    var branchChartLabels =
+        operationalBranches
+            .Take(10)
+            .Select(x =>
+                string.IsNullOrWhiteSpace(
+                    x.BranchName)
+                    ? x.BranchCode
+                    : x.BranchName)
+            .ToList();
+
+    var branchChartActual =
+        operationalBranches
+            .Take(10)
+            .Select(x =>
+                x.ActualSales)
+            .ToList();
+
+    var branchChartTarget =
+        operationalBranches
+            .Take(10)
+            .Select(x =>
+                x.MonthlyTarget)
+            .ToList();
+
+    var negativeReasonLabels =
+        Model.NegativeVisitReasons
+            .Take(8)
+            .Select(x =>
+                x.Reason)
+            .ToList();
+
+    var negativeReasonValues =
+        Model.NegativeVisitReasons
+            .Take(8)
+            .Select(x =>
+                x.Count)
+            .ToList();
+
+    var visitStatusLabels =
+        new List<string>
+        {
+            "زيارات إيجابية",
+            "زيارات سلبية"
+        };
+
+    var visitStatusValues =
+        new List<int>
+        {
+            Model.Kpis.PositiveVisits,
+            Model.Kpis.NegativeVisits
+        };
+
+    // =========================================================
+    // Helpers
+    // =========================================================
+
+    string Money(decimal value)
+        => $"{value:N0} جنيه";
+
+    string Percent(decimal value)
+        => $"{value:N1}%";
+
+    string Number(decimal value)
+        => $"{value:N0}";
+
+    string RiskClass(string? risk)
+    {
+        return risk switch
+        {
+            "حرج" => "risk-critical",
+            "يحتاج متابعة عاجلة" => "risk-warning",
+            _ => "risk-normal"
+        };
+    }
+}
+
+<style>
+    .ceo-dashboard {
+        max-width: 1600px;
+        margin: 0 auto;
+        direction: rtl;
+        text-align: right;
+        font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+        --navy: #0b2a5b;
+        --navy-light: #123a78;
+        --gold: #c9a227;
+        --surface: #ffffff;
+        --border: #e5e7eb;
+        --muted: #64748b;
+        --soft: #f8fafc;
+    }
+
+    .dashboard-hero {
+        background: linear-gradient(135deg, var(--navy), var(--navy-light));
+        color: #fff;
+        border-radius: 22px;
+        padding: 26px;
+        margin-bottom: 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+        box-shadow: 0 16px 38px rgba(15, 23, 42, .16);
+        border-bottom: 3px solid var(--gold);
+    }
+
+    .hero-eyebrow {
+        color: var(--gold);
+        font-size: 12px;
+        font-weight: 900;
+        margin-bottom: 8px;
+    }
+
+    .hero-title {
+        font-size: 29px;
+        font-weight: 950;
+        margin-bottom: 7px;
+    }
+
+    .hero-subtitle {
+        max-width: 780px;
+        color: rgba(255,255,255,.78);
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.8;
+    }
+
+    .hero-meta {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 13px;
+    }
+
+    .hero-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.16);
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    .hero-pill-success {
+        background: rgba(22, 163, 74, .22);
+    }
+
+    .hero-pill-warning {
+        background: rgba(202, 138, 4, .22);
+    }
+
+    .hero-actions {
+        min-width: 390px;
+    }
+
+    .date-filter {
+        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.18);
+        border-radius: 14px;
+        padding: 12px;
+        display: flex;
+        gap: 9px;
+        flex-wrap: wrap;
+    }
+
+        .date-filter input,
+        .date-filter select {
+            border: none;
+            border-radius: 9px;
+            padding: 9px 11px;
+            font-weight: 800;
+        }
+
+    .btn-filter {
+        border: none;
+        border-radius: 9px;
+        background: #fff;
+        color: var(--navy);
+        padding: 9px 15px;
+        font-weight: 900;
+    }
+
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .kpi-card {
+        background: #fff;
+        border: 1px solid #edf0f5;
+        border-radius: 17px;
+        padding: 18px;
+        box-shadow: 0 9px 24px rgba(15, 23, 42, .055);
+    }
+
+    .kpi-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+
+    .kpi-label {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 850;
+    }
+
+    .kpi-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
+        background: #f1f5f9;
+        color: var(--navy);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+    }
+
+    .kpi-value {
+        color: #0f172a;
+        font-size: 24px;
+        font-weight: 950;
+    }
+
+    .kpi-empty {
+        color: #94a3b8;
+        font-size: 18px;
+    }
+
+    .kpi-hint {
+        margin-top: 5px;
+        color: #94a3b8;
+        font-size: 11px;
+        font-weight: 750;
+        line-height: 1.6;
+    }
+
+    .dashboard-section {
+        margin-bottom: 24px;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+    }
+
+    .section-title {
+        color: #0f172a;
+        font-size: 19px;
+        font-weight: 950;
+        margin-bottom: 3px;
+    }
+
+    .section-subtitle {
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 750;
+    }
+
+    .section-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        background: #eff6ff;
+        color: #1e40af;
+        border-radius: 9px;
+        padding: 8px 11px;
+        font-size: 11px;
+        font-weight: 900;
+    }
+
+        .section-link:hover {
+            background: #dbeafe;
+            color: #1e3a8a;
+        }
+
+    .panel {
+        background: #fff;
+        border: 1px solid #edf0f5;
+        border-radius: 18px;
+        padding: 19px;
+        box-shadow: 0 9px 25px rgba(15,23,42,.055);
+    }
+
+    .two-column-grid,
+    .chart-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0,1fr));
+        gap: 16px;
+    }
+
+    .executive-grid {
+        display: grid;
+        grid-template-columns: 1.25fr .75fr;
+        gap: 16px;
+        margin-bottom: 22px;
+    }
+
+    .snapshot-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0,1fr));
+        gap: 10px;
+        margin-top: 14px;
+    }
+
+    .snapshot-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 12px;
+    }
+
+    .snapshot-label {
+        color: #64748b;
+        font-size: 10px;
+        font-weight: 800;
+        margin-bottom: 4px;
+    }
+
+    .snapshot-value {
+        color: #0f172a;
+        font-size: 13px;
+        font-weight: 950;
+    }
+
+    .attention-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0,1fr));
+        gap: 12px;
+    }
+
+    .attention-card {
+        border-radius: 15px;
+        padding: 15px;
+        display: flex;
+        gap: 11px;
+        align-items: flex-start;
+        border: 1px solid #e5e7eb;
+    }
+
+    .attention-icon {
+        width: 39px;
+        height: 39px;
+        flex-shrink: 0;
+        border-radius: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .attention-title {
+        font-size: 13px;
+        color: #0f172a;
+        font-weight: 950;
+        margin-bottom: 4px;
+    }
+
+    .attention-message {
+        color: #64748b;
+        font-size: 11px;
+        line-height: 1.6;
+        font-weight: 700;
+    }
+
+    .attention-critical {
+        background: #fff7f7;
+        border-color: #fecaca;
+    }
+
+        .attention-critical .attention-icon {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+    .attention-warning {
+        background: #fffaf0;
+        border-color: #fed7aa;
+    }
+
+        .attention-warning .attention-icon {
+            background: #ffedd5;
+            color: #c2410c;
+        }
+
+    .attention-info {
+        background: #f8fbff;
+        border-color: #bfdbfe;
+    }
+
+        .attention-info .attention-icon {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+    .brief-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 9px;
+    }
+
+        .brief-list li {
+            background: #eff6ff;
+            border: 1px solid #dbeafe;
+            color: #1e3a8a;
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.6;
+        }
+
+    .pace-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .pace-status {
+        border-radius: 999px;
+        padding: 6px 9px;
+        font-size: 10px;
+        font-weight: 950;
+    }
+
+    .pace-status-good {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .pace-status-risk {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .pace-value {
+        font-size: 30px;
+        color: var(--navy);
+        font-weight: 950;
+    }
+
+    .pace-track {
+        background: #e5e7eb;
+        height: 9px;
+        border-radius: 999px;
+        overflow: hidden;
+        margin: 13px 0;
+    }
+
+    .pace-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: var(--navy);
+    }
+
+    .pace-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .mini-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 11px;
+        padding: 10px;
+    }
+
+    .mini-label {
+        color: #64748b;
+        font-size: 10px;
+        font-weight: 800;
+    }
+
+    .mini-value {
+        color: #0f172a;
+        font-size: 13px;
+        font-weight: 950;
+        margin-top: 3px;
+    }
+
+    .empty-state {
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 15px;
+        padding: 24px;
+        text-align: center;
+        color: #64748b;
+    }
+
+        .empty-state i {
+            font-size: 28px;
+            color: #94a3b8;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+    .empty-state-title {
+        color: #334155;
+        font-size: 13px;
+        font-weight: 950;
+        margin-bottom: 5px;
+    }
+
+    .empty-state-text {
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1.7;
+    }
+
+    .branch-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0,1fr));
+        gap: 12px;
+    }
+
+    .branch-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 15px;
+        padding: 15px;
+    }
+
+    .branch-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 11px;
+    }
+
+    .branch-name {
+        font-size: 14px;
+        font-weight: 950;
+        color: #0f172a;
+    }
+
+    .branch-code {
+        color: #94a3b8;
+        font-size: 10px;
+        font-weight: 800;
+    }
+
+    .branch-rank {
+        width: 31px;
+        height: 31px;
+        border-radius: 50%;
+        background: #eff6ff;
+        color: #1e40af;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 950;
+    }
+
+    .branch-sales {
+        color: var(--navy);
+        font-size: 20px;
+        font-weight: 950;
+    }
+
+    .branch-progress {
+        height: 7px;
+        background: #e5e7eb;
+        border-radius: 999px;
+        overflow: hidden;
+        margin: 10px 0;
+    }
+
+    .branch-progress-fill {
+        height: 100%;
+        background: var(--navy);
+    }
+
+    .branch-meta {
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 750;
+        line-height: 1.7;
+    }
+
+    .no-data-box {
+        margin-top: 12px;
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 13px;
+        padding: 13px;
+    }
+
+    .no-data-list {
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+    }
+
+    .no-data-chip {
+        display: inline-flex;
+        border-radius: 999px;
+        padding: 5px 9px;
+        background: #e2e8f0;
+        color: #475569;
+        font-size: 10px;
+        font-weight: 850;
+    }
+
+    .chart-box {
+        position: relative;
+        height: 315px;
+    }
+
+    .chart-title {
+        font-size: 14px;
+        font-weight: 950;
+        color: #0f172a;
+        margin-bottom: 12px;
+    }
+
+    .table {
+        margin-bottom: 0;
+        vertical-align: middle;
+    }
+
+        .table thead th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 11px;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .table tbody td {
+            font-size: 12px;
+            font-weight: 700;
+            color: #334155;
+            vertical-align: middle;
+        }
+
+    .entity-name {
+        color: #0f172a;
+        font-weight: 900;
+    }
+
+    .entity-code {
+        color: #94a3b8;
+        font-size: 10px;
+        font-weight: 750;
+    }
+
+    .risk-badge {
+        display: inline-flex;
+        border-radius: 999px;
+        padding: 5px 8px;
+        font-size: 10px;
+        font-weight: 950;
+    }
+
+    .risk-critical {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .risk-warning {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .risk-normal {
+        background: #e2e8f0;
+        color: #475569;
+    }
+
+    .quality-access-card {
+        background: linear-gradient(135deg, #ffffff, #f8fafc);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        flex-wrap: wrap;
+    }
+
+    .quality-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 15px;
+        background: #ecfdf5;
+        color: #15803d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 23px;
+    }
+
+    @@media (max-width: 1150px) {
+        .kpi-grid,
+        .snapshot-grid {
+            grid-template-columns: repeat(2, minmax(0,1fr));
+        }
+
+        .two-column-grid,
+        .executive-grid,
+        .chart-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .branch-grid {
+            grid-template-columns: repeat(2, minmax(0,1fr));
+        }
+
+        .attention-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 650px) {
+        .kpi-grid,
+        .snapshot-grid,
+        .branch-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .hero-actions {
+            min-width: 100%;
+        }
+
+        .date-filter {
+            display: grid;
+            grid-template-columns: 1fr;
+        }
+
+        .pace-details {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media print {
+        .date-filter,
+        .section-link {
+            display: none !important;
+        }
+
+        .panel,
+        .kpi-card,
+        .branch-card {
+            box-shadow: none !important;
+        }
+    }
+</style>
+
+<div class="ceo-dashboard"
+     dir="rtl"
+     lang="ar">
+
+    <!-- ===================================================== -->
+    <!-- HERO -->
+    <!-- ===================================================== -->
+
+    <div class="dashboard-hero">
+
+        <div>
+
+            <div class="hero-eyebrow">
+                <i class="bi bi-award ms-1"></i>
+                التقرير التنفيذي للمبيعات
+            </div>
+
+            <div class="hero-title">
+                لوحة الإدارة التنفيذية
+            </div>
+
+            <div class="hero-subtitle">
+                متابعة موحدة للمبيعات الفعلية والتارجت والنشاط الميداني
+                وأهم مؤشرات الأداء من بداية الشهر حتى التاريخ المحدد.
+            </div>
+
+            <div class="hero-meta">
+
+                <span class="hero-pill">
+                    <i class="bi bi-calendar-check"></i>
+                    البيانات حتى
+                    @selectedDate.ToString("dd/MM/yyyy")
+                </span>
+
+                <span class="hero-pill @(hasSales ? "hero-pill-success" : "hero-pill-warning")">
+                    <i class="bi bi-cash-stack"></i>
+                    المبيعات:
+                    @(hasSales ? "متاحة" : "غير متاحة")
+                </span>
+
+                <span class="hero-pill @(hasTargets ? "hero-pill-success" : "hero-pill-warning")">
+                    <i class="bi bi-bullseye"></i>
+                    التارجت:
+                    @(hasTargets ? "متاح" : "غير مرفوع")
+                </span>
+
+                <span class="hero-pill @(hasVisits ? "hero-pill-success" : "hero-pill-warning")">
+                    <i class="bi bi-geo-alt"></i>
+                    الزيارات:
+                    @(hasVisits ? "متاحة" : "غير متاحة")
+                </span>
+
+            </div>
+
+        </div>
+
+        <div class="hero-actions">
+
+            <form asp-controller="SalesAnalyticsDashboard"
+                  asp-action="Index"
+                  method="get"
+                  class="date-filter">
+
+                <input type="date"
+                       name="reportDate"
+                       value="@ViewBag.SelectedDate" />
+
+                <select name="branchCode">
+
+                    <option value="">
+                        كل الفروع
+                    </option>
+
+                    @foreach (var branch in branches)
+                    {
+                        if (selectedBranchCode == branch.BranchCode)
+                        {
+                            <option value="@branch.BranchCode"
+                                    selected>
+                                @branch.BranchName
+                            </option>
+                        }
+                        else
+                        {
+                            <option value="@branch.BranchCode">
+                                @branch.BranchName
+                            </option>
+                        }
+                    }
+
+                </select>
+
+                <button type="submit"
+                        class="btn-filter">
+
+                    <i class="bi bi-funnel ms-1"></i>
+                    تطبيق
+
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- MAIN KPIs -->
+    <!-- ===================================================== -->
+
+    <div class="kpi-grid">
+
+        <div class="kpi-card">
+
+            <div class="kpi-top">
+
+                <div class="kpi-label">
+                    إجمالي المبيعات
+                </div>
+
+                <div class="kpi-icon">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+
+            </div>
+
+            <div class="kpi-value">
+                @Money(Model.Kpis.TotalSales)
+            </div>
+
+            <div class="kpi-hint">
+                المبيعات الفعلية من بداية الشهر حتى التاريخ المختار.
+            </div>
+
+        </div>
+
+        <div class="kpi-card">
+
+            <div class="kpi-top">
+
+                <div class="kpi-label">
+                    التارجت الشهري
+                </div>
+
+                <div class="kpi-icon">
+                    <i class="bi bi-bullseye"></i>
+                </div>
+
+            </div>
+
+            @if (hasTargets)
+            {
+                <div class="kpi-value">
+                    @Money(targetSummary.TotalMonthlyTarget)
+                </div>
+
+                <div class="kpi-hint">
+                    المتبقي:
+                    @Money(targetSummary.RemainingTarget)
+                </div>
+            }
+            else
+            {
+                <div class="kpi-value kpi-empty">
+                    غير مرفوع
+                </div>
+
+                <div class="kpi-hint">
+                    ارفع تارجت الشهر لإتاحة تحليلات التحقيق والمعدل.
+                </div>
+            }
+
+        </div>
+
+        <div class="kpi-card">
+
+            <div class="kpi-top">
+
+                <div class="kpi-label">
+                    نسبة تحقيق التارجت
+                </div>
+
+                <div class="kpi-icon">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+
+            </div>
+
+            @if (hasTargets)
+            {
+                <div class="kpi-value">
+                    @Percent(targetSummary.AchievementPercentage)
+                </div>
+
+                <div class="kpi-hint">
+                    المعدل المتوقع حتى الآن:
+                    @Percent(expectedPacePercentage)
+                </div>
+            }
+            else
+            {
+                <div class="kpi-value kpi-empty">
+                    —
+                </div>
+
+                <div class="kpi-hint">
+                    غير متاح بدون تارجت شهري.
+                </div>
+            }
+
+        </div>
+
+        <div class="kpi-card">
+
+            <div class="kpi-top">
+
+                <div class="kpi-label">
+                    إجمالي الزيارات
+                </div>
+
+                <div class="kpi-icon">
+                    <i class="bi bi-geo-alt"></i>
+                </div>
+
+            </div>
+
+            @if (hasVisits)
+            {
+                <div class="kpi-value">
+                    @Model.Kpis.TotalVisits.ToString("N0")
+                </div>
+
+                <div class="kpi-hint">
+                    نسبة الزيارات الإيجابية:
+                    @Percent(Model.Kpis.PositiveVisitPercentage)
+                </div>
+            }
+            else
+            {
+                <div class="kpi-value kpi-empty">
+                    غير متاحة
+                </div>
+
+                <div class="kpi-hint">
+                    لم يتم رفع بيانات زيارات تغطي الفترة المحددة.
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- ACTUAL SALES OVERVIEW -->
+    <!-- ===================================================== -->
+
+    <div class="dashboard-section">
+
+        <div class="section-header">
+
+            <div>
+
+                <div class="section-title">
+                    <i class="bi bi-bar-chart-line ms-1"></i>
+                    تحليل المبيعات الفعلية
+                </div>
+
+                <div class="section-subtitle">
+                    تحليل مستقل عن التارجت يعرض أين تتركز المبيعات وأهم المنتجات.
+                </div>
+
+            </div>
+
+        </div>
+
+        @if (hasSales)
+        {
+            <div class="panel">
+
+                <div class="snapshot-grid">
+
+                    <div class="snapshot-card">
+                        <div class="snapshot-label">
+                            إجمالي الكمية
+                        </div>
+                        <div class="snapshot-value">
+                            @Number(Model.Kpis.TotalQuantity)
+                        </div>
+                    </div>
+
+                    <div class="snapshot-card">
+                        <div class="snapshot-label">
+                            متوسط المبيعات اليومي
+                        </div>
+                        <div class="snapshot-value">
+                            @Money(actualDailyRunRate)
+                        </div>
+                    </div>
+
+                    <div class="snapshot-card">
+                        <div class="snapshot-label">
+                            أعلى منطقة بيع
+                        </div>
+                        <div class="snapshot-value">
+                            @(topSalesDistrict?.LineName ?? "—")
+                        </div>
+                    </div>
+
+                    <div class="snapshot-card">
+                        <div class="snapshot-label">
+                            أعلى منتج
+                        </div>
+                        <div class="snapshot-value">
+                            @(topProduct?.ProductName ?? "—")
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="chart-grid mt-3">
+
+                <div class="panel">
+
+                    <div class="chart-title">
+                        <i class="bi bi-diagram-3 ms-1"></i>
+                        المبيعات حسب منطقة البيع
+                    </div>
+
+                    @if (salesDistrictChartLabels.Any())
+                    {
+                        <div class="chart-box">
+                            <canvas id="salesDistrictChart"></canvas>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-diagram-3"></i>
+                            <div class="empty-state-title">
+                                لا توجد بيانات مناطق بيع قابلة للعرض
+                            </div>
+                            <div class="empty-state-text">
+                                المبيعات موجودة، لكن الربط بمنطقة البيع غير متاح لبعض البيانات.
+                            </div>
+                        </div>
+                    }
+
+                </div>
+
+                <div class="panel">
+
+                    <div class="chart-title">
+                        <i class="bi bi-box-seam ms-1"></i>
+                        أفضل المنتجات بالمبيعات
+                    </div>
+
+                    @if (productChartLabels.Any())
+                    {
+                        <div class="chart-box">
+                            <canvas id="topProductsChart"></canvas>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-box-seam"></i>
+                            <div class="empty-state-title">
+                                لا توجد بيانات منتجات قابلة للعرض
+                            </div>
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="bi bi-database-x"></i>
+                <div class="empty-state-title">
+                    لا توجد بيانات مبيعات للفترة المحددة
+                </div>
+                <div class="empty-state-text">
+                    ارفع Daily Sales أو Sales Range لعرض تحليلات المبيعات الفعلية.
+                </div>
+            </div>
+        }
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- EXECUTIVE BRIEF -->
+    <!-- ===================================================== -->
+
+    <div class="executive-grid">
+
+        <div class="panel">
+
+            <div class="section-title">
+                <i class="bi bi-stars ms-1"></i>
+                الملخص التنفيذي
+            </div>
+
+            <div class="section-subtitle mb-3">
+                قراءة مباشرة لأهم المؤشرات المتاحة حتى التاريخ المحدد.
+            </div>
+
+            <ul class="brief-list">
+
+                @foreach (var insight in executiveInsights.Take(6))
+                {
+                    <li>
+                        <i class="bi bi-check2-circle ms-1"></i>
+                        @insight
+                    </li>
+                }
+
+            </ul>
+
+        </div>
+
+        <div class="panel">
+
+            <div class="section-title mb-3">
+                <i class="bi bi-speedometer2 ms-1"></i>
+                موقف التارجت
+            </div>
+
+            @if (hasTargets)
+            {
+                <div class="pace-heading">
+
+                    <span class="pace-status @(isAheadOfPace ? "pace-status-good" : "pace-status-risk")">
+                        @(isAheadOfPace
+                                            ? "متقدم عن المعدل"
+                                            : "متأخر عن المعدل")
+                </span>
+
+                </div>
+
+                <div class="pace-value">
+                    @Percent(targetSummary.AchievementPercentage)
+                </div>
+
+                <div class="section-subtitle">
+                    مقابل معدل متوقع
+                    @Percent(expectedPacePercentage)
+                </div>
+
+                <div class="pace-track">
+                    <div class="pace-fill"
+                         style="width:@Math.Min(targetSummary.AchievementPercentage, 100).ToString("0.##", CultureInfo.InvariantCulture)%">
+                    </div>
+                </div>
+
+                <div class="pace-details">
+
+                    <div class="mini-card">
+                        <div class="mini-label">
+                            المبيعات المتوقعة
+                        </div>
+                        <div class="mini-value">
+                            @Money(expectedSalesToDate)
+                        </div>
+                    </div>
+
+                    <div class="mini-card">
+                        <div class="mini-label">
+                            المبيعات الفعلية
+                        </div>
+                        <div class="mini-value">
+                            @Money(Model.Kpis.TotalSales)
+                        </div>
+                    </div>
+
+                    <div class="mini-card">
+                        <div class="mini-label">
+                            الفجوة عن المعدل
+                        </div>
+                        <div class="mini-value">
+                            @Money(salesPaceGap)
+                        </div>
+                    </div>
+
+                    <div class="mini-card">
+                        <div class="mini-label">
+                            المطلوب يوميًا
+                        </div>
+                        <div class="mini-value">
+                            @Money(targetSummary.RequiredDailySales)
+                        </div>
+                    </div>
+
+                </div>
+                        }
+            else
+            {
+                <div class="empty-state">
+                    <i class="bi bi-bullseye"></i>
+                    <div class="empty-state-title">
+                        لم يتم رفع تارجت للشهر المحدد
+                    </div>
+                    <div class="empty-state-text">
+                        المبيعات الفعلية ظاهرة بصورة مستقلة.
+                        بعد رفع التارجت ستظهر نسبة التحقيق والمعدل المتوقع والفجوة اليومية.
+                    </div>
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- ATTENTION -->
+    <!-- ===================================================== -->
+    @if (prioritizedAttentionItems.Any())
+    {
+        <div class="dashboard-section">
+
+            <div class="section-header">
+
+                <div>
+
+                    <div class="section-title">
+                        <i class="bi bi-bell-fill text-danger ms-1"></i>
+                        يحتاج انتباهك
+                    </div>
+
+                    <div class="section-subtitle">
+                        أهم المؤشرات التي تستحق متابعة الإدارة.
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="attention-grid">
+
+                @foreach (var item in prioritizedAttentionItems)
+                {
+                    var itemClass =
+                    item.Severity == "Critical"
+                    ? "attention-critical"
+                    : item.Severity == "Warning"
+                    ? "attention-warning"
+                    : "attention-info";
+
+                    <div class="attention-card @itemClass">
+
+                        <div class="attention-icon">
+                            <i class="bi @item.Icon"></i>
+                        </div>
+
+                        <div>
+
+                            <div class="attention-title">
+                                @item.Title
+                            </div>
+
+                            <div class="attention-message">
+                                @item.Message
+                            </div>
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+
+        </div>
+    }
+
+    <!-- ===================================================== -->
+    <!-- TARGET PERFORMANCE -->
+    <!-- ===================================================== -->
+
+    <div class="dashboard-section">
+
+        <div class="section-header">
+
+            <div>
+
+                <div class="section-title">
+                    <i class="bi bi-bullseye ms-1"></i>
+                    أداء التارجت
+                </div>
+
+                <div class="section-subtitle">
+                    مقارنة المبيعات الفعلية بالتارجت الشهري حسب الفروع ومناطق البيع.
+                </div>
+
+            </div>
+
+            <a asp-controller="SalesAnalyticsExecutiveReports"
+               asp-action="BranchPerformance"
+               asp-route-reportDate="@selectedDate.ToString("yyyy-MM-dd")"
+               asp-route-branchCode="@selectedBranchCode"
+               class="section-link">
+                عرض أداء الفروع
+                <i class="bi bi-arrow-left"></i>
+            </a>
+
+        </div>
+
+        @if (hasTargets)
+        {
+            @if (operationalBranches.Any())
+            {
+                <div class="branch-grid">
+
+                    @{
+                        var branchRank = 1;
+                    }
+
+                    @foreach (var branch in operationalBranches.Take(6))
+                    {
+                        <div class="branch-card">
+
+                            <div class="branch-top">
+
+                                <div>
+
+                                    <div class="branch-name">
+                                        @branch.BranchName
+                                    </div>
+
+                                    <div class="branch-code">
+                                        @branch.BranchCode
+                                    </div>
+
+                                </div>
+
+                                <div class="branch-rank">
+                                    @branchRank
+                                </div>
+
+                            </div>
+
+                            <div class="branch-sales">
+                                @Money(branch.ActualSales)
+                            </div>
+
+                            <div class="branch-progress">
+
+                                <div class="branch-progress-fill"
+                                     style="width:@Math.Min(branch.AchievementPercentage, 100).ToString("0.##", CultureInfo.InvariantCulture)%">
+                                </div>
+
+                            </div>
+
+                            <div class="branch-meta">
+
+                                التارجت:
+                                @Money(branch.MonthlyTarget)
+
+                                <br />
+
+                                نسبة التحقيق:
+                                @Percent(branch.AchievementPercentage)
+
+                                <br />
+
+                                الزيارات:
+                                @branch.ActualVisits.ToString("N0")
+
+                            </div>
+
+                        </div>
+
+                        branchRank++;
+                    }
+
+                </div>
+            }
+
+            @if (branchesWithoutOperationalData.Any())
+            {
+                <div class="no-data-box">
+
+                    <div class="fw-bold text-secondary">
+                        <i class="bi bi-cloud-arrow-up ms-1"></i>
+                        فروع لديها تارجت ولم تُرفع لها بيانات تشغيلية
+                    </div>
+
+                    <div class="no-data-list">
+
+                        @foreach (var branch in branchesWithoutOperationalData)
+                        {
+                            <span class="no-data-chip">
+                                @(string.IsNullOrWhiteSpace(branch.BranchName)
+                                                    ? branch.BranchCode
+                                                    : branch.BranchName)
+                </span>
+                                }
+
+                    </div>
+
+                </div>
+            }
+
+            <div class="chart-grid mt-3">
+
+                <div class="panel">
+
+                    <div class="chart-title">
+                        <i class="bi bi-bar-chart-line ms-1"></i>
+                        المبيعات مقابل التارجت حسب الفرع
+                    </div>
+
+                    @if (branchChartLabels.Any())
+                    {
+                        <div class="chart-box">
+                            <canvas id="branchTargetChart"></canvas>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-buildings"></i>
+                            <div class="empty-state-title">
+                                لا توجد فروع ببيانات تشغيلية للمقارنة
+                            </div>
+                        </div>
+                    }
+
+                </div>
+
+                <div class="panel">
+
+                    <div class="chart-title">
+                        <i class="bi bi-diagram-3 ms-1"></i>
+                        تحقيق التارجت حسب منطقة البيع
+                    </div>
+
+                    @if (targetChartLabels.Any())
+                    {
+                        <div class="chart-box">
+                            <canvas id="targetAchievementChart"></canvas>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-diagram-3"></i>
+                            <div class="empty-state-title">
+                                لا توجد مناطق بيع محققة لمبيعات حتى الآن
+                            </div>
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="bi bi-bullseye"></i>
+                <div class="empty-state-title">
+                    التارجت غير مرفوع للشهر المحدد
+                </div>
+                <div class="empty-state-text">
+                    هذا لا يؤثر على عرض وتحليل المبيعات الفعلية بالأعلى.
+                </div>
+            </div>
+        }
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- FIELD PERFORMANCE -->
+    <!-- ===================================================== -->
+
+    <div class="dashboard-section">
+
+        <div class="section-header">
+
+            <div>
+
+                <div class="section-title">
+                    <i class="bi bi-person-workspace ms-1"></i>
+                    الأداء الميداني
+                </div>
+
+                <div class="section-subtitle">
+                    أداء المناديب، حالة الزيارات، وأهم أسباب الزيارات السلبية.
+                </div>
+
+            </div>
+
+            <a asp-controller="SalesAnalyticsExecutiveReports"
+               asp-action="SalesRepEffectiveness"
+               asp-route-reportDate="@selectedDate.ToString("yyyy-MM-dd")"
+               asp-route-branchCode="@selectedBranchCode"
+               class="section-link">
+                عرض التقرير الكامل
+                <i class="bi bi-arrow-left"></i>
+            </a>
+
+        </div>
+
+        @if (hasVisits)
+        {
+            <div class="chart-grid">
+
+                <div class="panel">
+
+                    <div class="chart-title">
+                        <i class="bi bi-pie-chart ms-1"></i>
+                        حالة الزيارات
+                    </div>
+
+                    <div class="chart-box">
+                        <canvas id="visitStatusChart"></canvas>
+                    </div>
+
+                </div>
+
+                <div class="panel">
+
+                    <div class="chart-title">
+                        <i class="bi bi-exclamation-triangle ms-1"></i>
+                        أسباب الزيارات السلبية
+                    </div>
+
+                    @if (negativeReasonLabels.Any())
+                    {
+                        <div class="chart-box">
+                            <canvas id="negativeReasonsChart"></canvas>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-check-circle"></i>
+                            <div class="empty-state-title">
+                                لا توجد أسباب سلبية قابلة للعرض
+                            </div>
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+
+            <div class="two-column-grid mt-3">
+
+                <div class="panel">
+
+                    <div class="chart-title">
+                        <i class="bi bi-trophy-fill text-warning ms-1"></i>
+                        أعلى 5 مناديب في قيمة الزيارات
+                    </div>
+
+                    @if (bestSalesReps.Any())
+                    {
+                        <div class="table-responsive">
+
+                            <table class="table">
+
+                                <thead>
+                                    <tr>
+                                        <th>المندوب</th>
+                                        <th>الزيارات</th>
+                                        <th>إيجابي %</th>
+                                        <th>قيمة الزيارات</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+
+                                    @foreach (var rep in bestSalesReps)
+                                    {
+                                        <tr>
+
+                                            <td>
+                                                <div class="entity-name">
+                                                    @rep.SalesRepName
+                                                </div>
+                                                <div class="entity-code">
+                                                    @rep.SalesRepCode
+                                                </div>
+                                            </td>
+
+                                            <td>
+                                                @rep.TotalVisits.ToString("N0")
+                                            </td>
+
+                                            <td class="text-success fw-bold">
+                                                @Percent(rep.PositiveVisitPercentage)
+                                            </td>
+
+                                            <td>
+                                                @Money(rep.TotalVisitValue)
+                                            </td>
+
+                                        </tr>
+                                    }
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-person-workspace"></i>
+                            <div class="empty-state-title">
+                                لا توجد بيانات مناديب قابلة للعرض
+                            </div>
+                        </div>
+                    }
+
+                </div>
+
+                <div class="panel">
+
+                    <div class="chart-title">
+                        <i class="bi bi-exclamation-triangle-fill text-danger ms-1"></i>
+                        مناديب يحتاجون متابعة
+                    </div>
+
+                    @if (salesRepsNeedAttention.Any())
+                    {
+                        <div class="table-responsive">
+
+                            <table class="table">
+
+                                <thead>
+                                    <tr>
+                                        <th>المندوب</th>
+                                        <th>الزيارات</th>
+                                        <th>السلبية</th>
+                                        <th>إيجابي %</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+
+                                    @foreach (var rep in salesRepsNeedAttention)
+                                    {
+                                        <tr>
+
+                                            <td>
+                                                <div class="entity-name">
+                                                    @rep.SalesRepName
+                                                </div>
+                                                <div class="entity-code">
+                                                    @rep.SalesRepCode
+                                                </div>
+                                            </td>
+
+                                            <td>
+                                                @rep.TotalVisits.ToString("N0")
+                                            </td>
+
+                                            <td class="text-danger fw-bold">
+                                                @rep.NegativeVisits.ToString("N0")
+                                            </td>
+
+                                            <td>
+                                                @Percent(rep.PositiveVisitPercentage)
+                                            </td>
+
+                                        </tr>
+                                    }
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-check-circle"></i>
+                            <div class="empty-state-title">
+                                لا توجد حالات واضحة تحتاج متابعة
+                            </div>
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="bi bi-geo-alt"></i>
+                <div class="empty-state-title">
+                    لا توجد بيانات زيارات للفترة المحددة
+                </div>
+                <div class="empty-state-text">
+                    بعد رفع Daily Visits أو Visits Range ستظهر تحليلات الأداء الميداني تلقائيًا.
+                </div>
+            </div>
+        }
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- CUSTOMERS WITHOUT SALES -->
+    <!-- ===================================================== -->
+
+    <div class="dashboard-section">
+
+        <div class="section-header">
+
+            <div>
+
+                <div class="section-title">
+                    <i class="bi bi-person-x-fill text-danger ms-1"></i>
+                    عملاء تمت زيارتهم بدون مبيعات
+                </div>
+
+                <div class="section-subtitle">
+                    حالات تجارية تحتاج متابعة بعد الزيارة.
+                </div>
+
+            </div>
+
+            <a asp-controller="SalesAnalyticsExecutiveReports"
+               asp-action="NoSalesCustomers"
+               asp-route-reportDate="@selectedDate.ToString("yyyy-MM-dd")"
+               asp-route-branchCode="@selectedBranchCode"
+               class="section-link">
+                عرض جميع العملاء
+                <i class="bi bi-arrow-left"></i>
+            </a>
+
+        </div>
+
+        @if (hasVisits)
+        {
+            <div class="panel">
+
+                @if (noSalesCustomers.Any())
+                {
+                    <div class="table-responsive">
+
+                        <table class="table">
+
+                            <thead>
+                                <tr>
+                                    <th>العميل</th>
+                                    <th>المندوب</th>
+                                    <th>الفرع</th>
+                                    <th>الزيارات</th>
+                                    <th>السلبية</th>
+                                    <th>السبب</th>
+                                    <th>الحالة</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                @foreach (var customer in noSalesCustomers)
+                                {
+                                    <tr>
+
+                                        <td>
+                                            <div class="entity-name">
+                                                @customer.CustomerName
+                                            </div>
+                                            <div class="entity-code">
+                                                @customer.CustomerCode
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            <div>
+                                                @customer.SalesRepName
+                                            </div>
+                                            <div class="entity-code">
+                                                @customer.SalesRepCode
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            @customer.BranchName
+                                        </td>
+
+                                        <td>
+                                            @customer.TotalVisits
+                                        </td>
+
+                                        <td class="text-danger fw-bold">
+                                            @customer.NegativeVisits
+                                        </td>
+
+                                        <td>
+                                            @(string.IsNullOrWhiteSpace(customer.NegativeReason)
+                                                                            ? "بدون سبب مسجل"
+                                                                            : customer.NegativeReason)
+                            </td>
+
+                                        <td>
+                                            <span class="risk-badge @RiskClass(customer.RiskLevel)">
+                                                @customer.RiskLevel
+                                            </span>
+                                        </td>
+
+                                    </tr>
+                                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <div class="empty-state-title">
+                            لا توجد حالات حرجة ظاهرة ضمن أعلى العملاء
+                        </div>
+                    </div>
+                }
+
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="bi bi-person-x"></i>
+                <div class="empty-state-title">
+                    التحليل يحتاج بيانات زيارات
+                </div>
+                <div class="empty-state-text">
+                    لا يمكن تحديد العملاء الذين تمت زيارتهم بدون مبيعات قبل توفر بيانات الزيارات.
+                </div>
+            </div>
+        }
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- TOP PRODUCTS TABLE -->
+    <!-- ===================================================== -->
+    @if (Model.TopProducts.Any())
+    {
+        <div class="dashboard-section">
+
+            <div class="section-header">
+
+                <div>
+
+                    <div class="section-title">
+                        <i class="bi bi-box-seam ms-1"></i>
+                        تفاصيل أفضل المنتجات
+                    </div>
+
+                    <div class="section-subtitle">
+                        أعلى المنتجات مساهمة في المبيعات حتى التاريخ المحدد.
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="panel">
+
+                <div class="table-responsive">
+
+                    <table class="table">
+
+                        <thead>
+                            <tr>
+                                <th>المنتج</th>
+                                <th>المبيعات</th>
+                                <th>الكمية</th>
+                                <th>نسبة المساهمة</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var item in Model.TopProducts.Take(10))
+                            {
+                                <tr>
+
+                                    <td class="entity-name">
+                                        @item.ProductName
+                                    </td>
+
+                                    <td>
+                                        @Money(item.TotalSales)
+                                    </td>
+
+                                    <td>
+                                        @Number(item.TotalQuantity)
+                                    </td>
+
+                                    <td>
+                                        @Percent(item.ContributionPercentage)
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+    }
+
+    <!-- ===================================================== -->
+    <!-- DATA QUALITY -->
+    <!-- ===================================================== -->
+
+    <div class="dashboard-section">
+
+        <div class="panel quality-access-card">
+
+            <div class="d-flex align-items-center gap-3">
+
+                <div class="quality-icon">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+
+                <div>
+
+                    <div class="section-title">
+                        جودة البيانات
+                    </div>
+
+                    <div class="section-subtitle">
+                        راجع جودة الربط بين بيانات المبيعات والزيارات والعملاء قبل اتخاذ قرارات تفصيلية.
+                    </div>
+
+                </div>
+
+            </div>
+
+            <a asp-controller="SalesAnalyticsDataQuality"
+               asp-action="Index"
+               asp-route-reportDate="@selectedDate.ToString("yyyy-MM-dd")"
+               asp-route-branchCode="@selectedBranchCode"
+               class="section-link">
+                فتح تقرير جودة البيانات
+                <i class="bi bi-arrow-left"></i>
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
+
+            function waitForChart() {
+
+                if (typeof Chart === "undefined") {
+
+                    setTimeout(
+                        waitForChart,
+                        120);
+
+                    return;
+                }
+
+                initializeCharts();
+            }
+
+            waitForChart();
+
+            function createBarChart(
+                id,
+                labels,
+                values,
+                datasetLabel) {
+
+                const element =
+                    document.getElementById(id);
+
+                if (
+                    !element ||
+                    !labels ||
+                    labels.length === 0) {
+
+                    return;
+                }
+
+                new Chart(
+                    element,
+                    {
+                        type: "bar",
+
+                        data: {
+
+                            labels: labels,
+
+                            datasets: [
+                                {
+                                    label: datasetLabel,
+                                    data: values,
+                                    backgroundColor: "#0b2a5b",
+                                    borderRadius: 7
+                                }
+                            ]
+                        },
+
+                        options: {
+
+                            responsive: true,
+                            maintainAspectRatio: false,
+
+                            plugins: {
+
+                                legend: {
+                                    display: false
+                                },
+
+                                tooltip: {
+                                    rtl: true
+                                }
+                            },
+
+                            scales: {
+
+                                x: {
+                                    grid: {
+                                        display: false
+                                    }
+                                },
+
+                                y: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        color: "rgba(148,163,184,.15)"
+                                    }
+                                }
+                            }
+                        }
+                    });
+            }
+
+            function createGroupedBarChart(
+                id,
+                labels,
+                actualValues,
+                targetValues) {
+
+                const element =
+                    document.getElementById(id);
+
+                if (
+                    !element ||
+                    labels.length === 0) {
+
+                    return;
+                }
+
+                new Chart(
+                    element,
+                    {
+                        type: "bar",
+
+                        data: {
+
+                            labels: labels,
+
+                            datasets: [
+                                {
+                                    label: "المبيعات الفعلية",
+                                    data: actualValues,
+                                    backgroundColor: "#0b2a5b",
+                                    borderRadius: 6
+                                },
+                                {
+                                    label: "التارجت الشهري",
+                                    data: targetValues,
+                                    backgroundColor: "#c9a227",
+                                    borderRadius: 6
+                                }
+                            ]
+                        },
+
+                        options: {
+
+                            responsive: true,
+                            maintainAspectRatio: false,
+
+                            interaction: {
+                                mode: "index",
+                                intersect: false
+                            },
+
+                            plugins: {
+
+                                legend: {
+                                    position: "bottom",
+                                    rtl: true
+                                },
+
+                                tooltip: {
+                                    rtl: true
+                                }
+                            },
+
+                            scales: {
+
+                                x: {
+                                    grid: {
+                                        display: false
+                                    }
+                                },
+
+                                y: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        color: "rgba(148,163,184,.15)"
+                                    }
+                                }
+                            }
+                        }
+                    });
+            }
+
+            function createDoughnutChart(
+                id,
+                labels,
+                values) {
+
+                const element =
+                    document.getElementById(id);
+
+                if (!element) {
+                    return;
+                }
+
+                const total =
+                    values.reduce(
+                        (sum, value) =>
+                            sum + value,
+                        0);
+
+                if (total <= 0) {
+                    return;
+                }
+
+                new Chart(
+                    element,
+                    {
+                        type: "doughnut",
+
+                        data: {
+
+                            labels: labels,
+
+                            datasets: [
+                                {
+                                    data: values,
+
+                                    backgroundColor: [
+                                        "#16a34a",
+                                        "#dc2626"
+                                    ],
+
+                                    borderWidth: 0
+                                }
+                            ]
+                        },
+
+                        options: {
+
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutout: "68%",
+
+                            plugins: {
+
+                                legend: {
+                                    position: "bottom",
+                                    rtl: true
+                                },
+
+                                tooltip: {
+                                    rtl: true
+                                }
+                            }
+                        }
+                    });
+            }
+
+            function initializeCharts() {
+
+                const salesDistrictLabels =
+                    @Html.Raw(
+                        JsonSerializer.Serialize(
+                                salesDistrictChartLabels));
+
+                const salesDistrictValues =
+                    @Html.Raw(
+                                                JsonSerializer.Serialize(
+                                                        salesDistrictChartValues));
+
+                const productLabels =
+                    @Html.Raw(
+                                                JsonSerializer.Serialize(
+                                                        productChartLabels));
+
+                const productValues =
+                    @Html.Raw(
+                                                JsonSerializer.Serialize(
+                                                        productChartValues));
+
+                const branchLabels =
+                    @Html.Raw(
+                                                JsonSerializer.Serialize(
+                                                        branchChartLabels));
+
+                const branchActual =
+                    @Html.Raw(
+                                                JsonSerializer.Serialize(
+                                                        branchChartActual));
+
+                const branchTarget =
+                    @Html.Raw(
+                                                JsonSerializer.Serialize(
+                                                        branchChartTarget));
+
+                const targetLabels =
+                    @Html.Raw(
+                                                JsonSerializer.Serialize(
+                                                        targetChartLabels));
+
+                const targetValues =
+                    @Html.Raw(
+                                                JsonSerializer.Serialize(
+                                                        targetChartValues));
+
+                const visitLabels =
+                    @Html.Raw(
+                                                JsonSerializer.Serialize(
+                                                        visitStatusLabels));
+
+                const visitValues =
+                    @Html.Raw(
+                                                JsonSerializer.Serialize(
+                                                        visitStatusValues));
+
+                const negativeLabels =
+                    @Html.Raw(
+                                                JsonSerializer.Serialize(
+                                                        negativeReasonLabels));
+
+                const negativeValues =
+                    @Html.Raw(
+                                                JsonSerializer.Serialize(
+                                                        negativeReasonValues));
+
+                createBarChart(
+                    "salesDistrictChart",
+                    salesDistrictLabels,
+                    salesDistrictValues,
+                    "المبيعات");
+
+                createBarChart(
+                    "topProductsChart",
+                    productLabels,
+                    productValues,
+                    "المبيعات");
+
+                createGroupedBarChart(
+                    "branchTargetChart",
+                    branchLabels,
+                    branchActual,
+                    branchTarget);
+
+                createBarChart(
+                    "targetAchievementChart",
+                    targetLabels,
+                    targetValues,
+                    "نسبة التحقيق %");
+
+                createDoughnutChart(
+                    "visitStatusChart",
+                    visitLabels,
+                    visitValues);
+
+                createBarChart(
+                    "negativeReasonsChart",
+                    negativeLabels,
+                    negativeValues,
+                    "عدد الزيارات");
+            }
+        });
+</script>

@@ -1,0 +1,1186 @@
+﻿@model MasterDataAutomation.Application.Modules.SalesAnalytics.DataQualityDtos.SalesAnalyticsDataQualityReportDto
+@using MasterDataAutomation.Application.Modules.SalesAnalytics.DashboardDtos
+
+@{
+    ViewData["Title"] = "تقرير جودة البيانات";
+
+    var branches =
+        ViewBag.Branches as List<BranchOptionDto>
+        ?? new List<BranchOptionDto>();
+
+    var selectedBranchCode =
+        ViewBag.SelectedBranchCode as string
+        ?? string.Empty;
+
+    string Money(decimal value) =>
+        $"{value:N0} جنيه";
+
+    string Number(decimal value) =>
+        $"{value:N0}";
+
+    var scoreClass =
+        Model.DataQualityScore >= 98
+            ? "score-good"
+            : Model.DataQualityScore >= 95
+                ? "score-warning"
+                : "score-critical";
+}
+
+<style>
+    .quality-page {
+        max-width: 1600px;
+        margin: 0 auto;
+        direction: rtl;
+    }
+
+    .quality-hero {
+        background: linear-gradient(135deg, #0f172a, #1e3a8a);
+        color: #fff;
+        border-radius: 20px;
+        padding: 26px;
+        margin-bottom: 22px;
+        box-shadow: 0 14px 32px rgba(15, 23, 42, .16);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
+    }
+
+    .hero-title {
+        font-size: 28px;
+        font-weight: 950;
+        margin-bottom: 6px;
+    }
+
+    .hero-subtitle {
+        color: rgba(255,255,255,.8);
+        font-size: 14px;
+        font-weight: 600;
+        max-width: 780px;
+        line-height: 1.8;
+    }
+
+    .date-filter {
+        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.2);
+        border-radius: 14px;
+        padding: 14px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+        .date-filter input,
+        .date-filter select {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-weight: 800;
+        }
+
+    .btn-filter {
+        background: #fff;
+        color: #0f172a;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-weight: 900;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 22px;
+    }
+
+    .summary-card {
+        background: #fff;
+        border-radius: 18px;
+        padding: 20px;
+        border: 1px solid #edf0f5;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+    }
+
+    .summary-label {
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 800;
+        margin-bottom: 8px;
+    }
+
+    .summary-value {
+        color: #0f172a;
+        font-size: 26px;
+        font-weight: 950;
+    }
+
+    .summary-hint {
+        color: #94a3b8;
+        font-size: 12px;
+        font-weight: 700;
+        margin-top: 6px;
+        line-height: 1.6;
+    }
+
+    .score-good {
+        color: #15803d;
+    }
+
+    .score-warning {
+        color: #a16207;
+    }
+
+    .score-critical {
+        color: #b91c1c;
+    }
+
+    .issues-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .issue-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 16px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .issue-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+
+    .issue-title {
+        font-size: 14px;
+        font-weight: 950;
+        color: #0f172a;
+        margin-bottom: 5px;
+    }
+
+    .issue-message {
+        font-size: 12px;
+        font-weight: 700;
+        color: #64748b;
+        line-height: 1.7;
+    }
+
+    .issue-count {
+        margin-top: 8px;
+        display: inline-flex;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 950;
+        background: #f1f5f9;
+        color: #334155;
+    }
+
+    .issue-critical {
+        border-color: #fecaca;
+        background: #fff5f5;
+    }
+
+        .issue-critical .issue-icon {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+    .issue-warning {
+        border-color: #fed7aa;
+        background: #fff7ed;
+    }
+
+        .issue-warning .issue-icon {
+            background: #ffedd5;
+            color: #9a3412;
+        }
+
+    .issue-info {
+        border-color: #bfdbfe;
+        background: #eff6ff;
+    }
+
+        .issue-info .issue-icon {
+            background: #dbeafe;
+            color: #1e3a8a;
+        }
+
+    .section-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        margin-bottom: 18px;
+    }
+
+    .panel {
+        background: #fff;
+        border-radius: 18px;
+        padding: 20px;
+        border: 1px solid #edf0f5;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+    }
+
+    .panel-title {
+        font-size: 18px;
+        font-weight: 950;
+        color: #0f172a;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .panel-subtitle {
+        color: #94a3b8;
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 14px;
+        line-height: 1.6;
+    }
+
+    .impact-panel {
+        background: linear-gradient(135deg, #fff, #f8fafc);
+    }
+
+    .impact-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid #eef2f7;
+    }
+
+        .impact-row:last-child {
+            border-bottom: 0;
+        }
+
+    .impact-label {
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 800;
+    }
+
+    .impact-value {
+        color: #0f172a;
+        font-size: 15px;
+        font-weight: 950;
+    }
+
+    .table {
+        margin-bottom: 0;
+        vertical-align: middle;
+    }
+
+        .table thead th {
+            color: #475569;
+            font-size: 12px;
+            font-weight: 900;
+            background: #f8fafc;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        .table tbody td {
+            font-size: 13px;
+            font-weight: 700;
+            color: #334155;
+        }
+
+    .strong-name {
+        font-weight: 900;
+        color: #0f172a;
+    }
+
+    .muted-code {
+        color: #94a3b8;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .empty-state {
+        background: #ecfdf5;
+        border: 1px solid #bbf7d0;
+        color: #166534;
+        padding: 18px;
+        border-radius: 16px;
+        font-weight: 900;
+        margin-bottom: 18px;
+    }
+
+    .preview-note {
+        color: #94a3b8;
+        font-size: 11px;
+        font-weight: 700;
+        margin-top: 10px;
+    }
+
+    @@media (max-width: 1100px) {
+        .summary-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .issues-grid,
+        .section-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 650px) {
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .hero-title {
+            font-size: 22px;
+        }
+    }
+</style>
+
+<div class="quality-page">
+
+    <!-- ===================================================== -->
+    <!-- Hero -->
+    <!-- ===================================================== -->
+
+    <div class="quality-hero">
+
+        <div>
+
+            <div class="hero-title">
+                تقرير جودة البيانات
+            </div>
+
+            <div class="hero-subtitle">
+                التحقق من جودة وربط البيانات المستخدمة في لوحة الإدارة التنفيذية،
+                بما يشمل بيانات العملاء والمبيعات والزيارات والفروع ومناطق البيع،
+                وذلك من بداية الشهر وحتى التاريخ المحدد.
+            </div>
+
+        </div>
+
+        <form asp-controller="SalesAnalyticsDataQuality"
+              asp-action="Index"
+              method="get"
+              class="date-filter">
+
+            <input type="date"
+                   name="reportDate"
+                   value="@ViewBag.SelectedDate" />
+
+            <select name="branchCode">
+
+                <option value="">
+                    كل الفروع
+                </option>
+
+                @foreach (var branch in branches)
+                {
+                    if (selectedBranchCode == branch.BranchCode)
+                    {
+                        <option value="@branch.BranchCode" selected>
+                            @branch.BranchName
+                        </option>
+                    }
+                    else
+                    {
+                        <option value="@branch.BranchCode">
+                            @branch.BranchName
+                        </option>
+                    }
+                }
+
+            </select>
+
+            <button type="submit"
+                    class="btn-filter">
+                <i class="bi bi-search"></i>
+                فحص البيانات
+            </button>
+
+        </form>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- Executive Summary -->
+    <!-- ===================================================== -->
+
+    <div class="summary-grid">
+
+        <div class="summary-card">
+
+            <div class="summary-label">
+                نسبة جودة البيانات
+            </div>
+
+            <div class="summary-value @scoreClass">
+                @Model.DataQualityScore.ToString("N2")%
+            </div>
+
+            <div class="summary-hint">
+                نسبة الصفوف التشغيلية السليمة بعد استبعاد البيانات المتأثرة بمشاكل الربط.
+            </div>
+
+        </div>
+
+        <div class="summary-card">
+
+            <div class="summary-label">
+                المشاكل الحرجة
+            </div>
+
+            <div class="summary-value text-danger">
+                @Model.CriticalIssuesCount
+            </div>
+
+            <div class="summary-hint">
+                مشاكل قد تؤثر بشكل مباشر على دقة التقارير والتحليلات.
+            </div>
+
+        </div>
+
+        <div class="summary-card">
+
+            <div class="summary-label">
+                قيمة المبيعات المتأثرة
+            </div>
+
+            <div class="summary-value">
+                @Money(Model.AffectedSalesValue)
+            </div>
+
+            <div class="summary-hint">
+                قيمة مبيعات مرتبطة بعملاء غير موجودين في بيانات العملاء الرئيسية.
+            </div>
+
+        </div>
+
+        <div class="summary-card">
+
+            <div class="summary-label">
+                الزيارات المتأثرة
+            </div>
+
+            <div class="summary-value">
+                @Model.AffectedVisitRows.ToString("N0")
+            </div>
+
+            <div class="summary-hint">
+                زيارات لا يمكن ربطها بعميل موجود في بيانات العملاء الرئيسية.
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- Dataset Availability -->
+    <!-- ===================================================== -->
+
+    <div class="summary-grid">
+
+        <div class="summary-card">
+
+            <div class="summary-label">
+                صفوف المبيعات
+            </div>
+
+            <div class="summary-value">
+                @Model.TotalSalesRows.ToString("N0")
+            </div>
+
+            <div class="summary-hint">
+                عدد صفوف المبيعات المستخدمة من بداية الشهر حتى التاريخ المحدد.
+            </div>
+
+        </div>
+
+        <div class="summary-card">
+
+            <div class="summary-label">
+                صفوف الزيارات
+            </div>
+
+            <div class="summary-value">
+                @Model.TotalVisitRows.ToString("N0")
+            </div>
+
+            <div class="summary-hint">
+                عدد صفوف الزيارات المستخدمة من بداية الشهر حتى التاريخ المحدد.
+            </div>
+
+        </div>
+
+        <div class="summary-card">
+
+            <div class="summary-label">
+                سجلات التارجت الشهري
+            </div>
+
+            <div class="summary-value">
+                @Model.TotalTargets.ToString("N0")
+            </div>
+
+            <div class="summary-hint">
+                عدد سجلات التارجت المسجلة للشهر والفرع المحددين.
+            </div>
+
+        </div>
+
+        <div class="summary-card">
+
+            <div class="summary-label">
+                التحذيرات
+            </div>
+
+            <div class="summary-value text-warning">
+                @Model.WarningIssuesCount
+            </div>
+
+            <div class="summary-hint">
+                مشاكل ربط أو بيانات تحتاج مراجعة ولكنها ليست حرجة.
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- Issues -->
+    <!-- ===================================================== -->
+    @if (!Model.Issues.Any())
+    {
+        <div class="empty-state">
+            <i class="bi bi-check-circle ms-1"></i>
+            لم يتم اكتشاف مشاكل رئيسية في جودة البيانات للفترة والفرع المحددين.
+        </div>
+    }
+    else
+    {
+        <div class="issues-grid">
+
+            @foreach (var issue in Model.Issues)
+            {
+                var issueClass =
+                issue.Severity switch
+                {
+                    "Critical" => "issue-critical",
+                    "Warning" => "issue-warning",
+                    _ => "issue-info"
+                };
+
+                <div class="issue-card @issueClass">
+
+                    <div class="issue-icon">
+                        <i class="bi @issue.Icon"></i>
+                    </div>
+
+                    <div>
+
+                        <div class="issue-title">
+                            @issue.Title
+                        </div>
+
+                        <div class="issue-message">
+                            @issue.Message
+                        </div>
+
+                        <div class="issue-count">
+                            العدد: @issue.Count
+                        </div>
+
+                    </div>
+
+                </div>
+            }
+
+        </div>
+    }
+
+    <!-- ===================================================== -->
+    <!-- Business Impact -->
+    <!-- ===================================================== -->
+
+    <div class="section-grid">
+
+        <div class="panel impact-panel">
+
+            <div class="panel-title">
+                <i class="bi bi-currency-exchange"></i>
+                تأثير مشاكل بيانات المبيعات
+            </div>
+
+            <div class="panel-subtitle">
+                تأثير العملاء الموجودين في بيانات المبيعات وغير الموجودين في بيانات العملاء الرئيسية.
+            </div>
+
+            <div class="impact-row">
+                <div class="impact-label">
+                    عملاء مبيعات غير مربوطين
+                </div>
+
+                <div class="impact-value">
+                    @Model.UnmappedSalesCustomersCount
+                </div>
+            </div>
+
+            <div class="impact-row">
+                <div class="impact-label">
+                    صفوف مبيعات متأثرة
+                </div>
+
+                <div class="impact-value">
+                    @Model.AffectedSalesRows.ToString("N0")
+                </div>
+            </div>
+
+            <div class="impact-row">
+                <div class="impact-label">
+                    قيمة المبيعات المتأثرة
+                </div>
+
+                <div class="impact-value text-danger">
+                    @Money(Model.AffectedSalesValue)
+                </div>
+            </div>
+
+        </div>
+
+        <div class="panel impact-panel">
+
+            <div class="panel-title">
+                <i class="bi bi-geo-alt"></i>
+                تأثير مشاكل بيانات الزيارات
+            </div>
+
+            <div class="panel-subtitle">
+                الزيارات التي لا يمكن ربطها بعميل موجود في بيانات العملاء الرئيسية.
+            </div>
+
+            <div class="impact-row">
+                <div class="impact-label">
+                    عملاء زيارات غير مربوطين
+                </div>
+
+                <div class="impact-value">
+                    @Model.UnmappedVisitCustomersCount
+                </div>
+            </div>
+
+            <div class="impact-row">
+                <div class="impact-label">
+                    صفوف زيارات متأثرة
+                </div>
+
+                <div class="impact-value">
+                    @Model.AffectedVisitRows.ToString("N0")
+                </div>
+            </div>
+
+            <div class="impact-row">
+                <div class="impact-label">
+                    قيمة الزيارات المتأثرة
+                </div>
+
+                <div class="impact-value">
+                    @Money(Model.AffectedVisitValue)
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ===================================================== -->
+    <!-- Unmapped Sales Reps -->
+    <!-- ===================================================== -->
+
+    <div class="panel mb-4">
+
+        <div class="panel">
+
+            <div class="panel-title">
+                <i class="bi bi-person-badge"></i>
+                مناديب ظهروا في الزيارات وغير موجودين في بيانات المناديب
+            </div>
+
+            <div class="panel-subtitle">
+                مناديب ظهروا في بيانات الزيارات ولكن لم يتم العثور عليهم داخل Sales Rep Master.
+                يجب مراجعتهم وإضافتهم للبيانات الرئيسية حتى يظهر ربط الفرع والتقارير بصورة صحيحة.
+            </div>
+
+            <div class="impact-row">
+
+                <div class="impact-label">
+                    عدد المناديب غير المربوطين
+                </div>
+
+                <div class="impact-value text-danger">
+                    @Model.UnmappedSalesRepsCount
+                </div>
+
+            </div>
+
+            <div class="impact-row">
+
+                <div class="impact-label">
+                    عدد الزيارات المتأثرة
+                </div>
+
+                <div class="impact-value">
+                    @Model.AffectedSalesRepVisitRows.ToString("N0")
+                </div>
+
+            </div>
+
+            <div class="table-responsive mt-3">
+
+                <table class="table">
+
+                    <thead>
+                        <tr>
+                            <th>المندوب</th>
+                            <th>عدد الزيارات</th>
+                            <th>العملاء الذين تمت زيارتهم</th>
+                            <th>قيمة الزيارات</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @if (!Model.UnmappedSalesReps.Any())
+                        {
+                            <tr>
+                                <td colspan="4"
+                                    class="text-muted fw-bold">
+                                    لا توجد مناديب غير مربوطين.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.UnmappedSalesReps)
+                            {
+                                <tr>
+
+                                    <td>
+
+                                        <div class="strong-name">
+                                            @item.SalesRepName
+                                        </div>
+
+                                        <div class="muted-code">
+                                            @item.SalesRepCode
+                                        </div>
+
+                                    </td>
+
+                                    <td>
+                                        @item.VisitsCount.ToString("N0")
+                                    </td>
+
+                                    <td>
+                                        @item.CustomersVisited.ToString("N0")
+                                    </td>
+
+                                    <td>
+                                        @Money(item.TotalVisitValue)
+                                    </td>
+
+                                </tr>
+                            }
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            @if (Model.UnmappedSalesRepsCount > Model.UnmappedSalesReps.Count)
+            {
+                <div class="preview-note">
+                    يتم عرض أول @Model.UnmappedSalesReps.Count
+                    من أصل @Model.UnmappedSalesRepsCount مندوب.
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- Unmapped Sales Customers -->
+    <!-- ===================================================== -->
+
+    <div class="section-grid">
+
+        <div class="panel">
+
+            <div class="panel-title">
+                <i class="bi bi-person-exclamation"></i>
+                عملاء موجودون في المبيعات وغير موجودين في بيانات العملاء
+            </div>
+
+            <div class="panel-subtitle">
+                عملاء ظهروا في بيانات المبيعات ولكن لم يتم العثور عليهم داخل Customer Master.
+            </div>
+
+            <div class="table-responsive">
+
+                <table class="table">
+
+                    <thead>
+                        <tr>
+                            <th>العميل</th>
+                            <th>عدد الصفوف</th>
+                            <th>المبيعات</th>
+                            <th>الكمية</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @if (!Model.UnmappedSalesCustomers.Any())
+                        {
+                            <tr>
+                                <td colspan="4"
+                                    class="text-muted fw-bold">
+                                    لا توجد عملاء مبيعات غير مربوطين.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.UnmappedSalesCustomers)
+                            {
+                                <tr>
+
+                                    <td>
+                                        <div class="strong-name">
+                                            @item.CustomerName
+                                        </div>
+
+                                        <div class="muted-code">
+                                            @item.CustomerCode
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        @item.RowsCount
+                                    </td>
+
+                                    <td>
+                                        @Money(item.TotalSales)
+                                    </td>
+
+                                    <td>
+                                        @Number(item.TotalQuantity)
+                                    </td>
+
+                                </tr>
+                            }
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            @if (Model.UnmappedSalesCustomersCount > Model.UnmappedSalesCustomers.Count)
+            {
+                <div class="preview-note">
+                    يتم عرض أول @Model.UnmappedSalesCustomers.Count
+                    من أصل @Model.UnmappedSalesCustomersCount عميل.
+                </div>
+            }
+
+        </div>
+
+        <!-- ================================================= -->
+        <!-- Unmapped Visit Customers -->
+        <!-- ================================================= -->
+
+        <div class="panel">
+
+            <div class="panel-title">
+                <i class="bi bi-person-x"></i>
+                عملاء موجودون في الزيارات وغير موجودين في بيانات العملاء
+            </div>
+
+            <div class="panel-subtitle">
+                عملاء ظهروا في بيانات الزيارات ولكن لم يتم العثور عليهم داخل Customer Master.
+            </div>
+
+            <div class="table-responsive">
+
+                <table class="table">
+
+                    <thead>
+                        <tr>
+                            <th>العميل</th>
+                            <th>المندوب</th>
+                            <th>عدد الزيارات</th>
+                            <th>قيمة الزيارات</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @if (!Model.UnmappedVisitCustomers.Any())
+                        {
+                            <tr>
+                                <td colspan="4"
+                                    class="text-muted fw-bold">
+                                    لا توجد عملاء زيارات غير مربوطين.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.UnmappedVisitCustomers)
+                            {
+                                <tr>
+
+                                    <td>
+                                        <div class="strong-name">
+                                            @item.CustomerName
+                                        </div>
+
+                                        <div class="muted-code">
+                                            @item.CustomerCode
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <div>
+                                            @item.SalesRepName
+                                        </div>
+
+                                        <div class="muted-code">
+                                            @item.SalesRepCode
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        @item.VisitsCount
+                                    </td>
+
+                                    <td>
+                                        @Money(item.VisitValue)
+                                    </td>
+
+                                </tr>
+                            }
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            @if (Model.UnmappedVisitCustomersCount > Model.UnmappedVisitCustomers.Count)
+            {
+                <div class="preview-note">
+                    يتم عرض أول @Model.UnmappedVisitCustomers.Count
+                    من أصل @Model.UnmappedVisitCustomersCount عميل.
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- Sales Lines / Missing District -->
+    <!-- ===================================================== -->
+
+    <div class="section-grid">
+
+        <div class="panel">
+
+            <div class="panel-title">
+                <i class="bi bi-diagram-3"></i>
+                مناطق بيع غير مربوطة
+            </div>
+
+            <div class="panel-subtitle">
+                أكواد مناطق أو خطوط بيع ظهرت في بيانات المبيعات ولا يمكن ربطها بشكل صحيح ببيانات العملاء.
+            </div>
+
+            <div class="table-responsive">
+
+                <table class="table">
+
+                    <thead>
+                        <tr>
+                            <th>منطقة البيع</th>
+                            <th>عدد الصفوف</th>
+                            <th>المبيعات</th>
+                            <th>الكمية</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @if (!Model.UnmappedSalesLines.Any())
+                        {
+                            <tr>
+                                <td colspan="4"
+                                    class="text-muted fw-bold">
+                                    لا توجد مناطق بيع غير مربوطة.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.UnmappedSalesLines)
+                            {
+                                <tr>
+
+                                    <td>
+                                        <div class="strong-name">
+                                            @item.LineName
+                                        </div>
+
+                                        <div class="muted-code">
+                                            @item.LineCode
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        @item.RowsCount
+                                    </td>
+
+                                    <td>
+                                        @Money(item.TotalSales)
+                                    </td>
+
+                                    <td>
+                                        @Number(item.TotalQuantity)
+                                    </td>
+
+                                </tr>
+                            }
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            @if (Model.UnmappedSalesLinesCount > Model.UnmappedSalesLines.Count)
+            {
+                <div class="preview-note">
+                    يتم عرض أول @Model.UnmappedSalesLines.Count
+                    من أصل @Model.UnmappedSalesLinesCount منطقة.
+                </div>
+            }
+
+        </div>
+
+        <div class="panel">
+
+            <div class="panel-title">
+                <i class="bi bi-people"></i>
+                عملاء بدون منطقة بيع
+            </div>
+
+            <div class="panel-subtitle">
+                عملاء موجودون في Customer Master ولكن لا يوجد لديهم Sales District Code.
+            </div>
+
+            <div class="table-responsive">
+
+                <table class="table">
+
+                    <thead>
+                        <tr>
+                            <th>العميل</th>
+                            <th>الفرع</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @if (!Model.CustomersMissingSalesDistrict.Any())
+                        {
+                            <tr>
+                                <td colspan="2"
+                                    class="text-muted fw-bold">
+                                    لا توجد عملاء بدون منطقة بيع.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.CustomersMissingSalesDistrict)
+                            {
+                                <tr>
+
+                                    <td>
+                                        <div class="strong-name">
+                                            @item.CustomerName
+                                        </div>
+
+                                        <div class="muted-code">
+                                            @item.CustomerCode
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <div>
+                                            @item.BranchName
+                                        </div>
+
+                                        <div class="muted-code">
+                                            @item.BranchCode
+                                        </div>
+                                    </td>
+
+                                </tr>
+                            }
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            @if (Model.CustomersMissingSalesDistrictCount > Model.CustomersMissingSalesDistrict.Count)
+            {
+                <div class="preview-note">
+                    يتم عرض أول @Model.CustomersMissingSalesDistrict.Count
+                    من أصل @Model.CustomersMissingSalesDistrictCount عميل.
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+</div>

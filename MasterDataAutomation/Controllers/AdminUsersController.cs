@@ -161,7 +161,12 @@ public class AdminUsersController : Controller
 
             new SelectListItem { Text = "Accounts User", Value = "AccountsUser" },
             new SelectListItem { Text = "Accounts Manager", Value = "AccountsManager" },
-            new SelectListItem { Text = "Executive Manager", Value = "ExecutiveManager" },
+
+            // Product pricing executive role
+            new SelectListItem { Text = "Executive Manager - Pricing", Value = "ExecutiveManager" },
+
+            // CEO dashboard only role
+            new SelectListItem { Text = "CEO", Value = "CEO" },
 
             new SelectListItem("Admin", "Admin")
         };

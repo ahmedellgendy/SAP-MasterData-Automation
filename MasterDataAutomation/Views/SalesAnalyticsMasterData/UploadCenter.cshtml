@@ -1,0 +1,424 @@
+﻿@using MasterDataAutomation.Application.Modules.SalesAnalytics.Dtos
+@using MasterDataAutomation.Application.Modules.SalesAnalytics.Enums
+@model List<SalesAnalyticsUploadHistoryDto>
+
+@{
+    ViewData["Title"] = "Sales Analytics Upload Center";
+
+    string StatusClass(SalesAnalyticsUploadStatus status)
+    {
+        return status switch
+        {
+            SalesAnalyticsUploadStatus.Success => "status-success",
+            SalesAnalyticsUploadStatus.PartiallyImported => "status-warning",
+            SalesAnalyticsUploadStatus.Failed => "status-danger",
+            _ => "status-muted"
+        };
+    }
+
+    string FileTypeName(SalesAnalyticsUploadFileType type)
+    {
+        return type switch
+        {
+            SalesAnalyticsUploadFileType.CustomerMaster => "Customer Master",
+            SalesAnalyticsUploadFileType.SalesRepMaster => "Sales Rep Master",
+            SalesAnalyticsUploadFileType.RepRouteAssignment => "Rep Route Assignment",
+            SalesAnalyticsUploadFileType.DailySalesReport => "Daily Sales Report",
+            SalesAnalyticsUploadFileType.MtdSalesReport => "MTD Sales Report",
+            SalesAnalyticsUploadFileType.DailyVisitsReport => "Daily Visits Report",
+            SalesAnalyticsUploadFileType.MtdVisitsReport => "MTD Visits Report",
+            SalesAnalyticsUploadFileType.MonthlyTargets => "Monthly Targets",
+            _ => type.ToString()
+        };
+    }
+}
+
+<style>
+    .upload-center-page {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-hero {
+        background: linear-gradient(135deg, #0b2a5b, #123a78);
+        color: #fff;
+        border-radius: 20px;
+        padding: 26px;
+        margin-bottom: 22px;
+        box-shadow: 0 14px 32px rgba(15, 23, 42, .16);
+    }
+
+    .page-title {
+        font-size: 28px;
+        font-weight: 950;
+        margin-bottom: 6px;
+    }
+
+    .page-subtitle {
+        color: rgba(255,255,255,.78);
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .upload-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 22px;
+    }
+
+    .upload-card {
+        background: #fff;
+        border-radius: 18px;
+        padding: 20px;
+        border: 1px solid #edf0f5;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+        text-decoration: none;
+        color: inherit;
+        transition: .18s ease;
+    }
+
+        .upload-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 34px rgba(15, 23, 42, .12);
+            color: inherit;
+        }
+
+    .upload-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        background: #eff6ff;
+        color: #0b2a5b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        margin-bottom: 14px;
+    }
+
+    .upload-title {
+        font-size: 16px;
+        font-weight: 950;
+        color: #0f172a;
+        margin-bottom: 6px;
+    }
+
+    .upload-desc {
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 650;
+        line-height: 1.6;
+    }
+
+    .panel {
+        background: #fff;
+        border-radius: 18px;
+        padding: 20px;
+        border: 1px solid #edf0f5;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+    }
+
+    .panel-title {
+        font-size: 18px;
+        font-weight: 950;
+        color: #0f172a;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .table {
+        margin-bottom: 0;
+        vertical-align: middle;
+    }
+
+        .table thead th {
+            color: #475569;
+            font-size: 12px;
+            font-weight: 950;
+            background: #f8fafc;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        .table tbody td {
+            font-size: 13px;
+            font-weight: 750;
+            color: #334155;
+        }
+
+    .file-name {
+        font-weight: 900;
+        color: #0f172a;
+    }
+
+    .muted-text {
+        color: #94a3b8;
+        font-size: 12px;
+        font-weight: 750;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 900;
+    }
+
+    .status-success {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-warning {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-danger {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .status-muted {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    @@media (max-width: 1100px) {
+        .upload-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 650px) {
+        .upload-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .page-title {
+            font-size: 22px;
+        }
+    }
+</style>
+
+<div class="upload-center-page">
+
+    <div class="page-hero">
+        <div class="page-title">
+            Sales Analytics Upload Center
+        </div>
+
+        <div class="page-subtitle">
+            Manage SalesBuzz reports and master data uploads used by the CEO Sales Analytics Dashboard.
+        </div>
+    </div>
+
+    <div class="upload-grid">
+
+        <a asp-controller="SalesAnalyticsMasterData"
+           asp-action="CustomerMaster"
+           class="upload-card">
+
+            <div class="upload-icon">
+                <i class="bi bi-people"></i>
+            </div>
+
+            <div class="upload-title">
+                Customer Master
+            </div>
+
+            <div class="upload-desc">
+                Upload customer master data with customer code, branch, sales district, and customer type.
+            </div>
+        </a>
+
+        <a asp-controller="SalesAnalyticsMasterData"
+           asp-action="SalesRepMaster"
+           class="upload-card">
+
+            <div class="upload-icon">
+                <i class="bi bi-person-badge"></i>
+            </div>
+
+            <div class="upload-title">
+                Sales Rep Master
+            </div>
+
+            <div class="upload-desc">
+                Upload sales reps master data including rep code, rep name, branch, and internal code.
+            </div>
+        </a>
+
+        <a asp-controller="SalesAnalyticsMasterData"
+           asp-action="DailySalesReport"
+           class="upload-card">
+
+            <div class="upload-icon">
+                <i class="bi bi-file-earmark-spreadsheet"></i>
+            </div>
+
+            <div class="upload-title">
+                Daily Sales Report
+            </div>
+
+            <div class="upload-desc">
+                Upload SalesBuzz daily sales analysis report to calculate sales, quantities, lines, and products.
+            </div>
+        </a>
+
+        <a asp-controller="SalesAnalyticsTargets"
+           asp-action="Index"
+           class="upload-card">
+
+            <div class="upload-icon">
+                <i class="bi bi-bullseye"></i>
+            </div>
+
+            <div class="upload-title">
+                Monthly Targets
+            </div>
+
+            <div class="upload-desc">
+                Download targets template, fill monthly sales target and planned visits, then upload it to calculate achievement.
+            </div>
+        </a>
+
+        <a asp-controller="SalesAnalyticsMasterData"
+           asp-action="DailyVisitsReport"
+           class="upload-card">
+
+            <div class="upload-icon">
+                <i class="bi bi-geo-alt"></i>
+            </div>
+
+            <div class="upload-title">
+                Daily Visits Report
+            </div>
+
+            <div class="upload-desc">
+                Upload SalesBuzz visits report to calculate visits, positive visits, negative reasons, and rep activity.
+            </div>
+        </a>
+
+        <a asp-controller="SalesAnalyticsMasterData"
+           asp-action="MtdSalesReport"
+           class="upload-card">
+
+            <div class="upload-icon">
+                <i class="bi bi-calendar-range"></i>
+            </div>
+
+            <div class="upload-title">
+                MTD Sales Upload
+            </div>
+
+            <div class="upload-desc">
+                Upload SalesBuzz sales report from month start to selected date for monthly target achievement.
+            </div>
+        </a>
+
+        <a asp-controller="SalesAnalyticsMasterData"
+           asp-action="MtdVisitsReport"
+           class="upload-card">
+
+            <div class="upload-icon">
+                <i class="bi bi-calendar-check"></i>
+            </div>
+
+            <div class="upload-title">
+                MTD Visits Upload
+            </div>
+
+            <div class="upload-desc">
+                Upload SalesBuzz visits report from month start to selected date for monthly visit achievement.
+            </div>
+        </a>
+
+    </div>
+
+    <div class="panel">
+        <div class="panel-title">
+            <i class="bi bi-clock-history"></i>
+            Recent Upload History
+        </div>
+
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>File Type</th>
+                        <th>File Name</th>
+                        <th>Report Date</th>
+                        <th>Upload Date</th>
+                        <th>Rows</th>
+                        <th>Uploaded By</th>
+                        <th>Status</th>
+                        <th>Error</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-muted fw-bold">
+                                No upload history found.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@FileTypeName(item.FileType)</strong>
+                                </td>
+
+                                <td>
+                                    <div class="file-name">@item.OriginalFileName</div>
+                                    <div class="muted-text">Batch #@item.Id</div>
+                                </td>
+
+                                <td>
+                                    @(item.ReportDate.HasValue? item.ReportDate.Value.ToString("yyyy-MM-dd") : "-")
+                                </td>
+
+                                <td>
+                                    @item.UploadDate.ToString("yyyy-MM-dd HH:mm")
+                                </td>
+
+                                <td>
+                                    <strong>@item.ImportedRows</strong> imported
+                                    <div class="muted-text">
+                                        @item.TotalRows total / @item.FailedRows failed
+                                    </div>
+                                </td>
+
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(item.UploadedBy) ? "-" : item.UploadedBy)
+                                </td>
+
+                                <td>
+                                    <span class="status-badge @StatusClass(item.Status)">
+                                        @item.Status
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(item.ErrorMessage) ? "-" : item.ErrorMessage)
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+
+            </table>
+        </div>
+    </div>
+
+</div>
