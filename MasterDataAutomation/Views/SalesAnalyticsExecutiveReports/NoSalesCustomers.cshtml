@@ -1,0 +1,553 @@
+﻿@model List<MasterDataAutomation.Application.Modules.SalesAnalytics.DashboardDtos.NoSalesCustomerDto>
+
+@{
+    ViewData["Title"] = "تقرير العملاء بدون مبيعات بعد الزيارة";
+
+    var selectedDate =
+        ViewBag.SelectedDate as string
+        ?? DateTime.Today.ToString("yyyy-MM-dd");
+
+    var selectedBranchCode =
+        ViewBag.SelectedBranchCode as string
+        ?? string.Empty;
+
+    var branches =
+        ViewBag.Branches as IEnumerable<dynamic>
+        ?? Enumerable.Empty<dynamic>();
+
+    var totalCustomers =
+        ViewBag.TotalCustomers ?? 0;
+
+    var criticalCustomers =
+        ViewBag.CriticalCustomers ?? 0;
+
+    var urgentCustomers =
+        ViewBag.UrgentCustomers ?? 0;
+
+    var totalVisits =
+        ViewBag.TotalVisits ?? 0;
+
+    var totalNegativeVisits =
+        ViewBag.TotalNegativeVisits ?? 0;
+}
+
+<style>
+    .report-page {
+        direction: rtl;
+    }
+
+    .report-hero {
+        background: linear-gradient(135deg, #0f172a, #1e3a8a);
+        color: white;
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, .15);
+    }
+
+        .report-hero h2 {
+            margin: 0 0 8px;
+            font-weight: 800;
+        }
+
+        .report-hero p {
+            margin: 0;
+            opacity: .85;
+        }
+
+    .filter-card {
+        background: var(--bs-body-bg);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 16px;
+        padding: 18px;
+        margin-bottom: 20px;
+    }
+
+    .kpi-card {
+        border: 1px solid var(--bs-border-color);
+        border-radius: 16px;
+        padding: 18px;
+        height: 100%;
+        background: var(--bs-body-bg);
+    }
+
+    .kpi-label {
+        color: var(--bs-secondary-color);
+        font-size: .9rem;
+        margin-bottom: 6px;
+    }
+
+    .kpi-value {
+        font-size: 1.6rem;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+
+    .table-card {
+        border: 1px solid var(--bs-border-color);
+        border-radius: 16px;
+        overflow: hidden;
+        background: var(--bs-body-bg);
+        margin-top: 20px;
+    }
+
+    .table-card-header {
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--bs-border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+        .table-card-header h5 {
+            margin: 0;
+            font-weight: 800;
+        }
+
+    .report-table {
+        margin: 0;
+        white-space: nowrap;
+    }
+
+        .report-table th {
+            font-weight: 700;
+            background: var(--bs-tertiary-bg);
+        }
+
+    .risk-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: .78rem;
+        font-weight: 700;
+    }
+
+    .risk-critical {
+        background: rgba(220, 53, 69, .12);
+        color: #dc3545;
+    }
+
+    .risk-urgent {
+        background: rgba(255, 193, 7, .16);
+        color: #a66b00;
+    }
+
+    .risk-follow {
+        background: rgba(13, 110, 253, .12);
+        color: #0d6efd;
+    }
+
+    .customer-code {
+        font-family: monospace;
+        font-weight: 700;
+    }
+
+    .empty-state {
+        padding: 60px 20px;
+        text-align: center;
+        color: var(--bs-secondary-color);
+    }
+
+        .empty-state i {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 12px;
+        }
+
+    .report-note {
+        background: rgba(13, 110, 253, .08);
+        border: 1px solid rgba(13, 110, 253, .15);
+        border-radius: 12px;
+        padding: 12px 16px;
+        margin-top: 16px;
+        font-size: .9rem;
+    }
+</style>
+
+<div class="container-fluid report-page">
+
+    <!-- Hero -->
+    <div class="report-hero">
+        <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+            <div>
+                <h2>
+                    <i class="bi bi-person-exclamation ms-2"></i>
+                    تقرير العملاء بدون مبيعات بعد الزيارة
+                </h2>
+
+                <p>
+                    العملاء الذين تمت زيارتهم خلال الشهر
+                    ولم يتم تسجيل مبيعات فعلية لهم حتى التاريخ المحدد.
+                </p>
+            </div>
+
+            <a asp-controller="SalesAnalyticsDashboard"
+               asp-action="Index"
+               asp-route-reportDate="@selectedDate"
+               asp-route-branchCode="@selectedBranchCode"
+               class="btn btn-light">
+                <i class="bi bi-arrow-right ms-1"></i>
+                العودة للداشبورد
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-card">
+        <form asp-controller="SalesAnalyticsExecutiveReports"
+              asp-action="NoSalesCustomers"
+              method="get">
+
+            <div class="row g-3 align-items-end">
+
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label fw-semibold">
+                        حتى تاريخ
+                    </label>
+
+                    <input type="date"
+                           name="reportDate"
+                           value="@selectedDate"
+                           class="form-control" />
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <label class="form-label fw-semibold">
+                        الفرع
+                    </label>
+
+                    <select name="branchCode"
+                            class="form-select">
+
+                        <option value="">
+                            كل الفروع
+                        </option>
+
+                        @foreach (var branch in branches)
+                        {
+                            var code = branch.BranchCode?.ToString() ?? "";
+                            var name = branch.BranchName?.ToString() ?? code;
+
+                            if (code == selectedBranchCode)
+                            {
+                                <option value="@code" selected>
+                                    @name
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@code">
+                                    @name
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-lg-5">
+                    <div class="d-flex gap-2 flex-wrap">
+
+                        <button type="submit"
+                                class="btn btn-primary">
+                            <i class="bi bi-funnel ms-1"></i>
+                            تطبيق الفلتر
+                        </button>
+
+                        <a asp-controller="SalesAnalyticsExecutiveReports"
+                           asp-action="NoSalesCustomers"
+                           class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-counterclockwise ms-1"></i>
+                            إعادة ضبط
+                        </a>
+
+                        <a asp-controller="SalesAnalyticsExecutiveReports"
+                           asp-action="ExportNoSalesCustomersExcel"
+                           asp-route-reportDate="@selectedDate"
+                           asp-route-branchCode="@selectedBranchCode"
+                           class="btn btn-success">
+                            <i class="bi bi-file-earmark-excel ms-1"></i>
+                            تصدير Excel
+                        </a>
+
+                    </div>
+                </div>
+
+            </div>
+        </form>
+    </div>
+
+    <!-- KPIs -->
+    <div class="row g-3">
+
+        <div class="col-xl col-md-4 col-sm-6">
+            <div class="kpi-card">
+                <div class="kpi-label">
+                    إجمالي العملاء
+                </div>
+
+                <div class="kpi-value">
+                    @totalCustomers
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl col-md-4 col-sm-6">
+            <div class="kpi-card">
+                <div class="kpi-label">
+                    حالات حرجة
+                </div>
+
+                <div class="kpi-value text-danger">
+                    @criticalCustomers
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl col-md-4 col-sm-6">
+            <div class="kpi-card">
+                <div class="kpi-label">
+                    متابعة عاجلة
+                </div>
+
+                <div class="kpi-value text-warning">
+                    @urgentCustomers
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl col-md-6 col-sm-6">
+            <div class="kpi-card">
+                <div class="kpi-label">
+                    إجمالي الزيارات
+                </div>
+
+                <div class="kpi-value">
+                    @totalVisits
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl col-md-6 col-sm-6">
+            <div class="kpi-card">
+                <div class="kpi-label">
+                    الزيارات السلبية
+                </div>
+
+                <div class="kpi-value">
+                    @totalNegativeVisits
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="report-note">
+        <i class="bi bi-info-circle ms-1"></i>
+
+        هذا التقرير لا يعرض كل عميل لم يشترِ فقط؛
+        بل يركز على العملاء الذين
+        <strong>تمت زيارتهم فعليًا</strong>
+        ولم يظهر لهم
+        <strong>أي بيع فعلي في تقرير المبيعات</strong>
+        خلال نفس الفترة.
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+
+        <div class="table-card-header">
+
+            <div>
+                <h5>
+                    تفاصيل العملاء
+                </h5>
+
+                <small class="text-body-secondary">
+                    عدد الحالات:
+                    @Model.Count
+                </small>
+            </div>
+
+            <div>
+                <span class="badge text-bg-secondary">
+                    من بداية الشهر حتى @selectedDate
+                </span>
+            </div>
+
+        </div>
+
+        @if (Model.Count == 0)
+        {
+            <div class="empty-state">
+                <i class="bi bi-check-circle"></i>
+
+                <h5>
+                    لا توجد حالات
+                </h5>
+
+                <div>
+                    لا يوجد عملاء تمت زيارتهم بدون مبيعات
+                    طبقًا للفلاتر الحالية.
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle report-table">
+
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>كود العميل</th>
+                            <th>اسم العميل</th>
+                            <th>الفرع</th>
+                            <th>منطقة البيع</th>
+                            <th>المندوب</th>
+                            <th>إجمالي الزيارات</th>
+                            <th>الإيجابية</th>
+                            <th>السلبية</th>
+                            <th>نسبة الإيجابي</th>
+                            <th>أكثر سبب سلبي</th>
+                            <th>مستوى المتابعة</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @{
+                            var index = 1;
+                        }
+
+                        @foreach (var customer in Model)
+                        {
+                            var riskClass =
+                            customer.RiskLevel == "حرج"
+                            ? "risk-critical"
+                            : customer.RiskLevel == "يحتاج متابعة عاجلة"
+                            ? "risk-urgent"
+                            : "risk-follow";
+
+                            <tr>
+
+                                <td>
+                                    @index
+                                </td>
+
+                                <td class="customer-code">
+                                    @customer.CustomerCode
+                                </td>
+
+                                <td>
+                                    <strong>
+                                        @customer.CustomerName
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(customer.BranchName))
+                                    {
+                                        <div>
+                                            @customer.BranchName
+                                        </div>
+
+                                        <small class="text-body-secondary">
+                                            @customer.BranchCode
+                                        </small>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-body-secondary">
+                                            غير محدد
+                                        </span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(customer.SalesDistrictName))
+                                    {
+                                        <div>
+                                            @customer.SalesDistrictName
+                                        </div>
+
+                                        <small class="text-body-secondary">
+                                            @customer.SalesDistrictCode
+                                        </small>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-body-secondary">
+                                            غير محدد
+                                        </span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(customer.SalesRepName))
+                                    {
+                                        <div>
+                                            @customer.SalesRepName
+                                        </div>
+
+                                        <small class="text-body-secondary">
+                                            @customer.SalesRepCode
+                                        </small>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-body-secondary">
+                                            غير محدد
+                                        </span>
+                                    }
+                            </td>
+
+                            <td>
+                                <strong>
+                                    @customer.TotalVisits
+                                </strong>
+                            </td>
+
+                            <td class="text-success">
+                                @customer.PositiveVisits
+                            </td>
+
+                            <td class="text-danger">
+                                @customer.NegativeVisits
+                            </td>
+
+                            <td>
+                                @customer.PositiveVisitPercentage.ToString("N1")%
+                            </td>
+
+                            <td>
+                                @(string.IsNullOrWhiteSpace(customer.TopNegativeReason)
+                                                            ? "—"
+                                                            : customer.TopNegativeReason)
+                        </td>
+
+                                <td>
+                                    <span class="risk-badge @riskClass">
+                                        @customer.RiskLevel
+                                    </span>
+                                </td>
+
+                            </tr>
+
+                                        index++;
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+</div>

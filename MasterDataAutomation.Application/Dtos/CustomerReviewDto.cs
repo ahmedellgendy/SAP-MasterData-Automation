@@ -13,7 +13,7 @@ public class CustomerReviewDto
     public string SalesDistrict { get; set; } = string.Empty;
 
     public string CustomerType { get; set; } = string.Empty;
-
+    public string? CreatedBy { get; set; }
     public string Status { get; set; } = string.Empty;
     public string? RejectionReason { get; set; }
 }

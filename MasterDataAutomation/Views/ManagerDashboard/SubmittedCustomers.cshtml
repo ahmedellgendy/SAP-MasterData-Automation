@@ -92,6 +92,7 @@
                             <th>Sales District</th>
                             <th>Customer Type</th>
                             <th>Status</th>
+                            <th>Requested By</th>
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
@@ -124,6 +125,10 @@
                                     <span class="badge bg-warning text-dark">
                                         @Model[i].Status
                                     </span>
+                                </td>
+
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(Model[i].CreatedBy) ? "-" : Model[i].CreatedBy)
                                 </td>
 
                                 <td class="text-end">

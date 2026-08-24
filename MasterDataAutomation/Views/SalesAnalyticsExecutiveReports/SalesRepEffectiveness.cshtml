@@ -1,0 +1,906 @@
+﻿@model List<MasterDataAutomation.Application.Modules.SalesAnalytics.DashboardDtos.SalesRepEffectivenessDto>
+
+@{
+    ViewData["Title"] = "تحليل أداء المناديب الميداني";
+
+    var selectedDate =
+        ViewBag.SelectedDate as string
+        ?? DateTime.Today.ToString("yyyy-MM-dd");
+
+    var selectedBranchCode =
+        ViewBag.SelectedBranchCode as string
+        ?? string.Empty;
+
+    var branches =
+        ViewBag.Branches as IEnumerable<dynamic>
+        ?? Enumerable.Empty<dynamic>();
+
+    var totalSalesReps =
+        Convert.ToInt32(ViewBag.TotalSalesReps ?? 0);
+
+    var totalVisits =
+        Convert.ToInt32(ViewBag.TotalVisits ?? 0);
+
+    var totalPositiveVisits =
+        Convert.ToInt32(ViewBag.TotalPositiveVisits ?? 0);
+
+    var totalNegativeVisits =
+        Convert.ToInt32(ViewBag.TotalNegativeVisits ?? 0);
+
+    var overallPositiveVisitRate =
+        Convert.ToDecimal(ViewBag.OverallPositiveVisitRate ?? 0);
+
+    var totalVisitValue =
+        Convert.ToDecimal(ViewBag.TotalVisitValue ?? 0);
+
+    // علشان نسبة 100% مع عدد زيارات قليل ما تبقاش مضللة
+    var eligibleReps =
+        Model
+            .Where(x => x.TotalVisits >= 20)
+            .ToList();
+
+    var highestPositiveRateRep =
+        eligibleReps
+            .OrderByDescending(x => x.PositiveVisitRate)
+            .ThenByDescending(x => x.PositiveVisits)
+            .FirstOrDefault();
+
+    var highestVisitValueRep =
+        Model
+            .OrderByDescending(x => x.TotalVisitValue)
+            .FirstOrDefault();
+
+    var highestCoverageRep =
+        Model
+            .OrderByDescending(x => x.VisitedCustomers)
+            .ThenByDescending(x => x.TotalVisits)
+            .FirstOrDefault();
+
+    var attentionReps =
+        eligibleReps
+            .OrderBy(x => x.PositiveVisitRate)
+            .ThenByDescending(x => x.NegativeVisits)
+            .Take(5)
+            .ToList();
+
+    var topVisitValueReps =
+        Model
+            .OrderByDescending(x => x.TotalVisitValue)
+            .Take(5)
+            .ToList();
+
+    var maxVisitValue =
+        topVisitValueReps.Count == 0
+            ? 0
+            : topVisitValueReps.Max(x => x.TotalVisitValue);
+}
+
+<style>
+    .report-page {
+        direction: rtl;
+    }
+
+    .report-hero {
+        background: linear-gradient(135deg, #0f172a, #1e3a8a);
+        color: white;
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, .15);
+    }
+
+        .report-hero h2 {
+            margin: 0 0 8px;
+            font-weight: 900;
+        }
+
+        .report-hero p {
+            margin: 0;
+            opacity: .85;
+        }
+
+    .filter-card,
+    .kpi-card,
+    .executive-card,
+    .table-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+    }
+
+    .filter-card {
+        padding: 18px;
+        margin-bottom: 20px;
+    }
+
+    .kpi-card {
+        padding: 18px;
+        height: 100%;
+    }
+
+    .kpi-label {
+        color: #64748b;
+        font-size: .88rem;
+        margin-bottom: 7px;
+        font-weight: 700;
+    }
+
+    .kpi-value {
+        font-size: 1.65rem;
+        font-weight: 900;
+        line-height: 1.2;
+        color: #0f172a;
+    }
+
+    .section-title {
+        font-weight: 900;
+        font-size: 1.05rem;
+        margin-bottom: 14px;
+        color: #0f172a;
+    }
+
+    .executive-card {
+        padding: 20px;
+        height: 100%;
+    }
+
+    .highlight-label {
+        color: #64748b;
+        font-size: .82rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .highlight-name {
+        font-size: 1.05rem;
+        font-weight: 900;
+        color: #0f172a;
+        margin-bottom: 8px;
+    }
+
+    .highlight-value {
+        font-size: 1.65rem;
+        font-weight: 900;
+    }
+
+    .highlight-meta {
+        color: #64748b;
+        font-size: .83rem;
+        margin-top: 7px;
+    }
+
+    .attention-row {
+        display: grid;
+        grid-template-columns: 45px 1fr auto auto;
+        gap: 12px;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #eef2f7;
+    }
+
+        .attention-row:last-child {
+            border-bottom: 0;
+        }
+
+    .attention-rank {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #fee2e2;
+        color: #dc2626;
+        border-radius: 50%;
+        font-weight: 900;
+    }
+
+    .rep-name {
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .rep-code {
+        font-size: .76rem;
+        color: #94a3b8;
+    }
+
+    .metric-danger {
+        font-weight: 900;
+        color: #dc2626;
+    }
+
+    .metric-muted {
+        color: #64748b;
+        font-size: .82rem;
+    }
+
+    .value-row {
+        margin-bottom: 16px;
+    }
+
+        .value-row:last-child {
+            margin-bottom: 0;
+        }
+
+    .value-row-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 7px;
+    }
+
+    .value-name {
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .value-amount {
+        font-weight: 900;
+        color: #1d4ed8;
+    }
+
+    .value-bar-track {
+        height: 9px;
+        background: #eef2f7;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .value-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #2563eb, #60a5fa);
+        border-radius: 999px;
+    }
+
+    .report-note {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 12px;
+        padding: 12px 16px;
+        margin-top: 20px;
+        font-size: .88rem;
+        color: #1e3a8a;
+    }
+
+    .table-card {
+        overflow: hidden;
+        margin-top: 20px;
+    }
+
+    .table-card-header {
+        padding: 18px 20px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+        .table-card-header h5 {
+            margin: 0;
+            font-weight: 900;
+        }
+
+    .report-table {
+        margin: 0;
+        white-space: nowrap;
+    }
+
+        .report-table th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: .82rem;
+            font-weight: 800;
+            vertical-align: middle;
+        }
+
+        .report-table td {
+            vertical-align: middle;
+        }
+
+    .rank-badge {
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+        background: #f1f5f9;
+        font-weight: 900;
+    }
+
+    .rate-badge {
+        display: inline-flex;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: .78rem;
+        font-weight: 900;
+    }
+
+    .rate-high {
+        color: #15803d;
+        background: #dcfce7;
+    }
+
+    .rate-medium {
+        color: #a16207;
+        background: #fef3c7;
+    }
+
+    .rate-low {
+        color: #b91c1c;
+        background: #fee2e2;
+    }
+
+    .empty-state {
+        padding: 60px 20px;
+        text-align: center;
+        color: #64748b;
+    }
+
+    @@media (max-width: 900px) {
+        .attention-row {
+            grid-template-columns: 40px 1fr;
+        }
+    }
+</style>
+
+<div class="container-fluid report-page">
+
+    <!-- HERO -->
+    <div class="report-hero">
+
+        <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+
+            <div>
+                <h2>
+                    <i class="bi bi-person-lines-fill ms-2"></i>
+                    تحليل أداء المناديب الميداني
+                </h2>
+
+                <p>
+                    نظرة تنفيذية على النشاط الميداني، جودة الزيارات،
+                    وحجم القيمة المحققة من الزيارات حتى التاريخ المحدد.
+                </p>
+            </div>
+
+            <a asp-controller="SalesAnalyticsDashboard"
+               asp-action="Index"
+               asp-route-reportDate="@selectedDate"
+               asp-route-branchCode="@selectedBranchCode"
+               class="btn btn-light">
+
+                <i class="bi bi-arrow-right ms-1"></i>
+                العودة للداشبورد
+
+            </a>
+
+        </div>
+
+    </div>
+
+    <!-- FILTER -->
+    <div class="filter-card">
+
+        <form asp-controller="SalesAnalyticsExecutiveReports"
+              asp-action="SalesRepEffectiveness"
+              method="get">
+
+            <div class="row g-3 align-items-end">
+
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label fw-semibold">
+                        حتى تاريخ
+                    </label>
+
+                    <input type="date"
+                           name="reportDate"
+                           value="@selectedDate"
+                           class="form-control" />
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <label class="form-label fw-semibold">
+                        الفرع
+                    </label>
+
+                    <select name="branchCode"
+                            class="form-select">
+
+                        <option value="">
+                            كل الفروع
+                        </option>
+
+                        @foreach (var branch in branches)
+                        {
+                            var code =
+                            branch.BranchCode?.ToString() ?? "";
+
+                            var name =
+                            branch.BranchName?.ToString() ?? code;
+
+                            if (code == selectedBranchCode)
+                            {
+                                <option value="@code" selected>
+                                    @name
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@code">
+                                    @name
+                                </option>
+                            }
+                        }
+
+                    </select>
+                </div>
+
+                <div class="col-lg-5">
+
+                    <div class="d-flex gap-2 flex-wrap">
+
+                        <button type="submit"
+                                class="btn btn-primary">
+                            <i class="bi bi-funnel ms-1"></i>
+                            تطبيق الفلتر
+                        </button>
+
+                        <a asp-controller="SalesAnalyticsExecutiveReports"
+                           asp-action="SalesRepEffectiveness"
+                           class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-counterclockwise ms-1"></i>
+                            إعادة ضبط
+                        </a>
+
+                        <a asp-controller="SalesAnalyticsExecutiveReports"
+                           asp-action="ExportSalesRepEffectivenessExcel"
+                           asp-route-reportDate="@selectedDate"
+                           asp-route-branchCode="@selectedBranchCode"
+                           class="btn btn-success">
+                            <i class="bi bi-file-earmark-excel ms-1"></i>
+                            تصدير Excel
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+    <!-- EXECUTIVE KPIs -->
+    <div class="row g-3">
+
+        <div class="col-xl-3 col-md-6">
+            <div class="kpi-card">
+                <div class="kpi-label">
+                    عدد المناديب النشطين
+                </div>
+                <div class="kpi-value">
+                    @totalSalesReps
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="kpi-card">
+                <div class="kpi-label">
+                    إجمالي الزيارات
+                </div>
+                <div class="kpi-value">
+                    @totalVisits.ToString("N0")
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="kpi-card">
+                <div class="kpi-label">
+                    نسبة الزيارات الإيجابية
+                </div>
+                <div class="kpi-value text-primary">
+                    @overallPositiveVisitRate.ToString("N1")%
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="kpi-card">
+                <div class="kpi-label">
+                    إجمالي قيمة الزيارات
+                </div>
+                <div class="kpi-value">
+                    @totalVisitValue.ToString("N0")
+                    <small class="fs-6 text-body-secondary">جنيه</small>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- EXECUTIVE HIGHLIGHTS -->
+    <div class="mt-4">
+
+        <div class="section-title">
+            Executive Highlights
+        </div>
+
+        <div class="row g-3">
+
+            <div class="col-lg-4">
+                <div class="executive-card">
+
+                    <div class="highlight-label">
+                        أعلى نسبة زيارات إيجابية
+                    </div>
+
+                    @if (highestPositiveRateRep == null)
+                    {
+                        <div class="text-body-secondary">
+                            لا توجد بيانات كافية.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="highlight-name">
+                            @highestPositiveRateRep.SalesRepName
+                        </div>
+
+                        <div class="highlight-value text-success">
+                            @highestPositiveRateRep.PositiveVisitRate.ToString("N1")%
+                        </div>
+
+                        <div class="highlight-meta">
+                            @highestPositiveRateRep.PositiveVisits
+                            زيارة إيجابية من
+                            @highestPositiveRateRep.TotalVisits
+                            زيارة
+                        </div>
+
+                        <div class="highlight-meta">
+                            يتم احتساب هذه المقارنة للمناديب
+                            الذين لديهم 20 زيارة فأكثر.
+                        </div>
+                    }
+
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="executive-card">
+
+                    <div class="highlight-label">
+                        أعلى قيمة زيارات
+                    </div>
+
+                    @if (highestVisitValueRep == null)
+                    {
+                        <div class="text-body-secondary">
+                            لا توجد بيانات.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="highlight-name">
+                            @highestVisitValueRep.SalesRepName
+                        </div>
+
+                        <div class="highlight-value text-primary">
+                            @highestVisitValueRep.TotalVisitValue.ToString("N0")
+                        </div>
+
+                        <div class="highlight-meta">
+                            جنيه قيمة زيارات
+                        </div>
+                    }
+
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="executive-card">
+
+                    <div class="highlight-label">
+                        أعلى تغطية عملاء
+                    </div>
+
+                    @if (highestCoverageRep == null)
+                    {
+                        <div class="text-body-secondary">
+                            لا توجد بيانات.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="highlight-name">
+                            @highestCoverageRep.SalesRepName
+                        </div>
+
+                        <div class="highlight-value">
+                            @highestCoverageRep.VisitedCustomers
+                        </div>
+
+                        <div class="highlight-meta">
+                            عميل مختلف تمت زيارتهم
+                        </div>
+                    }
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ATTENTION + TOP VALUE -->
+    <div class="row g-3 mt-1">
+
+        <div class="col-xl-6">
+
+            <div class="executive-card">
+
+                <div class="section-title">
+                    <i class="bi bi-exclamation-triangle ms-1 text-danger"></i>
+                    يحتاج انتباهك
+                </div>
+
+                @if (attentionReps.Count == 0)
+                {
+                    <div class="text-body-secondary">
+                        لا توجد بيانات كافية للتقييم.
+                    </div>
+                }
+                else
+                {
+                    var attentionIndex = 1;
+
+                    @foreach (var rep in attentionReps)
+                    {
+                        <div class="attention-row">
+
+                            <div class="attention-rank">
+                                @attentionIndex
+                            </div>
+
+                            <div>
+                                <div class="rep-name">
+                                    @rep.SalesRepName
+                                </div>
+
+                                <div class="rep-code">
+                                    @rep.SalesRepCode
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="metric-danger">
+                                    @rep.PositiveVisitRate.ToString("N1")%
+                                </div>
+
+                                <div class="metric-muted">
+                                    نسبة إيجابية
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="fw-bold">
+                                    @rep.NegativeVisits
+                                </div>
+
+                                <div class="metric-muted">
+                                    زيارة سلبية
+                                </div>
+                            </div>
+
+                        </div>
+
+                        attentionIndex++;
+                    }
+                }
+
+            </div>
+
+        </div>
+
+        <div class="col-xl-6">
+
+            <div class="executive-card">
+
+                <div class="section-title">
+                    <i class="bi bi-bar-chart-fill ms-1 text-primary"></i>
+                    أعلى 5 مناديب في قيمة الزيارات
+                </div>
+
+                @if (topVisitValueReps.Count == 0)
+                {
+                    <div class="text-body-secondary">
+                        لا توجد بيانات.
+                    </div>
+                }
+                else
+                {
+                    @foreach (var rep in topVisitValueReps)
+                    {
+                        var percentage =
+                        maxVisitValue <= 0
+                        ? 0
+                        : Math.Round(
+                        rep.TotalVisitValue /
+                        maxVisitValue *
+                        100,
+                        1);
+
+                        <div class="value-row">
+
+                            <div class="value-row-header">
+
+                                <div>
+                                    <div class="value-name">
+                                        @rep.SalesRepName
+                                    </div>
+
+                                    <div class="rep-code">
+                                        @rep.SalesRepCode
+                                    </div>
+                                </div>
+
+                                <div class="value-amount">
+                                    @rep.TotalVisitValue.ToString("N0")
+                                    جنيه
+                                </div>
+
+                            </div>
+
+                            <div class="value-bar-track">
+                                <div class="value-bar"
+                                     style="width:@percentage%"></div>
+                            </div>
+
+                        </div>
+                    }
+                }
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- NOTE -->
+    <div class="report-note">
+
+        <i class="bi bi-info-circle ms-1"></i>
+
+        يعتمد التحليل على بيانات الزيارات المسجلة للمندوبين.
+        نسبة الزيارات الإيجابية =
+        الزيارات الإيجابية ÷ إجمالي الزيارات.
+
+        قيمة الزيارات المعروضة هي
+        <strong>Successful Visit Value</strong>
+        وليست مبيعات منسوبة مباشرة للمندوب.
+
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-card">
+
+        <div class="table-card-header">
+
+            <div>
+                <h5>
+                    تفاصيل أداء المناديب
+                </h5>
+
+                <small class="text-body-secondary">
+                    @Model.Count مندوب
+                </small>
+            </div>
+
+            <span class="badge text-bg-secondary">
+                من بداية الشهر حتى @selectedDate
+            </span>
+
+        </div>
+
+        @if (Model.Count == 0)
+        {
+            <div class="empty-state">
+                لا توجد بيانات وفقًا للفلاتر الحالية.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle report-table">
+
+                    <thead>
+                        <tr>
+                            <th>الترتيب</th>
+                            <th>المندوب</th>
+                            <th>الفرع</th>
+                            <th>العملاء</th>
+                            <th>الزيارات</th>
+                            <th>نسبة الإيجابية</th>
+                            <th>الزيارات السلبية</th>
+                            <th>قيمة الزيارات</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var rep in Model)
+                        {
+                            var rateClass =
+                            rep.PositiveVisitRate >= 80
+                            ? "rate-high"
+                            : rep.PositiveVisitRate >= 60
+                            ? "rate-medium"
+                            : "rate-low";
+
+                            <tr>
+
+                                <td>
+                                    <span class="rank-badge">
+                                        @rep.Rank
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="fw-bold">
+                                        @rep.SalesRepName
+                                    </div>
+
+                                    <div class="rep-code">
+                                        @rep.SalesRepCode
+                                    </div>
+                                </td>
+
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(rep.BranchName)
+                                                                ? "غير محدد"
+                                                                : rep.BranchName)
+                        </td>
+
+                                <td class="fw-semibold">
+                                    @rep.VisitedCustomers
+                                </td>
+
+                                <td>
+                                    @rep.TotalVisits
+                                </td>
+
+                                <td>
+                                    <span class="rate-badge @rateClass">
+                                        @rep.PositiveVisitRate.ToString("N1")%
+                                    </span>
+                                </td>
+
+                                <td class="text-danger fw-semibold">
+                                    @rep.NegativeVisits
+                                </td>
+
+                                <td class="fw-bold">
+                                    @rep.TotalVisitValue.ToString("N0")
+                                    جنيه
+                                </td>
+
+                            </tr>
+                                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+</div>

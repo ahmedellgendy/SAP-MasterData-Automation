@@ -1,0 +1,368 @@
+﻿@model MasterDataAutomation.Application.Modules.CustomerModification.Dtos.CreateCustomerModificationRequestDto
+@using MasterDataAutomation.Application.Modules.CustomerModification.Enums
+
+@{
+    ViewData["Title"] = "طلب تعديل عميل";
+}
+
+<style>
+    .cm-wrap {
+        max-width: 1000px;
+        margin: 0 auto;
+        background: #f4f7f8;
+        border-radius: 16px;
+        padding: 24px;
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        color: #16232c;
+        direction: rtl;
+        text-align: right;
+    }
+
+    .cm-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 16px;
+        flex-wrap: wrap;
+        border-bottom: 2px solid #16232c;
+        padding-bottom: 18px;
+        margin-bottom: 22px;
+        direction: rtl;
+    }
+
+    .cm-title {
+        margin: 0;
+        font-size: 30px;
+        font-weight: 900;
+        color: #16232c;
+    }
+
+    .cm-sub {
+        margin: 6px 0 0;
+        color: #6b7a86;
+        font-size: 14px;
+    }
+
+    .form-card {
+        background: #fff;
+        border: 1px solid #e1e7ea;
+        border-radius: 16px;
+        padding: 22px;
+    }
+
+    .section-title {
+        font-size: 15px;
+        font-weight: 900;
+        margin-bottom: 14px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #e1e7ea;
+        color: #16232c;
+    }
+
+    .form-label {
+        font-weight: 800;
+        color: #16232c;
+        margin-bottom: 6px;
+    }
+
+    .form-control,
+    .form-select,
+    textarea {
+        border-radius: 10px;
+        padding: 10px 12px;
+        direction: rtl;
+        text-align: right;
+        font-size: 14px;
+    }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #2f7d6b;
+            box-shadow: 0 0 0 0.2rem rgba(47, 125, 107, 0.15);
+        }
+
+    .form-select {
+        background-position: left 0.75rem center;
+        padding-left: 2.25rem;
+        padding-right: 0.75rem;
+    }
+
+    .info-box {
+        background: #e7f3f0;
+        border: 1px solid #cfe6de;
+        color: #1d5347;
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 18px;
+        font-weight: 700;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-save {
+        background: #2f7d6b;
+        border: 1px solid #2f7d6b;
+        color: #fff;
+        font-weight: 800;
+        border-radius: 10px;
+        padding: 10px 18px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-save:hover {
+            background: #245f52;
+            border-color: #245f52;
+            color: #fff;
+        }
+
+    .btn-back {
+        border: 1px solid #16232c;
+        color: #16232c;
+        background: transparent;
+        font-weight: 800;
+        border-radius: 10px;
+        padding: 10px 18px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-back:hover {
+            background: #16232c;
+            color: #fff;
+        }
+
+    .text-danger {
+        display: block;
+        text-align: right;
+        margin-top: 4px;
+    }
+
+    .required-mark {
+        color: #dc3545;
+        font-weight: 900;
+    }
+
+    .new-name-box {
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 14px;
+    }
+
+    .actions-row {
+        display: flex;
+        justify-content: flex-start;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    @@media (max-width: 768px) {
+        .cm-wrap {
+            padding: 16px;
+        }
+
+        .cm-title {
+            font-size: 24px;
+        }
+
+        .cm-header {
+            align-items: flex-start;
+        }
+
+        .actions-row {
+            justify-content: stretch;
+        }
+
+            .actions-row .btn-save,
+            .actions-row .btn-back {
+                width: 100%;
+                justify-content: center;
+            }
+    }
+</style>
+
+<div class="cm-wrap">
+
+    <div class="cm-header">
+        <div>
+            <h1 class="cm-title">طلب تعديل عميل</h1>
+            <p class="cm-sub">
+                استخدم هذه الصفحة لطلب تعديل بيانات عميل موجود.
+            </p>
+        </div>
+
+        <a asp-controller="CustomerModificationRequests"
+           asp-action="Drafts"
+           class="btn-back">
+            <i class="bi bi-list-check"></i>
+            المسودات
+        </a>
+    </div>
+
+    <div class="form-card">
+
+        <div class="info-box">
+            <i class="bi bi-info-circle"></i>
+            <span>
+                اسم الماركت هو نفس اسم العميل. في حالة اختيار تعديل اسم، يجب إدخال الاسم الجديد.
+            </span>
+        </div>
+
+        <form asp-controller="CustomerModificationRequests"
+              asp-action="Create"
+              method="post">
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="section-title">
+                بيانات العميل الحالية
+            </div>
+
+            <div class="row g-3 mb-4">
+
+                <div class="col-md-6">
+                    <label asp-for="BranchId" class="form-label">
+                        الفرع <span class="required-mark">*</span>
+                    </label>
+
+                    <select asp-for="BranchId"
+                            asp-items="ViewBag.Branches"
+                            class="form-select">
+                        <option value="">-- اختر الفرع --</option>
+                    </select>
+
+                    <span asp-validation-for="BranchId" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="MarketCode" class="form-label">
+                        كود الماركت / العميل <span class="required-mark">*</span>
+                    </label>
+
+                    <input asp-for="MarketCode"
+                           class="form-control"
+                           placeholder="مثال: 6001577" />
+
+                    <span asp-validation-for="MarketCode" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="MarketName" class="form-label">
+                        اسم الماركت / العميل <span class="required-mark">*</span>
+                    </label>
+
+                    <input asp-for="MarketName"
+                           class="form-control"
+                           placeholder="اكتب اسم العميل الحالي" />
+
+                    <span asp-validation-for="MarketName" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="CurrentCustomerType" class="form-label">
+                        نوع العميل الحالي <span class="required-mark">*</span>
+                    </label>
+
+                    <select asp-for="CurrentCustomerType"
+                            asp-items="Html.GetEnumSelectList<CustomerModificationCustomerType>()"
+                            class="form-select">
+                        <option value="">-- اختر نوع العميل --</option>
+                    </select>
+
+                    <span asp-validation-for="CurrentCustomerType" class="text-danger small"></span>
+                </div>
+
+            </div>
+
+            <div class="section-title">
+                نوع التعديل المطلوب
+            </div>
+
+            <div class="row g-3 mb-4">
+
+                <div class="col-md-6">
+                    <label asp-for="ModificationType" class="form-label">
+                        نوع التعديل <span class="required-mark">*</span>
+                    </label>
+
+                    <select asp-for="ModificationType"
+                            asp-items="Html.GetEnumSelectList<CustomerModificationType>()"
+                            class="form-select"
+                            id="modificationType">
+                        <option value="">-- اختر نوع التعديل --</option>
+                    </select>
+
+                    <span asp-validation-for="ModificationType" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6" id="newMarketNameBox" style="display:none;">
+                    <div class="new-name-box">
+                        <label asp-for="NewMarketName" class="form-label">
+                            اسم الماركت الجديد <span class="required-mark">*</span>
+                        </label>
+
+                        <input asp-for="NewMarketName"
+                               class="form-control"
+                               placeholder="اكتب الاسم الجديد" />
+
+                        <span asp-validation-for="NewMarketName" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="col-md-12">
+                    <label asp-for="Notes" class="form-label">
+                        ملاحظات
+                    </label>
+
+                    <textarea asp-for="Notes"
+                              class="form-control"
+                              rows="3"
+                              placeholder="ملاحظات اختيارية"></textarea>
+
+                    <span asp-validation-for="Notes" class="text-danger small"></span>
+                </div>
+
+            </div>
+
+            <div class="actions-row">
+                <button type="submit" class="btn btn-save">
+                    <i class="bi bi-save"></i>
+                    حفظ كمسودة
+                </button>
+
+                <a asp-controller="SalesDashboard"
+                   asp-action="Index"
+                   class="btn-back">
+                    <i class="bi bi-arrow-left-circle"></i>
+                    إلغاء
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+    function toggleNewMarketName() {
+        const modificationType = document.getElementById("modificationType").value;
+        const box = document.getElementById("newMarketNameBox");
+
+        // CustomerModificationType.ChangeName = 2
+        if (modificationType === "2") {
+            box.style.display = "block";
+        } else {
+            box.style.display = "none";
+        }
+    }
+
+    document.getElementById("modificationType").addEventListener("change", toggleNewMarketName);
+    toggleNewMarketName();
+</script>

@@ -1,10 +1,11 @@
-﻿using MasterDataAutomation.Infrastructure.Data;
+﻿using MasterDataAutomation.Application.Interfaces.Services;
+using MasterDataAutomation.Infrastructure.Data;
 using MasterDataAutomation.Infrastructure.Data.Entities;
 using MasterDataAutomation.Web.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace MasterDataAutomation.Web.Controllers;
 
@@ -12,10 +13,14 @@ namespace MasterDataAutomation.Web.Controllers;
 public class AdminUsersController : Controller
 {
     private readonly ApplicationDbContext _context;
+    private readonly IActivityLogService _activityLogService;
 
-    public AdminUsersController(ApplicationDbContext context)
+    public AdminUsersController(
+        ApplicationDbContext context,
+        IActivityLogService activityLogService)
     {
         _context = context;
+        _activityLogService = activityLogService;
     }
 
     [HttpGet]
@@ -70,6 +75,13 @@ public class AdminUsersController : Controller
         _context.AppUsers.Add(user);
         _context.SaveChanges();
 
+        _activityLogService.Log(
+            action: "Create",
+            module: "Administration",
+            entityName: "User",
+            entityId: user.Id,
+            description: $"Created user {user.UserName} with role {user.Role}");
+
         TempData["Success"] = "User created successfully.";
 
         return RedirectToAction(nameof(Index));
@@ -81,13 +93,61 @@ public class AdminUsersController : Controller
         var user = _context.AppUsers.FirstOrDefault(x => x.Id == id);
 
         if (user == null)
+        {
+            TempData["Error"] = "User not found.";
             return RedirectToAction(nameof(Index));
+        }
 
         user.IsActive = !user.IsActive;
 
         _context.SaveChanges();
 
+        _activityLogService.Log(
+            action: user.IsActive ? "Activate" : "Deactivate",
+            module: "Administration",
+            entityName: "User",
+            entityId: user.Id,
+            description: $"{(user.IsActive ? "Activated" : "Deactivated")} user {user.UserName} with role {user.Role}");
+
         TempData["Success"] = "User status updated successfully.";
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    public IActionResult Delete(int id)
+    {
+        var currentUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (int.TryParse(currentUserIdValue, out var currentUserId) && currentUserId == id)
+        {
+            TempData["Error"] = "You cannot delete your own account while logged in.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var user = _context.AppUsers.FirstOrDefault(x => x.Id == id);
+
+        if (user == null)
+        {
+            TempData["Error"] = "User not found.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var deletedUserName = user.UserName;
+        var deletedUserRole = user.Role;
+        var deletedUserFullName = user.FullName;
+
+        _context.AppUsers.Remove(user);
+        _context.SaveChanges();
+
+        _activityLogService.Log(
+            action: "Delete",
+            module: "Administration",
+            entityName: "User",
+            entityId: id,
+            description: $"Deleted user {deletedUserName} - {deletedUserFullName} with role {deletedUserRole}");
+
+        TempData["Success"] = "User deleted successfully.";
 
         return RedirectToAction(nameof(Index));
     }
@@ -98,6 +158,16 @@ public class AdminUsersController : Controller
         {
             new SelectListItem("Sales", "Sales"),
             new SelectListItem("Manager", "Manager"),
+
+            new SelectListItem { Text = "Accounts User", Value = "AccountsUser" },
+            new SelectListItem { Text = "Accounts Manager", Value = "AccountsManager" },
+
+            // Product pricing executive role
+            new SelectListItem { Text = "Executive Manager - Pricing", Value = "ExecutiveManager" },
+
+            // CEO dashboard only role
+            new SelectListItem { Text = "CEO", Value = "CEO" },
+
             new SelectListItem("Admin", "Admin")
         };
     }

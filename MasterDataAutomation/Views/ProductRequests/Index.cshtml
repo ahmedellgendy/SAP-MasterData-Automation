@@ -1,0 +1,668 @@
+﻿@model MasterDataAutomation.Web.ViewModels.ProductMaster.AccountsUserProductDashboardViewModel
+
+@{
+    ViewData["Title"] = "Product Requests";
+
+    var draftCount = Model?.DraftCount ?? 0;
+    var submittedCount = Model?.SubmittedCount ?? 0;
+    var totalCount = draftCount + submittedCount;
+
+    var recentDrafts = Model?.RecentDrafts
+        ?? new List<MasterDataAutomation.Application.Modules.ProductMaster.Dtos.ProductRequestDto>();
+
+    var recentSubmitted = Model?.RecentSubmitted
+        ?? new List<MasterDataAutomation.Application.Modules.ProductMaster.Dtos.ProductRequestDto>();
+}
+
+<style>
+    .requests-page {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        color: #17212b;
+    }
+
+    .requests-hero {
+        background: linear-gradient(135deg, #0f766e, #134e4a);
+        border-radius: 22px;
+        padding: 26px;
+        color: #fff;
+        margin-bottom: 22px;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .requests-hero::after {
+            content: "";
+            position: absolute;
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.09);
+            right: -80px;
+            top: -90px;
+        }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
+    }
+
+    .hero-label {
+        font-size: 12px;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        opacity: .85;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .hero-title {
+        font-size: 34px;
+        font-weight: 900;
+        margin: 0;
+    }
+
+    .hero-subtitle {
+        margin: 8px 0 0;
+        opacity: .88;
+        font-size: 15px;
+    }
+
+    .hero-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .hero-btn {
+        border: 0;
+        border-radius: 12px;
+        padding: 11px 16px;
+        text-decoration: none;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .hero-btn.primary {
+            background: #fff;
+            color: #0f766e;
+        }
+
+        .hero-btn.secondary {
+            background: rgba(255,255,255,.13);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,.35);
+        }
+
+        .hero-btn:hover {
+            transform: translateY(-1px);
+        }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 22px;
+    }
+
+    .summary-card {
+        background: #fff;
+        border: 1px solid #e5e9ef;
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, .05);
+    }
+
+    .summary-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .summary-label {
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+    }
+
+    .summary-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 19px;
+    }
+
+    .icon-total {
+        background: #eef2ff;
+        color: #4f46e5;
+    }
+
+    .icon-draft {
+        background: #eff6ff;
+        color: #2563eb;
+    }
+
+    .icon-submitted {
+        background: #fff7ed;
+        color: #ea580c;
+    }
+
+    .summary-number {
+        font-size: 34px;
+        font-weight: 900;
+        margin: 0;
+        line-height: 1;
+    }
+
+    .summary-text {
+        color: #64748b;
+        font-size: 13px;
+        margin: 8px 0 0;
+    }
+
+    .workflow-card {
+        background: #fff;
+        border: 1px solid #e5e9ef;
+        border-radius: 18px;
+        padding: 20px;
+        margin-bottom: 22px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, .05);
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 900;
+        margin: 0;
+        color: #17212b;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .section-subtitle {
+        color: #64748b;
+        font-size: 13px;
+        margin: 6px 0 0;
+    }
+
+    .workflow-steps {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+    }
+
+    .workflow-step {
+        border: 1px solid #e5e9ef;
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 16px;
+        position: relative;
+    }
+
+    .workflow-step-number {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #0f766e;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 13px;
+        margin-bottom: 10px;
+    }
+
+    .workflow-step-title {
+        font-weight: 900;
+        margin-bottom: 5px;
+    }
+
+    .workflow-step-text {
+        color: #64748b;
+        font-size: 13px;
+        margin: 0;
+    }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: 1.1fr .9fr;
+        gap: 18px;
+    }
+
+    .panel {
+        background: #fff;
+        border: 1px solid #e5e9ef;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, .05);
+    }
+
+    .panel-header {
+        padding: 16px 18px;
+        border-bottom: 1px solid #e5e9ef;
+        background: #fbfcfe;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .panel-title {
+        font-weight: 900;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .panel-link {
+        text-decoration: none;
+        color: #0f766e;
+        font-weight: 800;
+        font-size: 13px;
+    }
+
+    .clean-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0;
+    }
+
+        .clean-table th {
+            background: #f8fafc;
+            color: #64748b;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            padding: 12px 14px;
+            border-bottom: 1px solid #e5e9ef;
+            white-space: nowrap;
+        }
+
+        .clean-table td {
+            padding: 14px;
+            border-bottom: 1px solid #eef2f7;
+            vertical-align: middle;
+            font-size: 14px;
+        }
+
+        .clean-table tr:last-child td {
+            border-bottom: none;
+        }
+
+    .item-code {
+        font-family: Consolas, monospace;
+        font-weight: 900;
+        color: #0f766e;
+        background: #ecfdf5;
+        border-radius: 8px;
+        padding: 5px 8px;
+        display: inline-block;
+    }
+
+    .item-name {
+        font-weight: 800;
+        color: #17212b;
+    }
+
+    .money {
+        font-family: Consolas, monospace;
+        font-weight: 900;
+        text-align: right;
+    }
+
+    .badge-soft {
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: 12px;
+        font-weight: 900;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .badge-soft::before {
+            content: "";
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+
+    .badge-draft {
+        background: #eff6ff;
+        color: #2563eb;
+    }
+
+        .badge-draft::before {
+            background: #2563eb;
+        }
+
+    .badge-submitted {
+        background: #fff7ed;
+        color: #ea580c;
+    }
+
+        .badge-submitted::before {
+            background: #ea580c;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 48px 20px;
+    }
+
+    .empty-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 18px;
+        background: #f1f5f9;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        margin: 0 auto 14px;
+    }
+
+    .empty-state h5 {
+        font-weight: 900;
+        margin-bottom: 6px;
+    }
+
+    .empty-state p {
+        color: #64748b;
+        margin-bottom: 16px;
+    }
+
+    .mini-btn {
+        border-radius: 10px;
+        padding: 8px 13px;
+        background: #0f766e;
+        color: #fff;
+        text-decoration: none;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 13px;
+    }
+
+        .mini-btn:hover {
+            background: #134e4a;
+            color: #fff;
+        }
+
+    @@media (max-width: 1100px) {
+        .summary-grid,
+        .workflow-steps,
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="requests-page">
+
+    <div class="requests-hero">
+        <div class="hero-content">
+            <div>
+                <div class="hero-label">Accounts Product Workflow</div>
+                <h1 class="hero-title">Product Requests</h1>
+                <p class="hero-subtitle">
+                    Start a request, save it as draft, then submit it to Accounts Manager for approval.
+                </p>
+            </div>
+
+            <div class="hero-actions">
+                <a asp-controller="ProductRequests"
+                   asp-action="Create"
+                   class="hero-btn primary">
+                    <i class="bi bi-plus-circle"></i>
+                    New Request
+                </a>
+
+                <a asp-controller="ProductRequests"
+                   asp-action="Drafts"
+                   class="hero-btn secondary">
+                    <i class="bi bi-folder2-open"></i>
+                    View Drafts
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="summary-grid">
+
+        <div class="summary-card">
+            <div class="summary-head">
+                <div class="summary-label">Total Requests</div>
+                <div class="summary-icon icon-total">
+                    <i class="bi bi-stack"></i>
+                </div>
+            </div>
+            <h2 class="summary-number">@totalCount</h2>
+            <p class="summary-text">Drafts and submitted requests.</p>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-head">
+                <div class="summary-label">Drafts</div>
+                <div class="summary-icon icon-draft">
+                    <i class="bi bi-pencil-square"></i>
+                </div>
+            </div>
+            <h2 class="summary-number">@draftCount</h2>
+            <p class="summary-text">Editable requests not submitted yet.</p>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-head">
+                <div class="summary-label">Submitted</div>
+                <div class="summary-icon icon-submitted">
+                    <i class="bi bi-send-check"></i>
+                </div>
+            </div>
+            <h2 class="summary-number">@submittedCount</h2>
+            <p class="summary-text">Waiting for Accounts Manager review.</p>
+        </div>
+
+    </div>
+
+    <div class="workflow-card">
+        <div>
+            <h3 class="section-title">
+                <i class="bi bi-diagram-3 text-success"></i>
+                Request Flow
+            </h3>
+            <p class="section-subtitle">
+                Clear steps for creating and approving a new product.
+            </p>
+        </div>
+
+        <div class="workflow-steps">
+            <div class="workflow-step">
+                <div class="workflow-step-number">1</div>
+                <div class="workflow-step-title">Create Request</div>
+                <p class="workflow-step-text">Enter product code, name, purchase price and pieces count.</p>
+            </div>
+
+            <div class="workflow-step">
+                <div class="workflow-step-number">2</div>
+                <div class="workflow-step-title">Save Draft</div>
+                <p class="workflow-step-text">Review your draft before sending it to the manager.</p>
+            </div>
+
+            <div class="workflow-step">
+                <div class="workflow-step-number">3</div>
+                <div class="workflow-step-title">Submit</div>
+                <p class="workflow-step-text">Send the request to Accounts Manager for approval.</p>
+            </div>
+
+            <div class="workflow-step">
+                <div class="workflow-step-number">4</div>
+                <div class="workflow-step-title">Final Pricing</div>
+                <p class="workflow-step-text">Executive Manager sets prices and creates the final product.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-grid">
+
+        <div class="panel">
+            <div class="panel-header">
+                <h4 class="panel-title">
+                    <i class="bi bi-pencil-square text-primary"></i>
+                    Latest Draft Requests
+                </h4>
+
+                <a asp-controller="ProductRequests"
+                   asp-action="Drafts"
+                   class="panel-link">
+                    View All Drafts
+                </a>
+            </div>
+
+            @if (recentDrafts.Any())
+            {
+                <div class="table-responsive">
+                    <table class="clean-table">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Product</th>
+                                <th style="text-align:right;">Purchase</th>
+                                <th style="text-align:right;">Piece</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var item in recentDrafts)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="item-code">@item.ItemCode</span>
+                                    </td>
+
+                                    <td>
+                                        <div class="item-name">@item.ItemName</div>
+                                        <small class="text-muted">@item.PiecesCount pieces</small>
+                                    </td>
+
+                                    <td class="money">
+                                        @item.PurchasePrice.ToString("N2")
+                                    </td>
+
+                                    <td class="money">
+                                        @item.PiecePrice.ToString("N2")
+                                    </td>
+
+                                    <td>
+                                        <span class="badge-soft badge-draft">Draft</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="bi bi-inbox"></i>
+                    </div>
+
+                    <h5>No drafts yet</h5>
+                    <p>Create a request and it will appear here before submission.</p>
+
+                    <a asp-controller="ProductRequests"
+                       asp-action="Create"
+                       class="mini-btn">
+                        <i class="bi bi-plus-circle"></i>
+                        Create Request
+                    </a>
+                </div>
+            }
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <h4 class="panel-title">
+                    <i class="bi bi-send-check text-warning"></i>
+                    Submitted Requests
+                </h4>
+            </div>
+
+            @if (recentSubmitted.Any())
+            {
+                <div class="table-responsive">
+                    <table class="clean-table">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Product</th>
+                                <th>Submitted</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var item in recentSubmitted)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="item-code">@item.ItemCode</span>
+                                    </td>
+
+                                    <td>
+                                        <div class="item-name">@item.ItemName</div>
+                                        <small class="text-muted">@item.PurchasePrice.ToString("N2") EGP</small>
+                                    </td>
+
+                                    <td>
+                                        @(item.SubmittedAt.HasValue
+                                                                        ? item.SubmittedAt.Value.ToString("yyyy-MM-dd")
+                                                                        : "-")
+                            </td>
+
+                                    <td>
+                                        <span class="badge-soft badge-submitted">Submitted</span>
+                                    </td>
+                                </tr>
+                                                }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="bi bi-send"></i>
+                    </div>
+
+                    <h5>No submitted requests</h5>
+                    <p>Requests sent to Accounts Manager will appear here.</p>
+                </div>
+            }
+        </div>
+
+    </div>
+
+</div>
