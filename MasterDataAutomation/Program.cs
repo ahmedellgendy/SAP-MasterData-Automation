@@ -6,6 +6,7 @@ using MasterDataAutomation.Application.Modules.CustomerModification.Interfaces;
 using MasterDataAutomation.Application.Modules.ProductMaster.Interfaces;
 using MasterDataAutomation.Application.Modules.SalesAnalytics.Interfaces;
 using MasterDataAutomation.Application.Validators;
+
 using MasterDataAutomation.Infrastructure.Data;
 using MasterDataAutomation.Infrastructure.DependencyInjection;
 using MasterDataAutomation.Infrastructure.Excel;
@@ -18,16 +19,10 @@ using MasterDataAutomation.Infrastructure.Persistence;
 using MasterDataAutomation.Infrastructure.Services;
 using MasterDataAutomation.Infrastructure.Settings;
 using MasterDataAutomation.Infrastructure.Validators;
-<<<<<<< HEAD
-=======
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.DataProtection;
->>>>>>> feature/sales-analytics
 
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 
 namespace MasterDataAutomation
@@ -39,70 +34,11 @@ namespace MasterDataAutomation
             var builder =
                 WebApplication.CreateBuilder(args);
 
-<<<<<<< HEAD
-            // =====================================================
-            // Database
-            // =====================================================
-
-            builder.Services.AddDbContext<ApplicationDbContext>(
-                options =>
-                    options.UseSqlServer(
-                        builder.Configuration
-                            .GetConnectionString(
-                                "DefaultConnection")));
-
-            // =====================================================
-            // MVC
-            // =====================================================
-=======
-            var dataProtectionKeysPath =
-           Path.Combine(
-               builder.Environment.ContentRootPath,
-               "App_Data",
-               "DataProtectionKeys");
-
-            Directory.CreateDirectory(
-                dataProtectionKeysPath);
-
-            builder.Services
-                .AddDataProtection()
-                .PersistKeysToFileSystem(
-                    new DirectoryInfo(
-                        dataProtectionKeysPath))
-                .SetApplicationName("FridayOps");
-
-            builder.WebHost.ConfigureKestrel(options =>
-            {
-                options.Limits.MaxRequestBodySize = 200 * 1024 * 1024; // 200 MB
-            });
-
-            builder.Services.Configure<FormOptions>(options =>
-            {
-                options.MultipartBodyLengthLimit = 200 * 1024 * 1024; // 200 MB
-                options.ValueLengthLimit = int.MaxValue;
-                options.MultipartHeadersLengthLimit = int.MaxValue;
-            });
-
-
-            builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
->>>>>>> feature/sales-analytics
-
-            builder.Services.AddControllersWithViews();
-
-<<<<<<< HEAD
-            // =====================================================
-            // SAP Settings
-            // =====================================================
-
-            builder.Services.Configure<SapSettings>(
-                builder.Configuration
-                    .GetSection("SapSettings"));
-
             // =====================================================
             // Data Protection
             //
-            // Important for shared hosting / application recycle.
-            // Keeps authentication cookies valid after app restart.
+            // Keep authentication cookies valid after
+            // application recycle / restart on shared hosting.
             // =====================================================
 
             var dataProtectionKeysPath =
@@ -121,6 +57,53 @@ namespace MasterDataAutomation
                         dataProtectionKeysPath))
                 .SetApplicationName(
                     "FridayOps");
+
+            // =====================================================
+            // Upload Limits
+            // =====================================================
+
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.Limits.MaxRequestBodySize =
+                    200 * 1024 * 1024;
+            });
+
+            builder.Services.Configure<FormOptions>(options =>
+            {
+                options.MultipartBodyLengthLimit =
+                    200 * 1024 * 1024;
+
+                options.ValueLengthLimit =
+                    int.MaxValue;
+
+                options.MultipartHeadersLengthLimit =
+                    int.MaxValue;
+            });
+
+            // =====================================================
+            // Database
+            // =====================================================
+
+            builder.Services.AddDbContext<ApplicationDbContext>(
+                options =>
+                    options.UseSqlServer(
+                        builder.Configuration
+                            .GetConnectionString(
+                                "DefaultConnection")));
+
+            // =====================================================
+            // MVC
+            // =====================================================
+
+            builder.Services.AddControllersWithViews();
+
+            // =====================================================
+            // SAP Settings
+            // =====================================================
+
+            builder.Services.Configure<SapSettings>(
+                builder.Configuration
+                    .GetSection("SapSettings"));
 
             // =====================================================
             // Authentication
@@ -153,25 +136,10 @@ namespace MasterDataAutomation
                     options.Cookie.SecurePolicy =
                         CookieSecurePolicy.SameAsRequest;
                 });
-=======
-            builder.Services
-                  .AddAuthentication(
-                      CookieAuthenticationDefaults.AuthenticationScheme)
-                  .AddCookie(options =>
-                  {
-                      options.LoginPath =
-                          "/Account/Login";
 
-                      options.AccessDeniedPath =
-                          "/Account/AccessDenied";
-
-                      options.ExpireTimeSpan =
-                          TimeSpan.FromHours(8);
-
-                      options.SlidingExpiration =
-                          true;
-                  });
->>>>>>> feature/sales-analytics
+            // =====================================================
+            // Authorization
+            // =====================================================
 
             builder.Services.AddAuthorization();
 
@@ -182,7 +150,7 @@ namespace MasterDataAutomation
             builder.Services.AddInfrastructure();
 
             // =====================================================
-            // Application Services
+            // Core Application Services
             // =====================================================
 
             builder.Services.AddScoped<
@@ -225,38 +193,81 @@ namespace MasterDataAutomation
                 ICustomerDraftRepository,
                 SqlCustomerDraftRepository>();
 
-            builder.Services.AddHttpContextAccessor();
-            builder.Services.AddScoped<IProductRepository, ProductRepository>();
-            builder.Services.AddScoped<IProductRequestRepository, ProductRequestRepository>();
-            builder.Services.AddHttpContextAccessor();
-            builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
-            builder.Services.AddScoped<ICustomerModificationRequestRepository, CustomerModificationRequestRepository>();
-            builder.Services.AddScoped<ISalesAnalyticsMasterDataRepository, SalesAnalyticsMasterDataRepository>();
-            builder.Services.AddScoped<ISalesAnalyticsMasterDataImportService, SalesAnalyticsMasterDataImportService>();
-            builder.Services.AddScoped<ISalesAnalyticsDashboardRepository, SalesAnalyticsDashboardRepository>();
-            builder.Services.AddScoped<ISalesDistrictMonthlyTargetRepository, SalesDistrictMonthlyTargetRepository>();
-            builder.Services.AddScoped<ISalesAnalyticsDataQualityRepository, SalesAnalyticsDataQualityRepository>();
+            // =====================================================
+            // Product Master
+            // =====================================================
 
+            builder.Services.AddScoped<
+                IProductRepository,
+                ProductRepository>();
+
+            builder.Services.AddScoped<
+                IProductRequestRepository,
+                ProductRequestRepository>();
+
+            // =====================================================
+            // Activity Logs
+            // =====================================================
+
+            builder.Services.AddScoped<
+                IActivityLogService,
+                ActivityLogService>();
+
+            // =====================================================
+            // Customer Modification
+            // =====================================================
+
+            builder.Services.AddScoped<
+                ICustomerModificationRequestRepository,
+                CustomerModificationRequestRepository>();
+
+            // =====================================================
+            // Sales Analytics
+            // =====================================================
+
+            builder.Services.AddScoped<
+                ISalesAnalyticsMasterDataRepository,
+                SalesAnalyticsMasterDataRepository>();
+
+            builder.Services.AddScoped<
+                ISalesAnalyticsMasterDataImportService,
+                SalesAnalyticsMasterDataImportService>();
+
+            builder.Services.AddScoped<
+                ISalesAnalyticsDashboardRepository,
+                SalesAnalyticsDashboardRepository>();
+
+            builder.Services.AddScoped<
+                ISalesDistrictMonthlyTargetRepository,
+                SalesDistrictMonthlyTargetRepository>();
+
+            builder.Services.AddScoped<
+                ISalesAnalyticsDataQualityRepository,
+                SalesAnalyticsDataQualityRepository>();
+
+            // =====================================================
+            // HTTP Context
+            // =====================================================
+
+            builder.Services.AddHttpContextAccessor();
 
             // =====================================================
             // Session
             // =====================================================
 
-            builder.Services
-                .AddDistributedMemoryCache();
+            builder.Services.AddDistributedMemoryCache();
 
-            builder.Services
-                .AddSession(options =>
-                {
-                    options.IdleTimeout =
-                        TimeSpan.FromHours(8);
+            builder.Services.AddSession(options =>
+            {
+                options.IdleTimeout =
+                    TimeSpan.FromHours(8);
 
-                    options.Cookie.HttpOnly =
-                        true;
+                options.Cookie.HttpOnly =
+                    true;
 
-                    options.Cookie.IsEssential =
-                        true;
-                });
+                options.Cookie.IsEssential =
+                    true;
+            });
 
             // =====================================================
             // Build

@@ -515,6 +515,40 @@
             _ => "risk-normal"
         };
     }
+
+    string TargetAchievementClass(decimal achievement)
+    {
+        return achievement switch
+        {
+            >= 100 => "target-achievement-achieved",
+            >= 75 => "target-achievement-good",
+            >= 50 => "target-achievement-warning",
+            _ => "target-achievement-critical"
+        };
+    }
+
+    string TargetStatusClass(string? status)
+    {
+        return status switch
+        {
+            "Achieved" => "target-status-achieved",
+            "On Track" => "target-status-good",
+            "Needs Attention" => "target-status-warning",
+            _ => "target-status-critical"
+        };
+    }
+
+    string TargetStatusText(string? status)
+    {
+        return status switch
+        {
+            "Achieved" => "محقق",
+            "On Track" => "على المسار",
+            "Needs Attention" => "يحتاج متابعة",
+            "Critical" => "حرج",
+            _ => status ?? "—"
+        };
+    }
 }
 
 <style>
@@ -1150,6 +1184,42 @@
         font-size: 23px;
     }
 
+    .target-achievement-badge,
+    .target-status-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 5px 9px;
+        font-size: 10px;
+        font-weight: 950;
+        white-space: nowrap;
+    }
+
+    .target-achievement-achieved,
+    .target-status-achieved {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .target-achievement-good,
+    .target-status-good {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+
+    .target-achievement-warning,
+    .target-status-warning {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .target-achievement-critical,
+    .target-status-critical {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
     @@media (max-width: 1150px) {
         .kpi-grid,
         .snapshot-grid {
@@ -1355,6 +1425,7 @@
                 </div>
 
             </div>
+
 
             @if (hasTargets)
             {
@@ -1964,6 +2035,238 @@
                 </div>
 
             </div>
+
+            <!-- ===================================================== -->
+            <!-- TARGET ACHIEVEMENT TABLES -->
+            <!-- ===================================================== -->
+
+            <div class="two-column-grid mt-3">
+
+                <!-- ================================================= -->
+                <!-- Lowest 10 Target Achievement Lines -->
+                <!-- ================================================= -->
+
+                <div class="panel">
+
+                    <div class="chart-title">
+                        <i class="bi bi-exclamation-octagon-fill text-danger ms-1"></i>
+                        أقل 10 مناطق تحقيقًا للتارجت
+                    </div>
+
+                    <div class="section-subtitle mb-3">
+                        مناطق البيع ذات أقل نسب تحقيق للتارجت الشهري وتحتاج متابعة مباشرة.
+                    </div>
+
+                    <div class="table-responsive">
+
+                        <table class="table">
+
+                            <thead>
+                                <tr>
+                                    <th>الفرع</th>
+                                    <th>منطقة البيع</th>
+                                    <th>التارجت</th>
+                                    <th>الفعلـي</th>
+                                    <th>التحقيق</th>
+                                    <th>المتبقي</th>
+                                    <th>الحالة</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                @if (!Model.LowestTargetAchievements.Any())
+                                {
+                                    <tr>
+                                        <td colspan="7"
+                                            class="text-muted fw-bold text-center py-4">
+
+                                            لا توجد بيانات تارجت متاحة للشهر المحدد.
+
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var item in Model.LowestTargetAchievements.Take(10))
+                                    {
+                                        <tr>
+
+                                            <td>
+                                                <div class="entity-name">
+                                                    @(string.IsNullOrWhiteSpace(item.BranchName)
+                                                                                            ? item.BranchCode
+                                                                                            : item.BranchName)
+                                                                                                          </div>
+
+                                                <div class="entity-code">
+                                                    @item.BranchCode
+                                                </div>
+                                            </td>
+
+                                            <td>
+                                                <div class="entity-name">
+                                                    @(string.IsNullOrWhiteSpace(item.SalesDistrictName)
+                                                                                            ? item.SalesDistrictCode
+                                                                                            : item.SalesDistrictName)
+                                    </div>
+
+                                                <div class="entity-code">
+                                                    @item.SalesDistrictCode
+                                                </div>
+                                            </td>
+
+                                            <td>
+                                                @Money(item.MonthlyTarget)
+                                            </td>
+
+                                            <td>
+                                                @Money(item.ActualSales)
+                                            </td>
+
+                                            <td>
+                                                <span class="target-achievement-badge @TargetAchievementClass(item.AchievementPercentage)">
+                                                    @Percent(item.AchievementPercentage)
+                                                </span>
+                                            </td>
+
+                                            <td>
+                                                @Money(item.RemainingTarget)
+                                            </td>
+
+                                            <td>
+                                                <span class="target-status-badge @TargetStatusClass(item.Status)">
+                                                    @TargetStatusText(item.Status)
+                                                </span>
+                                            </td>
+
+                                        </tr>
+                                                        }
+                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+                <!-- ================================================= -->
+                <!-- Top 10 Active Target Lines -->
+                <!-- ================================================= -->
+
+                <div class="panel">
+
+                    <div class="chart-title">
+                        <i class="bi bi-trophy-fill text-warning ms-1"></i>
+                        أعلى 10 مناطق نشطة في تحقيق التارجت
+                    </div>
+
+                    <div class="section-subtitle mb-3">
+                        أعلى مناطق البيع التي سجلت مبيعات فعلية مقارنة بالتارجت الشهري.
+                    </div>
+
+                    <div class="table-responsive">
+
+                        <table class="table">
+
+                            <thead>
+                                <tr>
+                                    <th>الفرع</th>
+                                    <th>منطقة البيع</th>
+                                    <th>الفعلـي</th>
+                                    <th>التحقيق</th>
+                                    <th>الزيارات</th>
+                                    <th>الحالة</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                @if (!Model.BestTargetAchievements.Any())
+                                {
+                                    <tr>
+                                        <td colspan="6"
+                                            class="text-muted fw-bold text-center py-4">
+
+                                            لا توجد مناطق بيع نشطة حتى الآن.
+
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var item in Model.BestTargetAchievements.Take(10))
+                                    {
+                                        <tr>
+
+                                            <td>
+                                                <div class="entity-name">
+                                                    @(string.IsNullOrWhiteSpace(item.BranchName)
+                                                                                            ? item.BranchCode
+                                                                                            : item.BranchName)
+                                                                                                          </div>
+
+                                                <div class="entity-code">
+                                                    @item.BranchCode
+                                                </div>
+                                            </td>
+
+                                            <td>
+                                                <div class="entity-name">
+                                                    @(string.IsNullOrWhiteSpace(item.SalesDistrictName)
+                                                                                            ? item.SalesDistrictCode
+                                                                                            : item.SalesDistrictName)
+                                    </div>
+
+                                                <div class="entity-code">
+                                                    @item.SalesDistrictCode
+                                                </div>
+                                            </td>
+
+                                            <td>
+                                                @Money(item.ActualSales)
+                                            </td>
+
+                                            <td>
+                                                <span class="target-achievement-badge @TargetAchievementClass(item.AchievementPercentage)">
+                                                    @Percent(item.AchievementPercentage)
+                                                </span>
+                                            </td>
+
+                                            <td>
+                                                <div class="entity-name">
+                                                    @item.ActualVisits.ToString("N0")
+                                                    /
+                                                    @item.PlannedVisits.ToString("N0")
+                                                </div>
+
+                                                <div class="entity-code">
+                                                    @Percent(item.VisitAchievementPercentage)
+                                                </div>
+                                            </td>
+
+                                            <td>
+                                                <span class="target-status-badge @TargetStatusClass(item.Status)">
+                                                    @TargetStatusText(item.Status)
+                                                </span>
+                                            </td>
+
+                                        </tr>
+                                                        }
+                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
         }
         else
         {
@@ -2716,67 +3019,67 @@
                 const salesDistrictLabels =
                     @Html.Raw(
                         JsonSerializer.Serialize(
-                                salesDistrictChartLabels));
+                                        salesDistrictChartLabels));
 
                 const salesDistrictValues =
                     @Html.Raw(
-                                                JsonSerializer.Serialize(
-                                                        salesDistrictChartValues));
+                                                                                                JsonSerializer.Serialize(
+                                                                                                                salesDistrictChartValues));
 
                 const productLabels =
                     @Html.Raw(
-                                                JsonSerializer.Serialize(
-                                                        productChartLabels));
+                                                                                                JsonSerializer.Serialize(
+                                                                                                                productChartLabels));
 
                 const productValues =
                     @Html.Raw(
-                                                JsonSerializer.Serialize(
-                                                        productChartValues));
+                                                                                                JsonSerializer.Serialize(
+                                                                                                                productChartValues));
 
                 const branchLabels =
                     @Html.Raw(
-                                                JsonSerializer.Serialize(
-                                                        branchChartLabels));
+                                                                                                JsonSerializer.Serialize(
+                                                                                                                branchChartLabels));
 
                 const branchActual =
                     @Html.Raw(
-                                                JsonSerializer.Serialize(
-                                                        branchChartActual));
+                                                                                                JsonSerializer.Serialize(
+                                                                                                                branchChartActual));
 
                 const branchTarget =
                     @Html.Raw(
-                                                JsonSerializer.Serialize(
-                                                        branchChartTarget));
+                                                                                                JsonSerializer.Serialize(
+                                                                                                                branchChartTarget));
 
                 const targetLabels =
                     @Html.Raw(
-                                                JsonSerializer.Serialize(
-                                                        targetChartLabels));
+                                                                                                JsonSerializer.Serialize(
+                                                                                                                targetChartLabels));
 
                 const targetValues =
                     @Html.Raw(
-                                                JsonSerializer.Serialize(
-                                                        targetChartValues));
+                                                                                                JsonSerializer.Serialize(
+                                                                                                                targetChartValues));
 
                 const visitLabels =
                     @Html.Raw(
-                                                JsonSerializer.Serialize(
-                                                        visitStatusLabels));
+                                                                                                JsonSerializer.Serialize(
+                                                                                                                visitStatusLabels));
 
                 const visitValues =
                     @Html.Raw(
-                                                JsonSerializer.Serialize(
-                                                        visitStatusValues));
+                                                                                                JsonSerializer.Serialize(
+                                                                                                                visitStatusValues));
 
                 const negativeLabels =
                     @Html.Raw(
-                                                JsonSerializer.Serialize(
-                                                        negativeReasonLabels));
+                                                                                                JsonSerializer.Serialize(
+                                                                                                                negativeReasonLabels));
 
                 const negativeValues =
                     @Html.Raw(
-                                                JsonSerializer.Serialize(
-                                                        negativeReasonValues));
+                                                                                                JsonSerializer.Serialize(
+                                                                                                                negativeReasonValues));
 
                 createBarChart(
                     "salesDistrictChart",
