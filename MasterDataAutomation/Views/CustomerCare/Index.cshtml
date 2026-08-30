@@ -1,0 +1,645 @@
+﻿@model MasterDataAutomation.Web.ViewModels.CustomerCare.CustomerCareQueueViewModel
+@using MasterDataAutomation.Domain.Modules.CustomerCare.Enums
+
+@{
+    ViewData["Title"] = "مركز متابعة خدمة العملاء";
+
+    var canViewDashboard =
+        User.IsInRole("ComplaintSupervisor") ||
+        User.IsInRole("ComplaintManager") ||
+        User.IsInRole("Admin");
+
+    string StatusText(CustomerCareTicketStatus status) => status switch
+    {
+        CustomerCareTicketStatus.New => "جديدة",
+        CustomerCareTicketStatus.Assigned => "تم الإسناد",
+        CustomerCareTicketStatus.InProgress => "قيد العمل",
+        CustomerCareTicketStatus.WaitingCustomer => "بانتظار العميل",
+        CustomerCareTicketStatus.WaitingDepartment => "بانتظار القسم",
+        CustomerCareTicketStatus.WaitingBranch => "بانتظار الفرع",
+        CustomerCareTicketStatus.Resolved => "تم الحل",
+        CustomerCareTicketStatus.Closed => "مغلقة",
+        CustomerCareTicketStatus.Reopened => "أعيد فتحها",
+        CustomerCareTicketStatus.Cancelled => "ملغاة",
+        CustomerCareTicketStatus.Rejected => "مرفوضة",
+        _ => status.ToString()
+    };
+
+    string StatusClass(CustomerCareTicketStatus status) => status switch
+    {
+        CustomerCareTicketStatus.New => "status-new",
+        CustomerCareTicketStatus.Assigned => "status-assigned",
+        CustomerCareTicketStatus.InProgress => "status-progress",
+        CustomerCareTicketStatus.WaitingCustomer => "status-waiting",
+        CustomerCareTicketStatus.WaitingDepartment => "status-waiting",
+        CustomerCareTicketStatus.WaitingBranch => "status-waiting",
+        CustomerCareTicketStatus.Resolved => "status-resolved",
+        CustomerCareTicketStatus.Closed => "status-closed",
+        CustomerCareTicketStatus.Reopened => "status-reopened",
+        CustomerCareTicketStatus.Cancelled => "status-cancelled",
+        CustomerCareTicketStatus.Rejected => "status-rejected",
+        _ => "status-new"
+    };
+
+    string PriorityText(CustomerCareTicketPriority priority) => priority switch
+    {
+        CustomerCareTicketPriority.Critical => "حرجة",
+        CustomerCareTicketPriority.High => "عالية",
+        CustomerCareTicketPriority.Normal => "عادية",
+        CustomerCareTicketPriority.Low => "منخفضة",
+        _ => priority.ToString()
+    };
+
+    string PriorityClass(CustomerCareTicketPriority priority) => priority switch
+    {
+        CustomerCareTicketPriority.Critical => "priority-critical",
+        CustomerCareTicketPriority.High => "priority-high",
+        CustomerCareTicketPriority.Normal => "priority-normal",
+        _ => "priority-low"
+    };
+
+    string SourceText(CustomerCareTicketSource source) => source switch
+    {
+        CustomerCareTicketSource.Call => "مكالمة",
+        CustomerCareTicketSource.Facebook => "فيسبوك",
+        CustomerCareTicketSource.Instagram => "إنستجرام",
+        CustomerCareTicketSource.WhatsApp => "واتساب",
+        CustomerCareTicketSource.CustomerServiceSystem => "نظام خدمة العملاء",
+        CustomerCareTicketSource.Other => "أخرى",
+        _ => source.ToString()
+    };
+
+    string CategoryText(string? value) => value switch
+    {
+        "Sales & Representative" => "المبيعات والمندوب",
+        "Delivery & Supply" => "التوريد والتسليم",
+        "Product Replacement" => "استبدال المنتجات",
+        "Freezer & Maintenance" => "الثلاجات والصيانة",
+        "Product Quality" => "جودة المنتج",
+        "Commercial Requests" => "الطلبات التجارية",
+        "General Inquiry" => "استفسارات عامة",
+        "Other" => "أخرى",
+        null or "" => "—",
+        _ => value
+    };
+
+    string DepartmentText(string? value) => value switch
+    {
+        "Customer Care" => "خدمة العملاء",
+        "Quality" => "الجودة",
+        "Sales" => "المبيعات",
+        "Branches" => "الفروع",
+        "Distribution" => "التوزيع",
+        "Management" => "الإدارة",
+        null or "" => "غير مسند",
+        _ => value
+    };
+
+    var totalShown = Model.Tickets.Count;
+    var overdueCount = Model.Tickets.Count(x => x.IsOverdue);
+    var criticalCount = Model.Tickets.Count(x => x.Priority == CustomerCareTicketPriority.Critical);
+}
+
+<style>
+    .cc-page {
+        direction: rtl;
+        max-width: 1650px;
+        margin: 0 auto;
+    }
+
+    .cc-hero {
+        background: linear-gradient(135deg,#0f172a 0%,#172554 48%,#1d4ed8 100%);
+        color: #fff;
+        border-radius: 20px;
+        padding: 24px 26px;
+        margin-bottom: 18px;
+        box-shadow: 0 16px 36px rgba(15,23,42,.15);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .cc-hero-title {
+        font-size: 25px;
+        font-weight: 900;
+        margin-bottom: 4px;
+    }
+
+    .cc-hero-subtitle {
+        color: rgba(255,255,255,.75);
+        font-size: 13px;
+    }
+
+    .cc-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+        .cc-actions .btn {
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 800;
+            padding: 9px 13px;
+        }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3,minmax(0,1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .stat-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 14px;
+        box-shadow: 0 6px 18px rgba(15,23,42,.04);
+    }
+
+    .stat-label {
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 800;
+        margin-bottom: 6px;
+    }
+
+    .stat-value {
+        color: #0f172a;
+        font-size: 24px;
+        font-weight: 900;
+    }
+
+    .filter-card, .queue-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        box-shadow: 0 7px 20px rgba(15,23,42,.045);
+    }
+
+    .filter-card {
+        margin-bottom: 16px;
+    }
+
+    .filter-card-header, .queue-card-header {
+        padding: 14px 16px;
+        border-bottom: 1px solid #e5e7eb;
+        background: linear-gradient(180deg,#fff,#f8fafc);
+        font-weight: 900;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .filter-card-body {
+        padding: 16px;
+    }
+
+    .form-label {
+        font-size: 11px;
+        color: #475569;
+        font-weight: 800;
+        margin-bottom: 6px;
+    }
+
+    .form-control, .form-select {
+        border-radius: 10px;
+        border-color: #dbe2ea;
+        min-height: 40px;
+        font-size: 12px;
+    }
+
+    .filter-flags {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
+    }
+
+    .form-check-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #475569;
+    }
+
+    .table {
+        margin-bottom: 0;
+        font-size: 12px;
+    }
+
+        .table thead th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 10px;
+            font-weight: 900;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+            padding: 12px 10px;
+        }
+
+        .table tbody td {
+            vertical-align: middle;
+            padding: 12px 10px;
+            color: #334155;
+            border-color: #eef2f7;
+        }
+
+    .ticket-link {
+        direction: ltr;
+        display: inline-block;
+        font-weight: 900;
+        color: #1d4ed8;
+        text-decoration: none;
+    }
+
+        .ticket-link:hover {
+            text-decoration: underline;
+        }
+
+    .ticket-date {
+        display: block;
+        margin-top: 4px;
+        color: #94a3b8;
+        font-size: 10px;
+    }
+
+    .customer-name {
+        font-weight: 850;
+        color: #0f172a;
+    }
+
+    .customer-phone {
+        direction: ltr;
+        display: inline-block;
+        color: #64748b;
+        font-size: 10px;
+        margin-top: 3px;
+    }
+
+    .badge-soft {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border-radius: 999px;
+        padding: 6px 9px;
+        font-size: 10px;
+        font-weight: 900;
+        white-space: nowrap;
+    }
+
+    .priority-critical {
+        background: #fee2e2;
+        color: #b91c1c
+    }
+
+    .priority-high {
+        background: #ffedd5;
+        color: #c2410c
+    }
+
+    .priority-normal {
+        background: #dbeafe;
+        color: #1d4ed8
+    }
+
+    .priority-low {
+        background: #e2e8f0;
+        color: #475569
+    }
+
+    .status-new {
+        background: #e2e8f0;
+        color: #334155
+    }
+
+    .status-assigned {
+        background: #dbeafe;
+        color: #1d4ed8
+    }
+
+    .status-progress {
+        background: #fef3c7;
+        color: #92400e
+    }
+
+    .status-waiting {
+        background: #ffedd5;
+        color: #c2410c
+    }
+
+    .status-resolved {
+        background: #dcfce7;
+        color: #166534
+    }
+
+    .status-closed {
+        background: #d1fae5;
+        color: #065f46
+    }
+
+    .status-reopened {
+        background: #f3e8ff;
+        color: #7e22ce
+    }
+
+    .status-cancelled, .status-rejected {
+        background: #fee2e2;
+        color: #991b1b
+    }
+
+    .sla-overdue {
+        background: #fee2e2;
+        color: #b91c1c
+    }
+
+    .sla-active {
+        background: #dcfce7;
+        color: #166534
+    }
+
+    .overdue-row {
+        background: #fff7f7
+    }
+
+    .empty-state {
+        padding: 50px 20px !important;
+        text-align: center;
+        color: #94a3b8 !important
+    }
+
+    @@media(max-width:900px) {
+        .stats-grid {
+            grid-template-columns: 1fr 1fr
+        }
+    }
+
+    @@media(max-width:650px) {
+        .stats-grid {
+            grid-template-columns: 1fr
+        }
+    }
+</style>
+
+<div class="cc-page">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success border-0 shadow-sm">
+            <i class="bi bi-check-circle-fill ms-1"></i>
+            @TempData["Success"]
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger border-0 shadow-sm">
+            <i class="bi bi-exclamation-triangle-fill ms-1"></i>
+            @TempData["Error"]
+        </div>
+    }
+
+    <div class="cc-hero">
+        <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+            <div>
+                <div class="cc-hero-title">
+                    <i class="bi bi-headset ms-1"></i>
+                    مركز متابعة خدمة العملاء
+                </div>
+                <div class="cc-hero-subtitle">
+                    متابعة الشكاوى والطلبات والاستفسارات وإدارة الحالات من شاشة واحدة.
+                </div>
+            </div>
+
+            <div class="cc-actions">
+                @if (canViewDashboard)
+                {
+                    <a asp-action="Dashboard" class="btn btn-outline-light">
+                        <i class="bi bi-speedometer2 ms-1"></i>
+                        لوحة المتابعة
+                    </a>
+                }
+
+                <a asp-action="Create" class="btn btn-light text-primary">
+                    <i class="bi bi-plus-circle ms-1"></i>
+                    فتح تذكرة جديدة
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">النتائج المعروضة</div>
+            <div class="stat-value">@totalShown</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">متأخرة عن موعد الحل</div>
+            <div class="stat-value">@overdueCount</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">حالات حرجة</div>
+            <div class="stat-value">@criticalCount</div>
+        </div>
+    </div>
+
+    <div class="filter-card">
+        <div class="filter-card-header">
+            <span><i class="bi bi-funnel ms-1"></i> البحث والتصفية</span>
+            <span class="small text-muted fw-normal">حدد الفلاتر المطلوبة ثم اضغط عرض النتائج.</span>
+        </div>
+
+        <div class="filter-card-body">
+            <form method="get" class="row g-3">
+
+                <div class="col-xl-3 col-lg-4 col-md-6">
+                    <label class="form-label">بحث سريع</label>
+                    <input asp-for="Search" class="form-control"
+                           placeholder="رقم التذكرة / اسم العميل / الموبايل" />
+                </div>
+
+                <div class="col-xl-2 col-lg-4 col-md-6">
+                    <label class="form-label">الحالة</label>
+                    <select asp-for="Status" class="form-select">
+                        <option value="">كل الحالات</option>
+                        @foreach (var status in Enum.GetValues<CustomerCareTicketStatus>())
+                        {
+                            <option value="@((int)status)">@StatusText(status)</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-xl-2 col-lg-4 col-md-6">
+                    <label class="form-label">الأولوية</label>
+                    <select asp-for="Priority" class="form-select">
+                        <option value="">كل الأولويات</option>
+                        @foreach (var priority in Enum.GetValues<CustomerCareTicketPriority>())
+                        {
+                            <option value="@((int)priority)">@PriorityText(priority)</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-xl-2 col-lg-4 col-md-6">
+                    <label class="form-label">مصدر التواصل</label>
+                    <select asp-for="Source" class="form-select">
+                        <option value="">كل المصادر</option>
+                        @foreach (var source in Enum.GetValues<CustomerCareTicketSource>())
+                        {
+                            <option value="@((int)source)">@SourceText(source)</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-xl-3 col-lg-4 col-md-6">
+                    <label class="form-label">التصنيف الرئيسي</label>
+                    <select asp-for="CategoryId" class="form-select">
+                        <option value="">كل التصنيفات</option>
+                        @foreach (var item in Model.Categories)
+                        {
+                            <option value="@item.Id">@CategoryText(item.Name)</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                        <div class="filter-flags">
+                            <div class="form-check">
+                                <input asp-for="OverdueOnly" class="form-check-input" />
+                                <label asp-for="OverdueOnly" class="form-check-label">المتأخرة فقط</label>
+                            </div>
+                            <div class="form-check">
+                                <input asp-for="FollowUpOnly" class="form-check-input" />
+                                <label asp-for="FollowUpOnly" class="form-check-label">تحتاج متابعة</label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-counterclockwise ms-1"></i>
+                                مسح الفلاتر
+                            </a>
+                            <button type="submit" class="btn btn-dark">
+                                <i class="bi bi-search ms-1"></i>
+                                عرض النتائج
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <div class="queue-card">
+        <div class="queue-card-header">
+            <span><i class="bi bi-inboxes ms-1"></i> قائمة التذاكر</span>
+            <span class="small text-muted fw-normal">عدد النتائج: @Model.Tickets.Count</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>رقم التذكرة</th>
+                        <th>العميل</th>
+                        <th>المصدر</th>
+                        <th>التصنيف</th>
+                        <th>الأولوية</th>
+                        <th>الحالة</th>
+                        <th>القسم المسؤول</th>
+                        <th>مستوى الخدمة</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (!Model.Tickets.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="empty-state">
+                                <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                                لا توجد تذاكر مطابقة للفلاتر الحالية.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var ticket in Model.Tickets)
+                        {
+                            <tr class="@(ticket.IsOverdue ? "overdue-row" : "")">
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@ticket.Id" class="ticket-link">
+                                        @ticket.TicketNumber
+                                    </a>
+                                    <span class="ticket-date">
+                                        @ticket.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="customer-name">@ticket.CustomerName</div>
+                                    @if (!string.IsNullOrWhiteSpace(ticket.CustomerPhone))
+                                    {
+                                        <span class="customer-phone">@ticket.CustomerPhone</span>
+                                    }
+                                </td>
+
+                                <td>@SourceText(ticket.Source)</td>
+
+                                <td>
+                                    <div class="fw-bold">@CategoryText(ticket.CategoryName)</div>
+                                    @if (!string.IsNullOrWhiteSpace(ticket.SubCategoryName))
+                                    {
+                                        <small class="text-muted">@ticket.SubCategoryName</small>
+                                    }
+                                </td>
+
+                                <td>
+                                    <span class="badge-soft @PriorityClass(ticket.Priority)">
+                                        @PriorityText(ticket.Priority)
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="badge-soft @StatusClass(ticket.Status)">
+                                        @StatusText(ticket.Status)
+                                    </span>
+                                </td>
+
+                                <td>@DepartmentText(ticket.AssignedDepartmentName)</td>
+
+                                <td>
+                                    @if (ticket.IsOverdue)
+                                    {
+                                        <span class="badge-soft sla-overdue">
+                                            <i class="bi bi-exclamation-triangle-fill"></i>
+                                            متأخرة
+                                        </span>
+                                    }
+                                    else if (ticket.ResolutionDueAt.HasValue)
+                                    {
+                                        <span class="badge-soft sla-active">
+                                            <i class="bi bi-check-circle-fill"></i>
+                                            ضمن الوقت
+                                        </span>
+                                        <div class="small text-muted mt-1">
+                                            حتى @ticket.ResolutionDueAt.Value.ToLocalTime().ToString("dd/MM HH:mm")
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>

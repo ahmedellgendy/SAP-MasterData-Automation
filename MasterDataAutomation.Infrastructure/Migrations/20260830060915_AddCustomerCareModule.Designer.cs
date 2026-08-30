@@ -4,6 +4,7 @@ using MasterDataAutomation.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MasterDataAutomation.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260830060915_AddCustomerCareModule")]
+    partial class AddCustomerCareModule
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -522,124 +525,6 @@ namespace MasterDataAutomation.Infrastructure.Migrations
                     b.HasIndex("TicketType", "CategoryId", "SubCategoryId", "Priority");
 
                     b.ToTable("CustomerCareSlaPolicies", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2026, 8, 30, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Default SLA for customer complaints.",
-                            EscalationMinutes = 480,
-                            FirstResponseMinutes = 120,
-                            IsActive = true,
-                            Name = "Default Complaint SLA",
-                            ResolutionMinutes = 1440,
-                            SortOrder = 100,
-                            TicketType = 1,
-                            UseBusinessHours = false
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CreatedAt = new DateTime(2026, 8, 30, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "SLA for high-priority complaints.",
-                            EscalationMinutes = 180,
-                            FirstResponseMinutes = 60,
-                            IsActive = true,
-                            Name = "High Priority Complaint SLA",
-                            Priority = 3,
-                            ResolutionMinutes = 480,
-                            SortOrder = 20,
-                            TicketType = 1,
-                            UseBusinessHours = false
-                        },
-                        new
-                        {
-                            Id = 3,
-                            CreatedAt = new DateTime(2026, 8, 30, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "SLA for critical customer complaints.",
-                            EscalationMinutes = 60,
-                            FirstResponseMinutes = 30,
-                            IsActive = true,
-                            Name = "Critical Complaint SLA",
-                            Priority = 4,
-                            ResolutionMinutes = 240,
-                            SortOrder = 10,
-                            TicketType = 1,
-                            UseBusinessHours = false
-                        },
-                        new
-                        {
-                            Id = 4,
-                            CategoryId = 5,
-                            CreatedAt = new DateTime(2026, 8, 30, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Default SLA for product quality complaints.",
-                            EscalationMinutes = 120,
-                            FirstResponseMinutes = 60,
-                            IsActive = true,
-                            Name = "Quality Complaint SLA",
-                            ResolutionMinutes = 480,
-                            SortOrder = 15,
-                            TicketType = 1,
-                            UseBusinessHours = false
-                        },
-                        new
-                        {
-                            Id = 5,
-                            CategoryId = 5,
-                            CreatedAt = new DateTime(2026, 8, 30, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Critical SLA for quality complaints involving serious risk.",
-                            EscalationMinutes = 30,
-                            FirstResponseMinutes = 15,
-                            IsActive = true,
-                            Name = "Critical Quality Complaint SLA",
-                            Priority = 4,
-                            ResolutionMinutes = 180,
-                            SortOrder = 1,
-                            TicketType = 1,
-                            UseBusinessHours = false
-                        },
-                        new
-                        {
-                            Id = 6,
-                            CreatedAt = new DateTime(2026, 8, 30, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Default SLA for customer requests.",
-                            EscalationMinutes = 1440,
-                            FirstResponseMinutes = 240,
-                            IsActive = true,
-                            Name = "Customer Request SLA",
-                            ResolutionMinutes = 2880,
-                            SortOrder = 100,
-                            TicketType = 2,
-                            UseBusinessHours = false
-                        },
-                        new
-                        {
-                            Id = 7,
-                            CreatedAt = new DateTime(2026, 8, 30, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Default SLA for customer inquiries.",
-                            FirstResponseMinutes = 120,
-                            IsActive = true,
-                            Name = "Customer Inquiry SLA",
-                            ResolutionMinutes = 480,
-                            SortOrder = 100,
-                            TicketType = 3,
-                            UseBusinessHours = false
-                        },
-                        new
-                        {
-                            Id = 8,
-                            CreatedAt = new DateTime(2026, 8, 30, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Default SLA for transferred customer cases.",
-                            EscalationMinutes = 120,
-                            FirstResponseMinutes = 60,
-                            IsActive = true,
-                            Name = "Transfer SLA",
-                            ResolutionMinutes = 240,
-                            SortOrder = 100,
-                            TicketType = 4,
-                            UseBusinessHours = false
-                        });
                 });
 
             modelBuilder.Entity("MasterDataAutomation.Domain.Modules.CustomerCare.Entities.CustomerCareStatusHistory", b =>
@@ -1265,57 +1150,6 @@ namespace MasterDataAutomation.Infrastructure.Migrations
                     b.HasIndex("TicketId");
 
                     b.ToTable("CustomerCareTicketActions", (string)null);
-                });
-
-            modelBuilder.Entity("MasterDataAutomation.Domain.Modules.CustomerCare.Entities.CustomerCareTicketGift", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("CreatedByUserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("CreatedByUserName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("ProductName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<string>("RecipientName")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("RecipientPhone")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("TicketId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("TicketId");
-
-                    b.ToTable("CustomerCareTicketGifts", (string)null);
                 });
 
             modelBuilder.Entity("MasterDataAutomation.Infrastructure.Data.Entities.AppUserEntity", b =>
@@ -2595,17 +2429,6 @@ namespace MasterDataAutomation.Infrastructure.Migrations
                     b.Navigation("Ticket");
                 });
 
-            modelBuilder.Entity("MasterDataAutomation.Domain.Modules.CustomerCare.Entities.CustomerCareTicketGift", b =>
-                {
-                    b.HasOne("MasterDataAutomation.Domain.Modules.CustomerCare.Entities.CustomerCareTicket", "Ticket")
-                        .WithMany("Gifts")
-                        .HasForeignKey("TicketId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Ticket");
-                });
-
             modelBuilder.Entity("MasterDataAutomation.Domain.Modules.CustomerCare.Entities.CustomerCareCategory", b =>
                 {
                     b.Navigation("SubCategories");
@@ -2618,8 +2441,6 @@ namespace MasterDataAutomation.Infrastructure.Migrations
                     b.Navigation("AssignmentHistory");
 
                     b.Navigation("Attachments");
-
-                    b.Navigation("Gifts");
 
                     b.Navigation("QualityDetail");
 

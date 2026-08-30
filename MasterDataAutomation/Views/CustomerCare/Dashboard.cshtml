@@ -1,0 +1,1280 @@
+﻿@model MasterDataAutomation.Application.Modules.CustomerCare.Dtos.CustomerCareDashboardDto
+@using MasterDataAutomation.Domain.Modules.CustomerCare.Enums
+
+@{
+    ViewData["Title"] = "لوحة متابعة خدمة العملاء";
+
+    string StatusText(CustomerCareTicketStatus status) => status switch
+    {
+        CustomerCareTicketStatus.New => "جديدة",
+        CustomerCareTicketStatus.Assigned => "تم الإسناد",
+        CustomerCareTicketStatus.InProgress => "قيد العمل",
+        CustomerCareTicketStatus.WaitingCustomer => "بانتظار العميل",
+        CustomerCareTicketStatus.WaitingDepartment => "بانتظار القسم",
+        CustomerCareTicketStatus.WaitingBranch => "بانتظار الفرع",
+        CustomerCareTicketStatus.Resolved => "تم الحل",
+        CustomerCareTicketStatus.Closed => "مغلقة",
+        CustomerCareTicketStatus.Reopened => "أعيد فتحها",
+        CustomerCareTicketStatus.Cancelled => "ملغاة",
+        CustomerCareTicketStatus.Rejected => "مرفوضة",
+        _ => status.ToString()
+    };
+
+    string DepartmentText(string? value) => value switch
+    {
+        "Customer Care" => "خدمة العملاء",
+        "Quality" => "الجودة",
+        "Sales" => "المبيعات",
+        "Branches" => "الفروع",
+        "Distribution" => "التوزيع",
+        "Management" => "الإدارة",
+        "Unassigned" => "غير مسند",
+        null or "" => "غير مسند",
+        _ => value
+    };
+
+    string CategoryText(string? value) => value switch
+    {
+        "Sales & Representative" => "المبيعات والمندوب",
+        "Delivery & Supply" => "التوريد والتسليم",
+        "Product Replacement" => "استبدال المنتجات",
+        "Freezer & Maintenance" => "الثلاجات والصيانة",
+        "Product Quality" => "جودة المنتج",
+        "Commercial Requests" => "الطلبات التجارية",
+        "General Inquiry" => "استفسارات عامة",
+        "Other" => "أخرى",
+        "Uncategorized" => "غير مصنف",
+        null or "" => "غير مصنف",
+        _ => value
+    };
+
+    string SourceText(string? value) => value switch
+    {
+        "Call" => "مكالمة",
+        "Facebook" => "فيسبوك",
+        "Instagram" => "إنستجرام",
+        "WhatsApp" => "واتساب",
+        "CustomerServiceSystem" => "نظام خدمة العملاء",
+        "Other" => "أخرى",
+        null or "" => "غير محدد",
+        _ => value
+    };
+
+    string StatusClass(CustomerCareTicketStatus status) => status switch
+    {
+        CustomerCareTicketStatus.New => "soft-neutral",
+        CustomerCareTicketStatus.Assigned => "soft-blue",
+        CustomerCareTicketStatus.InProgress => "soft-amber",
+        CustomerCareTicketStatus.WaitingCustomer => "soft-amber",
+        CustomerCareTicketStatus.WaitingDepartment => "soft-amber",
+        CustomerCareTicketStatus.WaitingBranch => "soft-amber",
+        CustomerCareTicketStatus.Resolved => "soft-green",
+        CustomerCareTicketStatus.Closed => "soft-green",
+        CustomerCareTicketStatus.Reopened => "soft-purple",
+        CustomerCareTicketStatus.Cancelled => "soft-red",
+        CustomerCareTicketStatus.Rejected => "soft-red",
+        _ => "soft-neutral"
+    };
+
+    var hasAnyCategory = Model.ByCategory.Any();
+    var hasAnySource = Model.BySource.Any();
+    var hasAnyDepartment = Model.ByDepartment.Any();
+    var hasGiftProducts = Model.TopGiftProducts?.Any() == true;
+    var hasRecentGifts = Model.RecentGifts?.Any() == true;
+
+    var openRate = Model.TotalTickets == 0
+        ? 0
+        : Math.Round((decimal)Model.OpenTickets / Model.TotalTickets * 100m, 1);
+
+    var resolvedRate = Model.TotalTickets == 0
+        ? 0
+        : Math.Round((decimal)(Model.ResolvedTickets + Model.ClosedTickets) / Model.TotalTickets * 100m, 1);
+}
+
+<style>
+    .cc-dashboard {
+        direction: rtl;
+        max-width: 1680px;
+        margin: 0 auto;
+        color: #0f172a;
+    }
+
+    .dashboard-hero {
+        position: relative;
+        overflow: hidden;
+        border-radius: 22px;
+        padding: 20px 22px;
+        margin-bottom: 14px;
+        color: #fff;
+        background: radial-gradient(circle at 8% 20%, rgba(255,255,255,.08), transparent 22%), linear-gradient(135deg, #0f172a 0%, #172554 46%, #1d4ed8 100%);
+        box-shadow: 0 18px 40px rgba(15,23,42,.16);
+    }
+
+        .dashboard-hero::after {
+            content: "";
+            position: absolute;
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.045);
+            left: -85px;
+            top: -125px;
+        }
+
+    .dashboard-title {
+        font-size: 23px;
+        font-weight: 950;
+        margin-bottom: 5px;
+        letter-spacing: -.2px;
+    }
+
+    .dashboard-subtitle {
+        font-size: 12px;
+        color: rgba(255,255,255,.72);
+        max-width: 760px;
+        line-height: 1.8;
+    }
+
+    .dashboard-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        position: relative;
+        z-index: 1;
+    }
+
+        .dashboard-actions .btn {
+            border-radius: 11px;
+            font-size: 12px;
+            font-weight: 850;
+            padding: 9px 13px;
+        }
+
+    .panel {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 17px;
+        box-shadow: 0 7px 22px rgba(15,23,42,.045);
+        overflow: hidden;
+    }
+
+    .panel-header {
+        min-height: 48px;
+        padding: 13px 16px;
+        border-bottom: 1px solid #e5e7eb;
+        background: linear-gradient(180deg,#fff,#f8fafc);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .panel-title {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12px;
+        font-weight: 950;
+        color: #0f172a;
+    }
+
+    .panel-subtitle {
+        font-size: 10px;
+        color: #94a3b8;
+    }
+
+    .panel-body {
+        padding: 14px;
+    }
+
+    .filter-panel {
+        margin-bottom: 16px;
+    }
+
+    .form-label {
+        font-size: 10px;
+        font-weight: 850;
+        color: #475569;
+        margin-bottom: 6px;
+    }
+
+    .form-control {
+        min-height: 40px;
+        border-radius: 10px;
+        border-color: #dbe2ea;
+        font-size: 12px;
+    }
+
+    .btn {
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 850;
+    }
+
+    .overview-grid {
+        display: grid;
+        grid-template-columns: 1.15fr 1fr 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .overview-card {
+        position: relative;
+        min-height: 98px;
+        padding: 14px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        box-shadow: 0 6px 18px rgba(15,23,42,.04);
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: center;
+    }
+
+        .overview-card.primary {
+            background: linear-gradient(135deg,#eff6ff,#f8fbff);
+            border-color: #bfdbfe;
+        }
+
+        .overview-card.alert-card {
+            background: linear-gradient(135deg,#fff7ed,#fff);
+            border-color: #fed7aa;
+        }
+
+        .overview-card.danger-card {
+            background: linear-gradient(135deg,#fef2f2,#fff);
+            border-color: #fecaca;
+        }
+
+    .overview-label {
+        color: #64748b;
+        font-size: 10px;
+        font-weight: 850;
+        margin-bottom: 8px;
+    }
+
+    .overview-value {
+        font-size: 27px;
+        font-weight: 950;
+        line-height: 1;
+        color: #0f172a;
+    }
+
+    .overview-note {
+        font-size: 10px;
+        color: #94a3b8;
+        margin-top: 7px;
+    }
+
+    .overview-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: 19px;
+        flex-shrink: 0;
+    }
+
+    .overview-card.alert-card .overview-icon {
+        background: #ffedd5;
+        color: #c2410c;
+    }
+
+    .overview-card.danger-card .overview-icon {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .secondary-kpis {
+        display: grid;
+        grid-template-columns: repeat(4,minmax(0,1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .mini-kpi {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 11px 13px;
+        box-shadow: 0 5px 16px rgba(15,23,42,.035);
+    }
+
+    .mini-label {
+        font-size: 10px;
+        color: #64748b;
+        font-weight: 850;
+        margin-bottom: 6px;
+    }
+
+    .mini-value {
+        font-size: 20px;
+        font-weight: 950;
+        color: #0f172a;
+    }
+
+    .mini-caption {
+        font-size: 9px;
+        color: #94a3b8;
+        margin-top: 4px;
+    }
+
+    .performance-strip {
+        display: grid;
+        grid-template-columns: repeat(3,minmax(0,1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .performance-card {
+        background: #0f172a;
+        color: #fff;
+        border-radius: 16px;
+        padding: 14px;
+        min-height: 92px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+        .performance-card:nth-child(2) {
+            background: #172554;
+        }
+
+        .performance-card:nth-child(3) {
+            background: #1e3a8a;
+        }
+
+    .performance-label {
+        font-size: 10px;
+        color: rgba(255,255,255,.68);
+        font-weight: 800;
+        margin-bottom: 7px;
+    }
+
+    .performance-value {
+        font-size: 23px;
+        font-weight: 950;
+    }
+
+    .performance-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: rgba(255,255,255,.10);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+
+    .insights-grid {
+        display: grid;
+        grid-template-columns: repeat(3,minmax(0,1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .breakdown-item {
+        margin-bottom: 14px;
+    }
+
+        .breakdown-item:last-child {
+            margin-bottom: 0;
+        }
+
+    .breakdown-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        font-size: 11px;
+        color: #334155;
+        margin-bottom: 6px;
+    }
+
+        .breakdown-row strong {
+            font-size: 11px;
+            color: #0f172a;
+        }
+
+    .progress {
+        height: 7px;
+        background: #eef2f7;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        background: linear-gradient(90deg,#60a5fa,#2563eb);
+    }
+
+    .gift-zone {
+        display: grid;
+        grid-template-columns: 1.15fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .gift-summary-panel {
+        background: linear-gradient(135deg,#f5f3ff,#fff);
+        border-color: #ddd6fe;
+    }
+
+    .gift-summary-top {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .gift-number-card {
+        background: rgba(255,255,255,.82);
+        border: 1px solid #ede9fe;
+        border-radius: 13px;
+        padding: 14px;
+    }
+
+    .gift-number-label {
+        color: #6b7280;
+        font-size: 10px;
+        font-weight: 850;
+        margin-bottom: 6px;
+    }
+
+    .gift-number-value {
+        color: #6d28d9;
+        font-size: 27px;
+        font-weight: 950;
+    }
+
+    .attention-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .table {
+        margin-bottom: 0;
+        font-size: 11px;
+    }
+
+        .table thead th {
+            background: #f8fafc;
+            color: #64748b;
+            font-size: 9px;
+            font-weight: 950;
+            padding: 9px 9px;
+            white-space: nowrap;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .table tbody td {
+            padding: 9px 9px;
+            vertical-align: middle;
+            border-color: #eef2f7;
+            color: #334155;
+        }
+
+    .ticket-link {
+        display: inline-block;
+        direction: ltr;
+        color: #1d4ed8;
+        font-weight: 950;
+        text-decoration: none;
+    }
+
+        .ticket-link:hover {
+            text-decoration: underline;
+        }
+
+    .soft-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border-radius: 999px;
+        padding: 5px 8px;
+        font-size: 9px;
+        font-weight: 900;
+        white-space: nowrap;
+    }
+
+    .soft-neutral {
+        background: #e2e8f0;
+        color: #334155;
+    }
+
+    .soft-blue {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+
+    .soft-amber {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .soft-green {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .soft-purple {
+        background: #f3e8ff;
+        color: #7e22ce;
+    }
+
+    .soft-red {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .empty-state {
+        color: #94a3b8;
+        text-align: center;
+        padding: 18px 12px !important;
+        font-size: 11px;
+    }
+
+    .section-gap {
+        margin-bottom: 16px;
+    }
+
+    .gift-zone .panel:first-child {
+        min-height: 100%;
+    }
+
+    .gift-zone .panel:last-child .table {
+        table-layout: fixed;
+    }
+
+        .gift-zone .panel:last-child .table th:nth-child(1),
+        .gift-zone .panel:last-child .table td:nth-child(1) {
+            width: 18%;
+        }
+
+        .gift-zone .panel:last-child .table th:nth-child(4),
+        .gift-zone .panel:last-child .table td:nth-child(4) {
+            width: 8%;
+            text-align: center;
+        }
+
+        .gift-zone .panel:last-child .table th:nth-child(6),
+        .gift-zone .panel:last-child .table td:nth-child(6) {
+            width: 14%;
+        }
+
+        .gift-zone .panel:last-child .table th:nth-child(7),
+        .gift-zone .panel:last-child .table td:nth-child(7) {
+            width: 13%;
+        }
+
+    .attention-grid .panel {
+        min-height: 230px;
+    }
+
+    .attention-grid .empty-state {
+        padding: 16px 12px !important;
+    }
+
+    @@media (max-width: 1250px) {
+        .overview-grid {
+            grid-template-columns: repeat(2,minmax(0,1fr));
+        }
+
+        .secondary-kpis {
+            grid-template-columns: repeat(2,minmax(0,1fr));
+        }
+
+        .insights-grid,
+        .gift-zone,
+        .attention-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 800px) {
+        .performance-strip {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 620px) {
+        .dashboard-hero {
+            padding: 20px;
+        }
+
+        .dashboard-title {
+            font-size: 21px;
+        }
+
+        .overview-grid,
+        .secondary-kpis,
+        .gift-summary-top {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="cc-dashboard">
+
+    <!-- Hero -->
+    <div class="dashboard-hero">
+
+        <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap position-relative"
+             style="z-index:1;">
+
+            <div>
+                <div class="dashboard-title">
+                    <i class="bi bi-speedometer2 ms-1"></i>
+                    لوحة متابعة خدمة العملاء
+                </div>
+
+                <div class="dashboard-subtitle">
+                    نظرة إدارية مركزة على حجم الحالات، سرعة الاستجابة، الحالات التي تحتاج تدخلًا، وحركة هدايا إرضاء العملاء.
+                </div>
+            </div>
+
+            <div class="dashboard-actions">
+
+                <a asp-action="Index"
+                   class="btn btn-outline-light">
+                    <i class="bi bi-inboxes ms-1"></i>
+                    مركز المتابعة
+                </a>
+
+                <a asp-action="Create"
+                   class="btn btn-light text-primary">
+                    <i class="bi bi-plus-circle ms-1"></i>
+                    فتح تذكرة جديدة
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Date filter -->
+    <div class="panel filter-panel">
+
+        <div class="panel-header">
+            <div>
+                <div class="panel-title">
+                    <i class="bi bi-calendar-range"></i>
+                    فترة المتابعة
+                </div>
+                <div class="panel-subtitle">
+                    جميع الأرقام والبيانات بالأسفل تتأثر بالفترة المختارة.
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-body">
+
+            <form method="get"
+                  class="row g-3 align-items-end">
+
+                <div class="col-lg-4 col-md-5">
+                    <label class="form-label">من تاريخ</label>
+                    <input type="date"
+                           name="fromDate"
+                           value="@ViewBag.FromDate?.ToString("yyyy-MM-dd")"
+                           class="form-control" />
+                </div>
+
+                <div class="col-lg-4 col-md-5">
+                    <label class="form-label">إلى تاريخ</label>
+                    <input type="date"
+                           name="toDate"
+                           value="@ViewBag.ToDate?.ToString("yyyy-MM-dd")"
+                           class="form-control" />
+                </div>
+
+                <div class="col-lg-4 col-md-2 d-flex gap-2 flex-wrap">
+                    <button class="btn btn-dark">
+                        <i class="bi bi-funnel ms-1"></i>
+                        تطبيق
+                    </button>
+
+                    <a asp-action="Dashboard"
+                       class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-counterclockwise ms-1"></i>
+                        مسح
+                    </a>
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <div class="panel-subtitle mb-2 fw-bold text-uppercase">
+        Operational Overview
+    </div>
+
+    <!-- Main overview -->
+    <div class="overview-grid">
+
+        <div class="overview-card primary">
+            <div>
+                <div class="overview-label">إجمالي التذاكر</div>
+                <div class="overview-value">@Model.TotalTickets.ToString("N0")</div>
+                <div class="overview-note">إجمالي الحالات في الفترة الحالية</div>
+            </div>
+            <div class="overview-icon">
+                <i class="bi bi-ticket-perforated"></i>
+            </div>
+        </div>
+
+        <div class="overview-card">
+            <div>
+                <div class="overview-label">الحالات المفتوحة</div>
+                <div class="overview-value">@Model.OpenTickets.ToString("N0")</div>
+                <div class="overview-note">@openRate.ToString("N1")% من إجمالي التذاكر</div>
+            </div>
+            <div class="overview-icon">
+                <i class="bi bi-folder2-open"></i>
+            </div>
+        </div>
+
+        <div class="overview-card alert-card">
+            <div>
+                <div class="overview-label">حالات حرجة</div>
+                <div class="overview-value">@Model.CriticalTickets.ToString("N0")</div>
+                <div class="overview-note">تحتاج أولوية متابعة أعلى</div>
+            </div>
+            <div class="overview-icon">
+                <i class="bi bi-shield-exclamation"></i>
+            </div>
+        </div>
+
+        <div class="overview-card danger-card">
+            <div>
+                <div class="overview-label">متأخرة عن موعد الحل</div>
+                <div class="overview-value">@Model.OverdueTickets.ToString("N0")</div>
+                <div class="overview-note">تجاوزت زمن الحل المستهدف</div>
+            </div>
+            <div class="overview-icon">
+                <i class="bi bi-alarm"></i>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Secondary KPIs -->
+    <div class="secondary-kpis">
+
+        <div class="mini-kpi">
+            <div class="mini-label">حالات جديدة</div>
+            <div class="mini-value">@Model.NewTickets.ToString("N0")</div>
+            <div class="mini-caption">لم يبدأ التعامل عليها بعد</div>
+        </div>
+
+        <div class="mini-kpi">
+            <div class="mini-label">قيد العمل</div>
+            <div class="mini-value">@Model.InProgressTickets.ToString("N0")</div>
+            <div class="mini-caption">يتم التعامل معها حاليًا</div>
+        </div>
+
+        <div class="mini-kpi">
+            <div class="mini-label">تم حلها / إغلاقها</div>
+            <div class="mini-value">@((Model.ResolvedTickets + Model.ClosedTickets).ToString("N0"))</div>
+            <div class="mini-caption">@resolvedRate.ToString("N1")% من الإجمالي</div>
+        </div>
+
+        <div class="mini-kpi">
+            <div class="mini-label">متابعة مستحقة</div>
+            <div class="mini-value">@Model.FollowUpDueTickets.ToString("N0")</div>
+            <div class="mini-caption">تحتاج اتصال أو إجراء متابعة</div>
+        </div>
+
+    </div>
+
+    <div class="panel-subtitle mb-2 fw-bold text-uppercase">
+        Service Performance
+    </div>
+
+    <!-- Performance -->
+    <div class="performance-strip">
+
+        <div class="performance-card">
+            <div>
+                <div class="performance-label">متوسط زمن حل التذكرة</div>
+                <div class="performance-value">
+                    @Model.AverageResolutionHours.ToString("N2")
+                    <span class="fs-6">ساعة</span>
+                </div>
+            </div>
+            <div class="performance-icon">
+                <i class="bi bi-stopwatch"></i>
+            </div>
+        </div>
+
+        <div class="performance-card">
+            <div>
+                <div class="performance-label">الالتزام بموعد الحل</div>
+                <div class="performance-value">
+                    @Model.SlaCompliancePercentage.ToString("N2")%
+                </div>
+            </div>
+            <div class="performance-icon">
+                <i class="bi bi-check2-circle"></i>
+            </div>
+        </div>
+
+        <div class="performance-card">
+            <div>
+                <div class="performance-label">الالتزام بموعد أول رد</div>
+                <div class="performance-value">
+                    @Model.FirstResponseCompliancePercentage.ToString("N2")%
+                </div>
+            </div>
+            <div class="performance-icon">
+                <i class="bi bi-reply"></i>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="panel-subtitle mb-2 fw-bold text-uppercase">
+        Operational Insights
+    </div>
+
+    <!-- Operational insights -->
+    <div class="insights-grid">
+
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="bi bi-tags"></i>
+                    حسب التصنيف
+                </div>
+            </div>
+
+            <div class="panel-body">
+                @if (!hasAnyCategory)
+                {
+                    <div class="empty-state">لا توجد بيانات في الفترة الحالية.</div>
+                }
+                else
+                {
+                    @foreach (var item in Model.ByCategory)
+                    {
+                        <div class="breakdown-item">
+                            <div class="breakdown-row">
+                                <span>@CategoryText(item.Name)</span>
+                                <strong>@item.Count</strong>
+                            </div>
+
+                            <div class="progress">
+                                <div class="progress-bar"
+                                     style="width:@item.Percentage%">
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="bi bi-chat-dots"></i>
+                    حسب مصدر التواصل
+                </div>
+            </div>
+
+            <div class="panel-body">
+                @if (!hasAnySource)
+                {
+                    <div class="empty-state">لا توجد بيانات في الفترة الحالية.</div>
+                }
+                else
+                {
+                    @foreach (var item in Model.BySource)
+                    {
+                        <div class="breakdown-item">
+                            <div class="breakdown-row">
+                                <span>@SourceText(item.Name)</span>
+                                <strong>@item.Count</strong>
+                            </div>
+
+                            <div class="progress">
+                                <div class="progress-bar"
+                                     style="width:@item.Percentage%">
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="bi bi-building"></i>
+                    حسب القسم المسؤول
+                </div>
+            </div>
+
+            <div class="panel-body">
+                @if (!hasAnyDepartment)
+                {
+                    <div class="empty-state">لا توجد بيانات في الفترة الحالية.</div>
+                }
+                else
+                {
+                    @foreach (var item in Model.ByDepartment)
+                    {
+                        <div class="breakdown-item">
+                            <div class="breakdown-row">
+                                <span>@DepartmentText(item.Name)</span>
+                                <strong>@item.Count</strong>
+                            </div>
+
+                            <div class="progress">
+                                <div class="progress-bar"
+                                     style="width:@item.Percentage%">
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+    </div>
+
+    <div class="panel-subtitle mb-2 fw-bold text-uppercase">
+        Customer Recovery
+    </div>
+
+    <!-- Gifts -->
+    <div class="gift-zone">
+
+        <div class="panel gift-summary-panel">
+
+            <div class="panel-header">
+                <div>
+                    <div class="panel-title">
+                        <i class="bi bi-gift"></i>
+                        هدايا إرضاء العملاء
+                    </div>
+                    <div class="panel-subtitle">
+                        ملخص حركة المنتجات المصروفة كإجراء لإرضاء العميل.
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-body">
+
+                <div class="gift-summary-top">
+
+                    <div class="gift-number-card">
+                        <div class="gift-number-label">إجمالي المنتجات المصروفة</div>
+                        <div class="gift-number-value">@Model.TotalGiftQuantity.ToString("N0")</div>
+                    </div>
+
+                    <div class="gift-number-card">
+                        <div class="gift-number-label">تذاكر حصلت على هدايا</div>
+                        <div class="gift-number-value">@Model.TicketsWithGifts.ToString("N0")</div>
+                    </div>
+
+                </div>
+
+                <div class="panel-title mb-3">
+                    <i class="bi bi-bar-chart"></i>
+                    أكثر المنتجات صرفًا
+                </div>
+
+                @if (!hasGiftProducts)
+                {
+                    <div class="empty-state">
+                        لم يتم تسجيل أي هدايا في الفترة الحالية.
+                    </div>
+                }
+                else
+                {
+                    @foreach (var item in Model.TopGiftProducts)
+                    {
+                        <div class="breakdown-item">
+                            <div class="breakdown-row">
+                                <span>@item.Name</span>
+                                <strong>@item.Count</strong>
+                            </div>
+
+                            <div class="progress">
+                                <div class="progress-bar"
+                                     style="width:@item.Percentage%">
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+
+            </div>
+
+        </div>
+
+        <div class="panel">
+
+            <div class="panel-header">
+                <div>
+                    <div class="panel-title">
+                        <i class="bi bi-clock-history"></i>
+                        آخر الهدايا المسجلة
+                    </div>
+                    <div class="panel-subtitle">
+                        آخر إجراءات الهدايا المسجلة على التذاكر.
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>رقم التذكرة</th>
+                            <th>العميل</th>
+                            <th>المنتج</th>
+                            <th>الكمية</th>
+                            <th>المستلم</th>
+                            <th>بواسطة</th>
+                            <th>التاريخ</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @if (!hasRecentGifts)
+                        {
+                            <tr>
+                                <td colspan="7" class="empty-state">
+                                    لا توجد هدايا مسجلة في الفترة الحالية.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var gift in Model.RecentGifts)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-action="Details"
+                                           asp-route-id="@gift.TicketId"
+                                           class="ticket-link">
+                                            @gift.TicketNumber
+                                        </a>
+                                    </td>
+
+                                    <td>@gift.CustomerName</td>
+
+                                    <td class="fw-bold">@gift.ProductName</td>
+
+                                    <td>
+                                        <span class="soft-badge soft-purple">
+                                            @gift.Quantity
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        @(string.IsNullOrWhiteSpace(gift.RecipientName)
+                                                                        ? gift.CustomerName
+                                                                        : gift.RecipientName)
+                            </td>
+
+                                    <td>@gift.CreatedByUserName</td>
+
+                                    <td>
+                                        @gift.CreatedAt.ToLocalTime().ToString("dd/MM HH:mm")
+                                    </td>
+                                </tr>
+                                                }
+                        }
+                    </tbody>
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="panel-subtitle mb-2 fw-bold text-uppercase">
+        Needs Attention
+    </div>
+
+    <!-- Attention -->
+    <div class="attention-grid">
+
+        <div class="panel">
+
+            <div class="panel-header">
+                <div>
+                    <div class="panel-title">
+                        <i class="bi bi-shield-exclamation"></i>
+                        الحالات الحرجة المفتوحة
+                    </div>
+                    <div class="panel-subtitle">
+                        الحالات التي تحتاج متابعة إدارية أسرع.
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>رقم التذكرة</th>
+                            <th>العميل</th>
+                            <th>الحالة</th>
+                            <th>مستوى الخدمة</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @if (!Model.CriticalOpenTickets.Any())
+                        {
+                            <tr>
+                                <td colspan="4" class="empty-state">
+                                    لا توجد حالات حرجة مفتوحة حاليًا.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.CriticalOpenTickets)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-action="Details"
+                                           asp-route-id="@item.Id"
+                                           class="ticket-link">
+                                            @item.TicketNumber
+                                        </a>
+                                    </td>
+
+                                    <td>@item.CustomerName</td>
+
+                                    <td>
+                                        <span class="soft-badge @StatusClass(item.Status)">
+                                            @StatusText(item.Status)
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        @if (item.IsOverdue)
+                                        {
+                                            <span class="soft-badge soft-red">
+                                                <i class="bi bi-exclamation-triangle-fill"></i>
+                                                متأخرة
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="soft-badge soft-green">
+                                                <i class="bi bi-check-circle-fill"></i>
+                                                ضمن الوقت
+                                            </span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+
+                    </tbody>
+                </table>
+
+            </div>
+
+        </div>
+
+        <div class="panel">
+
+            <div class="panel-header">
+                <div>
+                    <div class="panel-title">
+                        <i class="bi bi-alarm"></i>
+                        التذاكر المتأخرة
+                    </div>
+                    <div class="panel-subtitle">
+                        تجاوزت موعد الحل المستهدف في الفترة الحالية.
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>رقم التذكرة</th>
+                            <th>العميل</th>
+                            <th>القسم المسؤول</th>
+                            <th>موعد الحل</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @if (!Model.OverdueItems.Any())
+                        {
+                            <tr>
+                                <td colspan="4" class="empty-state">
+                                    لا توجد تذاكر متأخرة في الفترة الحالية.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.OverdueItems)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-action="Details"
+                                           asp-route-id="@item.Id"
+                                           class="ticket-link">
+                                            @item.TicketNumber
+                                        </a>
+                                    </td>
+
+                                    <td>@item.CustomerName</td>
+
+                                    <td>@DepartmentText(item.AssignedDepartmentName)</td>
+
+                                    <td>
+                                        @(
+                                                                        item.ResolutionDueAt.HasValue
+                                                                        ? item.ResolutionDueAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                                                        : "—"
+                                                                        )
+                                </td>
+                            </tr>
+                                                }
+                        }
+
+                    </tbody>
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

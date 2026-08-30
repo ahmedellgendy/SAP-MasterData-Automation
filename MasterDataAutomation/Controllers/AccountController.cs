@@ -60,26 +60,7 @@ public class AccountController : Controller
             CookieAuthenticationDefaults.AuthenticationScheme,
             principal);
 
-        return userRole switch
-        {
-            "Admin" => RedirectToAction("Index", "ManagerDashboard"),
-
-            "Manager" => RedirectToAction("Index", "ManagerDashboard"),
-
-            "Sales" => RedirectToAction("Index", "SalesDashboard"),
-
-            "AccountsUser" => RedirectToAction("Index", "ProductRequests"),
-
-            "AccountsManager" => RedirectToAction("Index", "ProductAccountsManager"),
-
-            "ExecutiveManager" => RedirectToAction("Index", "ProductExecutiveManager"),
-
-            "Executive Manager" => RedirectToAction("Index", "SalesAnalyticsDashboard"),
-
-            "CEO" => RedirectToAction("Index", "SalesAnalyticsDashboard"),
-
-            _ => RedirectToAction("AccessDenied", "Account")
-        };
+        return RedirectToHomeByRole(userRole);
     }
 
     [HttpPost]
@@ -94,6 +75,38 @@ public class AccountController : Controller
     [HttpGet]
     public IActionResult AccessDenied()
     {
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            var role =
+                User.FindFirstValue(
+                    ClaimTypes.Role)
+                ?.Trim()
+                ?? string.Empty;
+
+            return RedirectToHomeByRole(role);
+        }
+
         return View();
+    }
+
+    private IActionResult RedirectToHomeByRole(string role)
+    {
+        return role switch
+        {
+            "Admin" => RedirectToAction("Index", "ManagerDashboard"),
+            "Manager" => RedirectToAction("Index", "ManagerDashboard"),
+            "Sales" => RedirectToAction("Index", "SalesDashboard"),
+            "AccountsUser" => RedirectToAction("Index", "ProductRequests"),
+            "AccountsManager" => RedirectToAction("Index", "ProductAccountsManager"),
+            "ExecutiveManager" => RedirectToAction("Index", "ProductExecutiveManager"),
+            "Executive Manager" => RedirectToAction("Index", "SalesAnalyticsDashboard"),
+            "CEO" => RedirectToAction("Index", "SalesAnalyticsDashboard"),
+
+            "ComplaintAgent" => RedirectToAction("Index", "CustomerCare"),
+            "ComplaintSupervisor" => RedirectToAction("Dashboard", "CustomerCare"),
+            "ComplaintManager" => RedirectToAction("Dashboard", "CustomerCare"),
+
+            _ => RedirectToAction("AccessDenied", "Account")
+        };
     }
 }

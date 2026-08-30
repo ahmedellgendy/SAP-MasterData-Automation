@@ -2,6 +2,7 @@ using MasterDataAutomation.Application.Configuration;
 using MasterDataAutomation.Application.Interfaces.Repositories;
 using MasterDataAutomation.Application.Interfaces.Services;
 using MasterDataAutomation.Application.Interfaces.Validators;
+using MasterDataAutomation.Application.Modules.CustomerCare.Interfaces;
 using MasterDataAutomation.Application.Modules.CustomerModification.Interfaces;
 using MasterDataAutomation.Application.Modules.ProductMaster.Interfaces;
 using MasterDataAutomation.Application.Modules.SalesAnalytics.Interfaces;
@@ -11,6 +12,7 @@ using MasterDataAutomation.Infrastructure.Data;
 using MasterDataAutomation.Infrastructure.DependencyInjection;
 using MasterDataAutomation.Infrastructure.Excel;
 using MasterDataAutomation.Infrastructure.Mapping;
+using MasterDataAutomation.Infrastructure.Modules.CustomerCare.Services;
 using MasterDataAutomation.Infrastructure.Modules.CustomerModification.Persistence;
 using MasterDataAutomation.Infrastructure.Modules.ProductMaster.Persistence;
 using MasterDataAutomation.Infrastructure.Modules.SalesAnalytics.Persistence;
@@ -19,7 +21,8 @@ using MasterDataAutomation.Infrastructure.Persistence;
 using MasterDataAutomation.Infrastructure.Services;
 using MasterDataAutomation.Infrastructure.Settings;
 using MasterDataAutomation.Infrastructure.Validators;
-
+using MasterDataAutomation.Application.Modules.CustomerCare.Interfaces;
+using MasterDataAutomation.Infrastructure.Modules.CustomerCare.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.Features;
@@ -244,6 +247,13 @@ namespace MasterDataAutomation
             builder.Services.AddScoped<
                 ISalesAnalyticsDataQualityRepository,
                 SalesAnalyticsDataQualityRepository>();
+
+            // =====================================================
+            // Customer Care
+            // =====================================================
+            builder.Services.AddScoped<
+                ICustomerCareTicketService,
+                CustomerCareTicketService>();
 
             // =====================================================
             // HTTP Context

@@ -4,6 +4,7 @@ using MasterDataAutomation.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MasterDataAutomation.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260830073634_SeedCustomerCareSlaPolicies")]
+    partial class SeedCustomerCareSlaPolicies
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1265,57 +1268,6 @@ namespace MasterDataAutomation.Infrastructure.Migrations
                     b.HasIndex("TicketId");
 
                     b.ToTable("CustomerCareTicketActions", (string)null);
-                });
-
-            modelBuilder.Entity("MasterDataAutomation.Domain.Modules.CustomerCare.Entities.CustomerCareTicketGift", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("CreatedByUserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("CreatedByUserName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("ProductName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<string>("RecipientName")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("RecipientPhone")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("TicketId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("TicketId");
-
-                    b.ToTable("CustomerCareTicketGifts", (string)null);
                 });
 
             modelBuilder.Entity("MasterDataAutomation.Infrastructure.Data.Entities.AppUserEntity", b =>
@@ -2595,17 +2547,6 @@ namespace MasterDataAutomation.Infrastructure.Migrations
                     b.Navigation("Ticket");
                 });
 
-            modelBuilder.Entity("MasterDataAutomation.Domain.Modules.CustomerCare.Entities.CustomerCareTicketGift", b =>
-                {
-                    b.HasOne("MasterDataAutomation.Domain.Modules.CustomerCare.Entities.CustomerCareTicket", "Ticket")
-                        .WithMany("Gifts")
-                        .HasForeignKey("TicketId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Ticket");
-                });
-
             modelBuilder.Entity("MasterDataAutomation.Domain.Modules.CustomerCare.Entities.CustomerCareCategory", b =>
                 {
                     b.Navigation("SubCategories");
@@ -2618,8 +2559,6 @@ namespace MasterDataAutomation.Infrastructure.Migrations
                     b.Navigation("AssignmentHistory");
 
                     b.Navigation("Attachments");
-
-                    b.Navigation("Gifts");
 
                     b.Navigation("QualityDetail");
 

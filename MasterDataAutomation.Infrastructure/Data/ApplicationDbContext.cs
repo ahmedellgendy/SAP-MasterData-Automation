@@ -4,6 +4,7 @@ using MasterDataAutomation.Infrastructure.Data.Entities.Products;
 using MasterDataAutomation.Infrastructure.Data.Entities.SalesAnalytics;
 using MasterDataAutomation.Infrastructure.Data.Entities.System;
 using Microsoft.EntityFrameworkCore;
+using MasterDataAutomation.Domain.Modules.CustomerCare.Entities;
 
 namespace MasterDataAutomation.Infrastructure.Data;
 
@@ -40,9 +41,23 @@ public class ApplicationDbContext : DbContext
     public DbSet<SalesAnalyticsMtdSalesReportEntity> SalesAnalyticsMtdSalesReports { get; set; }
     public DbSet<SalesAnalyticsMtdVisitReportEntity> SalesAnalyticsMtdVisitReports { get; set; }
 
+    // Customer Care Dbsets
+    public DbSet<CustomerCareTicket> CustomerCareTickets { get; set; }
+    public DbSet<CustomerCareCategory> CustomerCareCategories { get; set; }
+    public DbSet<CustomerCareSubCategory> CustomerCareSubCategories { get; set; }
+    public DbSet<CustomerCareTicketAction> CustomerCareTicketActions { get; set; }
+    public DbSet<CustomerCareAssignmentHistory> CustomerCareAssignmentHistories { get; set; }
+    public DbSet<CustomerCareStatusHistory> CustomerCareStatusHistories { get; set; }
+    public DbSet<CustomerCareQualityDetail> CustomerCareQualityDetails { get; set; }
+    public DbSet<CustomerCareAttachment> CustomerCareAttachments { get; set; }
+    public DbSet<CustomerCareSlaPolicy> CustomerCareSlaPolicies { get; set; }
+    public DbSet<CustomerCareDepartment> CustomerCareDepartments { get; set; }
+    public DbSet<CustomerCareTicketGift> CustomerCareTicketGifts { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
         modelBuilder.Entity<DraftCustomerEntity>(entity =>
         {
@@ -419,7 +434,7 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(x => x.BranchCode);
             entity.HasIndex(x => x.InternalCode);
             entity.HasIndex(x => x.UploadBatchId);
-        }); 
+        });
         modelBuilder.Entity<SalesRepRouteAssignmentEntity>(entity =>
         {
             entity.ToTable("SalesRepRouteAssignments");

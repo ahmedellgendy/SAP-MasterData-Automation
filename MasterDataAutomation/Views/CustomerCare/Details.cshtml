@@ -1,0 +1,1979 @@
+﻿@model MasterDataAutomation.Application.Modules.CustomerCare.Dtos.CustomerCareTicketDetailsDto
+@using MasterDataAutomation.Application.Modules.CustomerCare.Dtos
+@using MasterDataAutomation.Domain.Modules.CustomerCare.Enums
+
+@{
+    ViewData["Title"] = $"تفاصيل التذكرة {Model.TicketNumber}";
+
+    var departments =
+        ViewBag.Departments as List<CustomerCareLookupDto>
+        ?? new List<CustomerCareLookupDto>();
+
+    var isResolved =
+        Model.Status == CustomerCareTicketStatus.Resolved;
+
+    var isClosed =
+        Model.Status == CustomerCareTicketStatus.Closed;
+
+    var isFinal =
+        isResolved ||
+        isClosed ||
+        Model.Status == CustomerCareTicketStatus.Cancelled ||
+        Model.Status == CustomerCareTicketStatus.Rejected;
+
+    var canManage =
+        User.IsInRole("ComplaintSupervisor") ||
+        User.IsInRole("ComplaintManager") ||
+        User.IsInRole("Admin");
+
+    var canClose =
+        User.IsInRole("ComplaintManager") ||
+        User.IsInRole("Admin");
+
+    string PriorityClass(CustomerCareTicketPriority priority)
+    {
+        return priority switch
+        {
+            CustomerCareTicketPriority.Critical => "priority-critical",
+            CustomerCareTicketPriority.High => "priority-high",
+            CustomerCareTicketPriority.Normal => "priority-normal",
+            _ => "priority-low"
+        };
+    }
+
+    string PriorityText(CustomerCareTicketPriority priority)
+    {
+        return priority switch
+        {
+            CustomerCareTicketPriority.Critical => "حرجة",
+            CustomerCareTicketPriority.High => "عالية",
+            CustomerCareTicketPriority.Normal => "عادية",
+            CustomerCareTicketPriority.Low => "منخفضة",
+            _ => priority.ToString()
+        };
+    }
+
+    string StatusClass(CustomerCareTicketStatus status)
+    {
+        return status switch
+        {
+            CustomerCareTicketStatus.New => "status-new",
+            CustomerCareTicketStatus.Assigned => "status-assigned",
+            CustomerCareTicketStatus.InProgress => "status-progress",
+            CustomerCareTicketStatus.WaitingCustomer => "status-waiting",
+            CustomerCareTicketStatus.WaitingDepartment => "status-waiting",
+            CustomerCareTicketStatus.WaitingBranch => "status-waiting",
+            CustomerCareTicketStatus.Resolved => "status-resolved",
+            CustomerCareTicketStatus.Closed => "status-closed",
+            CustomerCareTicketStatus.Reopened => "status-reopened",
+            CustomerCareTicketStatus.Cancelled => "status-cancelled",
+            CustomerCareTicketStatus.Rejected => "status-rejected",
+            _ => "status-new"
+        };
+    }
+
+    string StatusText(CustomerCareTicketStatus status)
+    {
+        return status switch
+        {
+            CustomerCareTicketStatus.New => "جديدة",
+            CustomerCareTicketStatus.Assigned => "تم الإسناد",
+            CustomerCareTicketStatus.InProgress => "قيد العمل",
+            CustomerCareTicketStatus.WaitingCustomer => "بانتظار العميل",
+            CustomerCareTicketStatus.WaitingDepartment => "بانتظار القسم",
+            CustomerCareTicketStatus.WaitingBranch => "بانتظار الفرع",
+            CustomerCareTicketStatus.Resolved => "تم الحل",
+            CustomerCareTicketStatus.Closed => "مغلقة",
+            CustomerCareTicketStatus.Reopened => "أعيد فتحها",
+            CustomerCareTicketStatus.Cancelled => "ملغاة",
+            CustomerCareTicketStatus.Rejected => "مرفوضة",
+            _ => status.ToString()
+        };
+    }
+
+    string SourceText(CustomerCareTicketSource source)
+    {
+        return source switch
+        {
+            CustomerCareTicketSource.Call => "مكالمة",
+            CustomerCareTicketSource.Facebook => "فيسبوك",
+            CustomerCareTicketSource.Instagram => "إنستجرام",
+            CustomerCareTicketSource.WhatsApp => "واتساب",
+            CustomerCareTicketSource.CustomerServiceSystem => "نظام خدمة العملاء",
+            CustomerCareTicketSource.Other => "أخرى",
+            _ => source.ToString()
+        };
+    }
+
+    string TypeText(CustomerCareTicketType type)
+    {
+        return type switch
+        {
+            CustomerCareTicketType.Complaint => "شكوى",
+            CustomerCareTicketType.Request => "طلب",
+            CustomerCareTicketType.Inquiry => "استفسار",
+            CustomerCareTicketType.Transfer => "تحويل",
+            _ => type.ToString()
+        };
+    }
+
+    string CategoryText(string? value)
+    {
+        return value switch
+        {
+            "Sales & Representative" => "المبيعات والمندوب",
+            "Delivery & Supply" => "التوريد والتسليم",
+            "Product Replacement" => "استبدال المنتجات",
+            "Freezer & Maintenance" => "الثلاجات والصيانة",
+            "Product Quality" => "جودة المنتج",
+            "Commercial Requests" => "الطلبات التجارية",
+            "General Inquiry" => "استفسارات عامة",
+            "Other" => "أخرى",
+            null or "" => "—",
+            _ => value
+        };
+    }
+
+    string SubCategoryText(string? value)
+    {
+        return value switch
+        {
+            "Sales Rep Complaint" => "شكوى من المندوب",
+            "Supervisor Complaint" => "شكوى من المشرف",
+            "Sales Rep No Response" => "المندوب لا يرد",
+            "No Delivery" => "لم يتم التسليم",
+            "Refused Supply" => "رفض التوريد",
+            "Insufficient Quantity" => "كمية غير كافية",
+            "Delivery Delay" => "تأخير في التسليم",
+            "Replacement Refused" => "رفض الاستبدال",
+            "Replacement Delayed" => "تأخير الاستبدال",
+            "Freezer Request" => "طلب ثلاجة",
+            "Freezer Maintenance" => "صيانة ثلاجة",
+            "Cooling Failure" => "عطل تبريد",
+            "Freezer Retrieval" => "استرجاع ثلاجة",
+            "Foreign Object" => "جسم غريب داخل المنتج",
+            "Hair in Product" => "شعر داخل المنتج",
+            "Plastic in Product" => "بلاستيك داخل المنتج",
+            "Metal or Wire in Product" => "معدن أو سلك داخل المنتج",
+            "Taste Issue" => "مشكلة في الطعم",
+            "Melted Product" => "منتج ذائب",
+            "Ice Crystals" => "بلورات ثلج",
+            "Packaging Issue" => "مشكلة في العبوة",
+            "Missing Production Date" => "تاريخ الإنتاج غير موجود",
+            "Missing Product Component" => "مكوّن ناقص في المنتج",
+            "Other Quality Issue" => "مشكلة جودة أخرى",
+            "New Customer Request" => "طلب عميل جديد",
+            "Contract Request" => "طلب تعاقد",
+            "Pricing Inquiry" => "استفسار عن الأسعار",
+            "General Information" => "معلومات عامة",
+            "Call Transfer" => "تحويل مكالمة",
+            "Other" => "أخرى",
+            null or "" => "—",
+            _ => value
+        };
+    }
+
+    string DepartmentText(string? value)
+    {
+        return value switch
+        {
+            "Customer Care" => "خدمة العملاء",
+            "Quality" => "الجودة",
+            "Sales" => "المبيعات",
+            "Branches" => "الفروع",
+            "Distribution" => "التوزيع",
+            "Management" => "الإدارة",
+            null or "" => "غير مسند",
+            _ => value
+        };
+    }
+
+    string ActionIcon(string actionType)
+    {
+        return actionType switch
+        {
+            "Created" => "bi-plus-circle",
+            "Assigned" => "bi-person-check",
+            "StatusChanged" => "bi-arrow-repeat",
+            "Resolved" => "bi-check-circle",
+            "Closed" => "bi-lock",
+            "Reopened" => "bi-arrow-counterclockwise",
+            "CustomerCalled" => "bi-telephone",
+            "NoAnswer" => "bi-telephone-x",
+            "FollowUp" => "bi-calendar-check",
+            "GiftAdded" => "bi-gift",
+            "QualityImageUploaded" => "bi-image",
+            "DepartmentContacted" => "bi-building-check",
+            "InternalNote" => "bi-sticky",
+            _ => "bi-dot"
+        };
+    }
+
+    string ActionText(string actionType)
+    {
+        return actionType switch
+        {
+            "Created" => "تم إنشاء التذكرة",
+            "Assigned" => "تم إسناد التذكرة",
+            "StatusChanged" => "تم تغيير الحالة",
+            "Resolved" => "تم حل التذكرة",
+            "Closed" => "تم إغلاق التذكرة",
+            "Reopened" => "تمت إعادة فتح التذكرة",
+            "CustomerCalled" => "تم الاتصال بالعميل",
+            "NoAnswer" => "العميل لم يرد",
+            "FollowUp" => "متابعة",
+            "GiftAdded" => "تم تسجيل هدية للعميل",
+            "QualityImageUploaded" => "تم رفع صورة لشكوى الجودة",
+            "DepartmentContacted" => "تم التواصل مع القسم",
+            "InternalNote" => "ملاحظة داخلية",
+            _ => actionType
+        };
+    }
+
+    string ActionDescriptionText(string? value)
+    {
+        return value switch
+        {
+            "Ticket created." => "تم إنشاء التذكرة.",
+            "Ticket created and assigned." => "تم إنشاء التذكرة وإسنادها.",
+            "Initial ticket assignment." => "الإسناد الأولي للتذكرة.",
+            "Ticket assignment updated." => "تم تحديث إسناد التذكرة.",
+            "Ticket closed." => "تم إغلاق التذكرة.",
+            null or "" => "",
+            _ => value
+        };
+    }
+
+    var previousTickets =
+        Model.CustomerHistory
+            .Where(x => x.Id != Model.Id)
+            .Take(5)
+            .ToList();
+}
+
+<style>
+    .ticket-workspace {
+        max-width: 1600px;
+        margin: 0 auto;
+        font-family: inherit;
+    }
+
+    .ticket-hero {
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(135deg, #0f172a 0%, #172554 48%, #1d4ed8 100%);
+        color: #fff;
+        border-radius: 20px;
+        padding: 24px 26px;
+        margin-bottom: 20px;
+        box-shadow: 0 16px 36px rgba(15, 23, 42, .16);
+    }
+
+        .ticket-hero::after {
+            content: "";
+            position: absolute;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .06);
+            left: -70px;
+            top: -110px;
+        }
+
+    .ticket-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: rgba(255,255,255,.86);
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+        .ticket-back:hover {
+            color: #fff;
+        }
+
+    .ticket-number {
+        font-size: 29px;
+        font-weight: 900;
+        letter-spacing: .2px;
+        direction: ltr;
+        display: inline-block;
+    }
+
+    .ticket-meta {
+        color: rgba(255,255,255,.72);
+        font-size: 12px;
+        margin-top: 3px;
+    }
+
+    .badge-soft {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        border-radius: 999px;
+        padding: 7px 11px;
+        font-size: 11px;
+        font-weight: 900;
+        white-space: nowrap;
+    }
+
+    .priority-critical {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .priority-high {
+        background: #ffedd5;
+        color: #c2410c;
+    }
+
+    .priority-normal {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+
+    .priority-low {
+        background: #e2e8f0;
+        color: #475569;
+    }
+
+    .status-new {
+        background: #e2e8f0;
+        color: #334155;
+    }
+
+    .status-assigned {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+
+    .status-progress {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-waiting {
+        background: #ffedd5;
+        color: #c2410c;
+    }
+
+    .status-resolved {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-closed {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-reopened {
+        background: #f3e8ff;
+        color: #7e22ce;
+    }
+
+    .status-cancelled,
+    .status-rejected {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .workspace-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.65fr) minmax(330px, .85fr);
+        gap: 18px;
+        align-items: start;
+    }
+
+    .workspace-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 17px;
+        box-shadow: 0 7px 22px rgba(15,23,42,.045);
+        margin-bottom: 16px;
+        overflow: hidden;
+    }
+
+    .workspace-card-header {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 14px 16px;
+        border-bottom: 1px solid #e5e7eb;
+        font-weight: 900;
+        color: #0f172a;
+        background: linear-gradient(180deg, #fff, #f8fafc);
+    }
+
+    .workspace-card-body {
+        padding: 16px;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0,1fr));
+        gap: 11px;
+    }
+
+    .info-box {
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        border-radius: 13px;
+        padding: 12px;
+        min-height: 67px;
+    }
+
+    .info-label {
+        font-size: 10px;
+        color: #64748b;
+        font-weight: 800;
+        margin-bottom: 5px;
+    }
+
+    .info-value {
+        font-weight: 850;
+        color: #0f172a;
+        font-size: 13px;
+        word-break: break-word;
+    }
+
+    .description-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 13px;
+        padding: 14px;
+        white-space: pre-wrap;
+        line-height: 1.85;
+        color: #334155;
+        font-size: 13px;
+    }
+
+    .empty-state {
+        text-align: center;
+        color: #94a3b8;
+        padding: 20px 10px;
+        font-size: 12px;
+    }
+
+    .history-item {
+        border: 1px solid #eef2f7 !important;
+        border-radius: 12px !important;
+        margin-bottom: 8px;
+        padding: 11px 12px !important;
+    }
+
+        .history-item:hover {
+            background: #f8fafc;
+        }
+
+    .timeline {
+        position: relative;
+        padding-right: 26px;
+    }
+
+        .timeline::before {
+            content: "";
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            bottom: 8px;
+            width: 2px;
+            background: #e2e8f0;
+        }
+
+    .timeline-item {
+        position: relative;
+        padding-bottom: 16px;
+    }
+
+    .timeline-dot {
+        position: absolute;
+        right: -24px;
+        top: 3px;
+        width: 19px;
+        height: 19px;
+        border-radius: 50%;
+        background: #1d4ed8;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 9px;
+        box-shadow: 0 0 0 4px #eff6ff;
+    }
+
+    .timeline-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 13px;
+        padding: 12px 13px;
+        background: #fff;
+    }
+
+    .timeline-title {
+        font-weight: 900;
+        color: #0f172a;
+        font-size: 13px;
+    }
+
+    .timeline-meta {
+        font-size: 10px;
+        color: #94a3b8;
+        margin-top: 3px;
+    }
+
+    .timeline-text {
+        font-size: 12px;
+        color: #475569;
+        margin-top: 8px;
+        line-height: 1.75;
+    }
+
+    .internal-note {
+        background: #fff7ed;
+        border-color: #fed7aa;
+    }
+
+    .action-panel {
+        display: grid;
+        gap: 12px;
+    }
+
+    .action-box {
+        border: 1px solid #e5e7eb;
+        border-radius: 13px;
+        padding: 13px;
+        background: #fff;
+    }
+
+    .action-title {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 900;
+        font-size: 12px;
+        margin-bottom: 10px;
+        color: #0f172a;
+    }
+
+    .sla-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .sla-good {
+        color: #166534;
+    }
+
+    .sla-danger {
+        color: #b91c1c;
+    }
+
+    .risk-box {
+        border-radius: 13px;
+        border: 1px solid #fecaca;
+        background: #fef2f2;
+        padding: 14px;
+        color: #991b1b;
+    }
+
+    .permission-note {
+        border-radius: 12px;
+        padding: 11px 12px;
+        background: #f8fafc;
+        color: #64748b;
+        border: 1px dashed #cbd5e1;
+        font-size: 12px;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 10px;
+        border-color: #dbe2ea;
+        font-size: 12px;
+        min-height: 40px;
+    }
+
+    textarea.form-control {
+        min-height: auto;
+    }
+
+    .btn {
+        border-radius: 10px;
+        font-weight: 800;
+        font-size: 12px;
+    }
+
+    .quality-evidence-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .quality-evidence-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        overflow: hidden;
+        background: #fff;
+    }
+
+    .quality-evidence-image-wrap {
+        position: relative;
+        aspect-ratio: 4 / 3;
+        background: #f8fafc;
+        overflow: hidden;
+    }
+
+    .quality-evidence-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform .2s ease;
+    }
+
+    .quality-evidence-image-wrap:hover .quality-evidence-image {
+        transform: scale(1.02);
+    }
+
+    .quality-evidence-open {
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15,23,42,.75);
+        color: #fff;
+        text-decoration: none;
+    }
+
+    .quality-evidence-body {
+        padding: 12px;
+    }
+
+    .quality-evidence-name {
+        font-size: 12px;
+        font-weight: 900;
+        color: #0f172a;
+        word-break: break-word;
+    }
+
+    .quality-evidence-meta {
+        font-size: 10px;
+        color: #94a3b8;
+        margin-top: 4px;
+        line-height: 1.6;
+    }
+
+    .quality-evidence-description {
+        margin-top: 9px;
+        padding: 9px 10px;
+        border-radius: 10px;
+        background: #f8fafc;
+        color: #475569;
+        font-size: 11px;
+        line-height: 1.7;
+    }
+
+    .quality-upload-box {
+        border: 1px dashed #93c5fd;
+        background: #eff6ff;
+        border-radius: 13px;
+        padding: 13px;
+        margin-top: 14px;
+    }
+
+    .quality-upload-title {
+        font-size: 12px;
+        font-weight: 900;
+        color: #1e3a8a;
+        margin-bottom: 10px;
+    }
+
+    @@media (max-width: 1050px) {
+        .quality-evidence-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .workspace-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 650px) {
+        .quality-evidence-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .ticket-hero {
+            padding: 19px;
+        }
+
+        .ticket-number {
+            font-size: 22px;
+        }
+
+        .info-grid,
+        .sla-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="ticket-workspace" dir="rtl">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success border-0 shadow-sm">
+            <i class="bi bi-check-circle-fill ms-1"></i>
+            @TempData["Success"]
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger border-0 shadow-sm">
+            <i class="bi bi-exclamation-triangle-fill ms-1"></i>
+            @TempData["Error"]
+        </div>
+    }
+
+    <div class="ticket-hero">
+
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+
+            <div class="position-relative" style="z-index:1;">
+
+                <a asp-action="Index" class="ticket-back">
+                    <i class="bi bi-arrow-right"></i>
+                    الرجوع إلى مركز المتابعة
+                </a>
+
+                <div class="ticket-number mt-2">
+                    @Model.TicketNumber
+                </div>
+
+                <div class="ticket-meta">
+                    تم الإنشاء في
+                    @Model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                </div>
+
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap position-relative" style="z-index:1;">
+
+                <span class="badge-soft @PriorityClass(Model.Priority)">
+                    <i class="bi bi-flag-fill"></i>
+                    أولوية @PriorityText(Model.Priority)
+                </span>
+
+                <span class="badge-soft @StatusClass(Model.Status)">
+                    <i class="bi bi-circle-fill" style="font-size:6px;"></i>
+                    @StatusText(Model.Status)
+                </span>
+
+                @if (Model.IsCritical)
+                {
+                    <span class="badge-soft priority-critical">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        حالة حرجة
+                    </span>
+                }
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="workspace-grid">
+
+        <div>
+
+            <!-- بيانات العميل -->
+            <div class="workspace-card">
+
+                <div class="workspace-card-header">
+                    <i class="bi bi-person-vcard"></i>
+                    بيانات العميل
+                </div>
+
+                <div class="workspace-card-body">
+
+                    <div class="info-grid">
+
+                        <div class="info-box">
+                            <div class="info-label">اسم العميل</div>
+                            <div class="info-value">@Model.CustomerName</div>
+                        </div>
+
+                        <div class="info-box">
+                            <div class="info-label">رقم الموبايل</div>
+                            <div class="info-value" dir="ltr">
+                                @(Model.CustomerPhone ?? "—")
+                            </div>
+                        </div>
+
+                        <div class="info-box">
+                            <div class="info-label">الربط بقاعدة العملاء</div>
+                            <div class="info-value">
+                                @(Model.CustomerId.HasValue ? $"مرتبط - رقم {Model.CustomerId}" : "غير مربوط بعميل")
+                            </div>
+                        </div>
+
+                        <div class="info-box">
+                            <div class="info-label">العنوان</div>
+                            <div class="info-value">
+                                @(Model.CustomerAddress ?? "—")
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- سجل العميل -->
+            <div class="workspace-card">
+
+                <div class="workspace-card-header">
+                    <i class="bi bi-clock-history"></i>
+                    سجل العميل السابق
+                </div>
+
+                <div class="workspace-card-body">
+
+                    @if (!previousTickets.Any())
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-inbox fs-4 d-block mb-2"></i>
+                            لا توجد تذاكر سابقة مسجلة لهذا العميل.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="list-group list-group-flush">
+
+                            @foreach (var item in previousTickets)
+                            {
+                                <a asp-action="Details"
+                                   asp-route-id="@item.Id"
+                                   class="list-group-item list-group-item-action history-item">
+
+                                    <div class="d-flex justify-content-between gap-3">
+
+                                        <div>
+                                            <strong dir="ltr" class="d-inline-block">
+                                                @item.TicketNumber
+                                            </strong>
+
+                                            <div class="small text-muted mt-1">
+                                                @CategoryText(item.CategoryName)
+                                                @if (!string.IsNullOrWhiteSpace(item.SubCategoryName))
+                                                {
+                                                    <span> - @SubCategoryText(item.SubCategoryName)</span>
+                                                }
+                                            </div>
+                                        </div>
+
+                                        <div class="text-end">
+                                            <span class="badge-soft @StatusClass(item.Status)">
+                                                @StatusText(item.Status)
+                                            </span>
+
+                                            <div class="small text-muted mt-1">
+                                                @item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+                                </a>
+                            }
+
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+
+            <!-- تفاصيل الحالة -->
+            <div class="workspace-card">
+
+                <div class="workspace-card-header">
+                    <i class="bi bi-ticket-detailed"></i>
+                    تفاصيل الحالة
+                </div>
+
+                <div class="workspace-card-body">
+
+                    <div class="info-grid mb-3">
+
+                        <div class="info-box">
+                            <div class="info-label">مصدر التواصل</div>
+                            <div class="info-value">@SourceText(Model.Source)</div>
+                        </div>
+
+                        <div class="info-box">
+                            <div class="info-label">نوع الحالة</div>
+                            <div class="info-value">@TypeText(Model.Type)</div>
+                        </div>
+
+                        <div class="info-box">
+                            <div class="info-label">التصنيف الرئيسي</div>
+                            <div class="info-value">@CategoryText(Model.CategoryName)</div>
+                        </div>
+
+                        <div class="info-box">
+                            <div class="info-label">التصنيف الفرعي</div>
+                            <div class="info-value">@SubCategoryText(Model.SubCategoryName)</div>
+                        </div>
+
+                    </div>
+
+                    <div class="info-label mb-2">وصف الحالة</div>
+                    <div class="description-box">
+                        @Model.Description
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- تفاصيل الجودة -->
+            @if (Model.QualityDetail != null)
+            {
+                <div class="workspace-card">
+
+                    <div class="workspace-card-header">
+                        <i class="bi bi-shield-exclamation"></i>
+                        تفاصيل شكوى الجودة
+                    </div>
+
+                    <div class="workspace-card-body">
+
+                        <div class="info-grid">
+
+                            <div class="info-box">
+                                <div class="info-label">المنتج</div>
+                                <div class="info-value">
+                                    @Model.QualityDetail.ProductName
+                                </div>
+                            </div>
+
+                            <div class="info-box">
+                                <div class="info-label">رقم التشغيلة</div>
+                                <div class="info-value">
+                                    @(Model.QualityDetail.BatchNumber ?? "—")
+                                </div>
+                            </div>
+
+                            <div class="info-box">
+                                <div class="info-label">تاريخ الإنتاج</div>
+                                <div class="info-value">
+                                    @(Model.QualityDetail.ProductionDate?.ToString("dd/MM/yyyy") ?? "—")
+                                </div>
+                            </div>
+
+                            <div class="info-box">
+                                <div class="info-label">تاريخ الصلاحية</div>
+                                <div class="info-value">
+                                    @(Model.QualityDetail.ExpiryDate?.ToString("dd/MM/yyyy") ?? "—")
+                                </div>
+                            </div>
+
+                            <div class="info-box">
+                                <div class="info-label">نوع مشكلة الجودة</div>
+                                <div class="info-value">
+                                    @(Model.QualityDetail.QualityIssueType ?? "—")
+                                </div>
+                            </div>
+
+                            <div class="info-box">
+                                <div class="info-label">حالة العينة</div>
+                                <div class="info-value">
+                                    @(
+                                                                    Model.QualityDetail.SampleRequired
+                                                                    ? (Model.QualityDetail.SampleCollected
+                                                                    ? "تم جمع العينة"
+                                                                    : "مطلوب جمع عينة")
+                                                                    : "لا توجد عينة مطلوبة"
+                                                                    )
+                                </div>
+                            </div>
+
+                            <div class="info-box">
+                                <div class="info-label">قرار قسم الجودة</div>
+                                <div class="info-value">
+                                    @(Model.QualityDetail.QualityDecision ?? "—")
+                                </div>
+                            </div>
+
+                            <div class="info-box">
+                                <div class="info-label">التعويض</div>
+                                <div class="info-value">
+                                    @(
+                                                                    string.IsNullOrWhiteSpace(Model.QualityDetail.CompensationType)
+                                                                    ? "—"
+                                                                    : Model.QualityDetail.CompensationType
+                                                                    )
+
+                                @if (Model.QualityDetail.CompensationQuantity.HasValue)
+                                    {
+                                        <span>
+                                            - الكمية:
+                                            @Model.QualityDetail.CompensationQuantity.Value.ToString("N2")
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.QualityDetail.QualityIssueDetails))
+                        {
+                            <div class="info-label mt-3 mb-2">تفاصيل مشكلة الجودة</div>
+                            <div class="description-box">
+                                @Model.QualityDetail.QualityIssueDetails
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Model.QualityDetail.CompensationNotes))
+                        {
+                            <div class="info-label mt-3 mb-2">ملاحظات التعويض</div>
+                            <div class="description-box">
+                                @Model.QualityDetail.CompensationNotes
+                            </div>
+                        }
+
+                        @if (Model.QualityDetail.HasHealthRisk ||
+                                            Model.QualityDetail.HasLegalRisk)
+                        {
+                            <div class="risk-box mt-3">
+
+                                <div class="fw-bold mb-2">
+                                    <i class="bi bi-exclamation-triangle-fill ms-1"></i>
+                                    تنبيه: حالة عالية الخطورة
+                                </div>
+
+                                <div>
+                                    <strong>خطر صحي:</strong>
+                                    @(Model.QualityDetail.HasHealthRisk ? "نعم" : "لا")
+                                </div>
+
+                                <div class="mt-1">
+                                    <strong>خطر قانوني:</strong>
+                                    @(Model.QualityDetail.HasLegalRisk ? "نعم" : "لا")
+                                </div>
+
+                                @if (!string.IsNullOrWhiteSpace(Model.QualityDetail.RiskNotes))
+                                {
+                                    <hr />
+                                    <strong>ملاحظات المخاطر:</strong>
+                                    <div class="mt-1">
+                                        @Model.QualityDetail.RiskNotes
+                                    </div>
+                                }
+
+                            </div>
+                        }
+
+                    </div>
+
+                </div>
+            }
+
+            <!-- صور ومرفقات شكوى الجودة -->
+            @if (Model.QualityDetail != null)
+            {
+                <div class="workspace-card">
+
+                    <div class="workspace-card-header">
+                        <i class="bi bi-images"></i>
+                        صور ومرفقات شكوى الجودة
+                    </div>
+
+                    <div class="workspace-card-body">
+
+                        @if (!Model.Attachments.Any())
+                        {
+                            <div class="empty-state">
+                                <i class="bi bi-image fs-4 d-block mb-2"></i>
+                                لا توجد صور مرفوعة لهذه الشكوى حتى الآن.
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="quality-evidence-grid">
+
+                                @foreach (var attachment in Model.Attachments)
+                                {
+                                    <div class="quality-evidence-card">
+
+                                        <div class="quality-evidence-image-wrap">
+
+                                            <img src="@Url.Content(attachment.FilePath)"
+                                                 alt="@attachment.FileName"
+                                                 class="quality-evidence-image"
+                                                 loading="lazy" />
+
+                                            <a href="@Url.Content(attachment.FilePath)"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               class="quality-evidence-open"
+                                               title="فتح الصورة بالحجم الكامل">
+                                                <i class="bi bi-arrows-fullscreen"></i>
+                                            </a>
+
+                                        </div>
+
+                                        <div class="quality-evidence-body">
+
+                                            <div class="quality-evidence-name">
+                                                @attachment.FileName
+                                            </div>
+
+                                            <div class="quality-evidence-meta">
+                                                بواسطة @attachment.UploadedByUserName
+                                                <br />
+                                                @attachment.UploadedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                                <br />
+                                                الحجم: @((attachment.FileSize / 1024d).ToString("N0")) KB
+                                            </div>
+
+                                            @if (!string.IsNullOrWhiteSpace(attachment.Description))
+                                            {
+                                                <div class="quality-evidence-description">
+                                                    @attachment.Description
+                                                </div>
+                                            }
+
+                                            @if (canClose)
+                                            {
+                                                <form asp-action="DeleteQualityImage"
+                                                      method="post"
+                                                      class="mt-2"
+                                                      onsubmit="return confirm('هل أنت متأكد من حذف هذه الصورة؟');">
+
+                                                    @Html.AntiForgeryToken()
+
+                                                    <input type="hidden"
+                                                           name="id"
+                                                           value="@Model.Id" />
+
+                                                    <input type="hidden"
+                                                           name="attachmentId"
+                                                           value="@attachment.Id" />
+
+                                                    <button type="submit"
+                                                            class="btn btn-sm btn-outline-danger w-100">
+                                                        <i class="bi bi-trash ms-1"></i>
+                                                        حذف الصورة
+                                                    </button>
+
+                                                </form>
+                                            }
+
+                                        </div>
+
+                                    </div>
+                                }
+
+                            </div>
+                        }
+
+                        <div class="quality-upload-box">
+
+                            <div class="quality-upload-title">
+                                <i class="bi bi-cloud-arrow-up ms-1"></i>
+                                رفع صورة جديدة لشكوى الجودة
+                            </div>
+
+                            <form asp-action="UploadQualityImage"
+                                  method="post"
+                                  enctype="multipart/form-data">
+
+                                @Html.AntiForgeryToken()
+
+                                <input type="hidden"
+                                       name="id"
+                                       value="@Model.Id" />
+
+                                <div class="row g-2">
+
+                                    <div class="col-md-6">
+
+                                        <label class="form-label small fw-bold">
+                                            اختر الصورة
+                                        </label>
+
+                                        <input type="file"
+                                               name="Image"
+                                               class="form-control"
+                                               accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                                               required />
+
+                                        <div class="small text-muted mt-1">
+                                            JPG / JPEG / PNG / WEBP — الحد الأقصى 5 MB.
+                                        </div>
+
+                                    </div>
+
+                                    <div class="col-md-6">
+
+                                        <label class="form-label small fw-bold">
+                                            وصف الصورة - اختياري
+                                        </label>
+
+                                        <input type="text"
+                                               name="Description"
+                                               class="form-control"
+                                               placeholder="مثال: صورة المنتج والعبوة عند استلام الشكوى" />
+
+                                    </div>
+
+                                    <div class="col-12">
+
+                                        <button type="submit"
+                                                class="btn btn-primary">
+                                            <i class="bi bi-cloud-arrow-up ms-1"></i>
+                                            رفع الصورة
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                            </form>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            }
+
+
+
+            <!-- الخط الزمني -->
+            <div class="workspace-card">
+
+                <div class="workspace-card-header">
+                    <i class="bi bi-clock-history"></i>
+                    سجل الإجراءات والمتابعات
+                </div>
+
+                <div class="workspace-card-body">
+
+                    @if (!Model.Actions.Any())
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-clock fs-4 d-block mb-2"></i>
+                            لم يتم تسجيل أي إجراءات على هذه التذكرة حتى الآن.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="timeline">
+
+                            @foreach (var action in Model.Actions)
+                            {
+                                <div class="timeline-item">
+
+                                    <div class="timeline-dot">
+                                        <i class="bi @ActionIcon(action.ActionType)"></i>
+                                    </div>
+
+                                    <div class="timeline-card @(action.IsInternalNote ? "internal-note" : "")">
+
+                                        <div class="d-flex justify-content-between gap-3 flex-wrap">
+
+                                            <div class="timeline-title">
+                                                @ActionText(action.ActionType)
+                                            </div>
+
+                                            @if (action.IsInternalNote)
+                                            {
+                                                <span class="badge bg-warning text-dark">
+                                                    ملاحظة داخلية
+                                                </span>
+                                            }
+
+                                        </div>
+
+                                        <div class="timeline-meta">
+                                            بواسطة @action.CreatedByUserName
+                                            ·
+                                            @action.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                        </div>
+
+                                        @if (!string.IsNullOrWhiteSpace(action.Description))
+                                        {
+                                            <div class="timeline-text">
+                                                @ActionDescriptionText(action.Description)
+                                            </div>
+                                        }
+
+                                        @if (action.FollowUpAt.HasValue)
+                                        {
+                                            <div class="timeline-text">
+                                                <i class="bi bi-calendar-event ms-1"></i>
+                                                <strong>موعد المتابعة:</strong>
+                                                @action.FollowUpAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                            </div>
+                                        }
+
+                                    </div>
+
+                                </div>
+                            }
+
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- العمود الجانبي -->
+        <div>
+
+            <!-- الإسناد -->
+            <div class="workspace-card">
+
+                <div class="workspace-card-header">
+                    <i class="bi bi-person-check"></i>
+                    الإسناد والمسؤولية
+                </div>
+
+                <div class="workspace-card-body">
+
+                    <div class="info-box mb-3">
+                        <div class="info-label">القسم المسؤول حاليًا</div>
+                        <div class="info-value">
+                            @DepartmentText(Model.AssignedDepartmentName)
+                        </div>
+                    </div>
+
+                    @if (canManage)
+                    {
+                        <form asp-action="Assign" method="post">
+
+                            @Html.AntiForgeryToken()
+
+                            <input type="hidden" name="id" value="@Model.Id" />
+
+                            <div class="mb-2">
+                                <label class="form-label small fw-bold">تحويل إلى قسم</label>
+
+                                <select name="AssignedDepartmentId" class="form-select">
+
+                                    <option value="">بدون إسناد</option>
+
+                                    @foreach (var department in departments)
+                                    {
+                                        if (Model.AssignedDepartmentId == department.Id)
+                                        {
+                                            <option value="@department.Id" selected>
+                                                @DepartmentText(department.Name)
+                                            </option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@department.Id">
+                                                @DepartmentText(department.Name)
+                                            </option>
+                                        }
+                                    }
+
+                                </select>
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label small fw-bold">سبب الإسناد أو التحويل</label>
+
+                                <input name="Reason"
+                                       class="form-control"
+                                       placeholder="اكتب سبب التحويل إن وجد" />
+                            </div>
+
+                            <button class="btn btn-outline-primary w-100">
+                                <i class="bi bi-arrow-left-right ms-1"></i>
+                                تحديث الإسناد
+                            </button>
+
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="permission-note">
+                            <i class="bi bi-lock ms-1"></i>
+                            تغيير الإسناد متاح لمسؤول أو مدير الشكاوى فقط.
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+
+            <!-- مستوى الخدمة -->
+            <div class="workspace-card">
+
+                <div class="workspace-card-header">
+                    <i class="bi bi-stopwatch"></i>
+                    اتفاقية مستوى الخدمة (SLA)
+                </div>
+
+                <div class="workspace-card-body">
+
+                    <div class="sla-grid">
+
+                        <div class="info-box">
+                            <div class="info-label">موعد أول رد</div>
+                            <div class="info-value @(Model.IsFirstResponseBreached ? "sla-danger" : "sla-good")">
+                                @(Model.FirstResponseDueAt?.ToLocalTime().ToString("dd/MM HH:mm") ?? "—")
+                            </div>
+                        </div>
+
+                        <div class="info-box">
+                            <div class="info-label">تم أول رد في</div>
+                            <div class="info-value">
+                                @(Model.FirstRespondedAt?.ToLocalTime().ToString("dd/MM HH:mm") ?? "—")
+                            </div>
+                        </div>
+
+                        <div class="info-box">
+                            <div class="info-label">موعد الحل المستهدف</div>
+                            <div class="info-value @(Model.IsResolutionBreached ? "sla-danger" : "sla-good")">
+                                @(Model.ResolutionDueAt?.ToLocalTime().ToString("dd/MM HH:mm") ?? "—")
+                            </div>
+                        </div>
+
+                        <div class="info-box">
+                            <div class="info-label">موعد المتابعة القادمة</div>
+                            <div class="info-value">
+                                @(Model.NextFollowUpAt?.ToLocalTime().ToString("dd/MM HH:mm") ?? "—")
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- الإجراءات -->
+            <div class="workspace-card">
+
+                <div class="workspace-card-header">
+                    <i class="bi bi-lightning-charge"></i>
+                    الإجراءات
+                </div>
+
+                <div class="workspace-card-body">
+
+                    <div class="action-panel">
+
+                        <!-- إضافة متابعة -->
+                        <div class="action-box">
+
+                            <div class="action-title">
+                                <i class="bi bi-chat-left-text"></i>
+                                إضافة متابعة أو ملاحظة
+                            </div>
+
+                            <form id="customerActionForm"
+                                  asp-action="AddAction"
+                                  method="post">
+
+                                @Html.AntiForgeryToken()
+
+                                <input type="hidden"
+                                       name="id"
+                                       value="@Model.Id" />
+
+                                <div class="mb-2">
+
+                                    <label class="form-label small fw-bold">
+                                        نوع الإجراء
+                                    </label>
+
+                                    <select name="ActionType"
+                                            id="actionType"
+                                            class="form-select">
+
+                                        <option value="CustomerCalled">
+                                            تم الاتصال بالعميل
+                                        </option>
+
+                                        <option value="NoAnswer">
+                                            العميل لم يرد
+                                        </option>
+
+                                        <option value="FollowUp">
+                                            متابعة
+                                        </option>
+
+                                        <option value="DepartmentContacted">
+                                            تم التواصل مع القسم المختص
+                                        </option>
+
+                                        @if (canManage)
+                                        {
+                                            <option value="GiftGiven">
+                                                تقديم هدية للعميل
+                                            </option>
+                                        }
+
+                                        <option value="InternalNote">
+                                            ملاحظة داخلية
+                                        </option>
+
+                                    </select>
+
+                                </div>
+
+                                <div id="giftFields"
+                                     class="d-none">
+
+                                    <div class="alert alert-primary py-2 small mb-2">
+                                        <i class="bi bi-gift ms-1"></i>
+                                        سجل بيانات الهدية المقدمة للعميل.
+                                    </div>
+
+                                    <div class="row g-2 mb-2">
+
+                                        <div class="col-md-8">
+
+                                            <label class="form-label small fw-bold">
+                                                اسم المنتج
+                                            </label>
+
+                                            <input name="ProductName"
+                                                   id="giftProductName"
+                                                   class="form-control"
+                                                   placeholder="اسم المنتج" />
+
+                                        </div>
+
+                                        <div class="col-md-4">
+
+                                            <label class="form-label small fw-bold">
+                                                الكمية
+                                            </label>
+
+                                            <input name="Quantity"
+                                                   id="giftQuantity"
+                                                   type="number"
+                                                   min="1"
+                                                   value="1"
+                                                   class="form-control" />
+
+                                        </div>
+
+                                        <div class="col-md-6">
+
+                                            <label class="form-label small fw-bold">
+                                                اسم المستلم
+                                            </label>
+
+                                            <input name="RecipientName"
+                                                   class="form-control"
+                                                   value="@Model.CustomerName" />
+
+                                        </div>
+
+                                        <div class="col-md-6">
+
+                                            <label class="form-label small fw-bold">
+                                                رقم الموبايل
+                                            </label>
+
+                                            <input name="RecipientPhone"
+                                                   class="form-control"
+                                                   dir="ltr"
+                                                   value="@Model.CustomerPhone" />
+
+                                        </div>
+
+                                        <div class="col-12">
+
+                                            <label class="form-label small fw-bold">
+                                                ملاحظات الهدية
+                                            </label>
+
+                                            <textarea name="Notes"
+                                                      class="form-control"
+                                                      rows="2"
+                                                      placeholder="أي ملاحظات عن الهدية..."></textarea>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="mb-2"
+                                     id="actionDescriptionContainer">
+
+                                    <label class="form-label small fw-bold">
+                                        تفاصيل الإجراء
+                                    </label>
+
+                                    <textarea name="Description"
+                                              id="actionDescription"
+                                              class="form-control"
+                                              rows="3"
+                                              placeholder="اكتب ما تم في هذه المتابعة..."></textarea>
+
+                                </div>
+
+                                <div class="mb-2"
+                                     id="followUpContainer">
+
+                                    <label class="form-label small fw-bold">
+                                        موعد المتابعة القادمة - اختياري
+                                    </label>
+
+                                    <input name="FollowUpAt"
+                                           type="datetime-local"
+                                           class="form-control" />
+
+                                </div>
+
+                                <div class="form-check mb-3"
+                                     id="internalNoteContainer">
+
+                                    <input name="IsInternalNote"
+                                           value="true"
+                                           type="checkbox"
+                                           class="form-check-input"
+                                           id="internalNote" />
+
+                                    <label class="form-check-label small"
+                                           for="internalNote">
+                                        ملاحظة داخلية لاستخدام الفريق
+                                    </label>
+
+                                </div>
+
+                                <button class="btn btn-dark w-100"
+                                        id="actionSubmitButton">
+
+                                    <i class="bi bi-plus-circle ms-1"
+                                       id="actionSubmitIcon"></i>
+
+                                    <span id="actionSubmitText">
+                                        حفظ الإجراء
+                                    </span>
+
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                        <!-- تغيير الحالة -->
+                        @if (!isFinal && canManage)
+                        {
+                            <div class="action-box">
+
+                                <div class="action-title">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                    تغيير حالة التذكرة
+                                </div>
+
+                                <form asp-action="ChangeStatus" method="post">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <input type="hidden" name="id" value="@Model.Id" />
+
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold">الحالة الجديدة</label>
+
+                                        <select name="Status" class="form-select">
+
+                                            @foreach (var status in Enum.GetValues<CustomerCareTicketStatus>())
+                                            {
+                                                if (status != CustomerCareTicketStatus.Resolved &&
+                                                status != CustomerCareTicketStatus.Closed &&
+                                                status != CustomerCareTicketStatus.Cancelled &&
+                                                status != CustomerCareTicketStatus.Rejected)
+                                                {
+                                                    if (status == Model.Status)
+                                                    {
+                                                        <option value="@((int)status)" selected>
+                                                            @StatusText(status)
+                                                        </option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@((int)status)">
+                                                            @StatusText(status)
+                                                        </option>
+                                                    }
+                                                }
+                                            }
+
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold">سبب تغيير الحالة</label>
+
+                                        <input name="Reason"
+                                               class="form-control"
+                                               placeholder="اكتب السبب إن وجد" />
+                                    </div>
+
+                                    <button class="btn btn-outline-dark w-100">
+                                        حفظ الحالة الجديدة
+                                    </button>
+
+                                </form>
+
+                            </div>
+                        }
+
+                        <!-- حل التذكرة -->
+                        @if (!isFinal && canManage)
+                        {
+                            <div class="action-box">
+
+                                <div class="action-title">
+                                    <i class="bi bi-check-circle"></i>
+                                    تسجيل حل التذكرة
+                                </div>
+
+                                <form asp-action="Resolve" method="post">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <input type="hidden" name="id" value="@Model.Id" />
+
+                                    <label class="form-label small fw-bold">ملخص الحل</label>
+
+                                    <textarea name="ResolutionSummary"
+                                          id="resolutionSummary"
+                                          class="form-control mb-2"
+                                          rows="3"
+                                          placeholder="اكتب الحل الذي تم اتخاذه مع العميل..."
+                                          required></textarea>
+
+                                    <button class="btn btn-success w-100">
+                                        <i class="bi bi-check-circle ms-1"></i>
+                                        تسجيل الحالة كمحلولة
+                                    </button>
+
+                                </form>
+
+                            </div>
+                        }
+
+                        <!-- إغلاق -->
+                        @if (Model.Status == CustomerCareTicketStatus.Resolved && canClose)
+                        {
+                            <div class="action-box">
+
+                                <div class="action-title">
+                                    <i class="bi bi-lock"></i>
+                                    إغلاق التذكرة
+                                </div>
+
+                                <form asp-action="Close" method="post">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <input type="hidden" name="id" value="@Model.Id" />
+
+                                    <label class="form-label small fw-bold">ملاحظة الإغلاق - اختياري</label>
+
+                                    <input name="reason"
+                                           class="form-control mb-2"
+                                           placeholder="أضف أي ملاحظة نهائية قبل الإغلاق" />
+
+                                    <button class="btn btn-secondary w-100">
+                                        <i class="bi bi-lock ms-1"></i>
+                                        إغلاق التذكرة
+                                    </button>
+
+                                </form>
+
+                            </div>
+                        }
+
+                        <!-- إعادة فتح -->
+                        @if ((isResolved || isClosed) && canClose)
+                        {
+                            <div class="action-box">
+
+                                <div class="action-title">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                    إعادة فتح التذكرة
+                                </div>
+
+                                <form asp-action="Reopen" method="post">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <input type="hidden" name="id" value="@Model.Id" />
+
+                                    <label class="form-label small fw-bold">سبب إعادة الفتح</label>
+
+                                    <input name="reason"
+                                           class="form-control mb-2"
+                                           placeholder="اكتب سبب إعادة فتح الحالة"
+                                           required />
+
+                                    <button class="btn btn-warning w-100">
+                                        <i class="bi bi-arrow-counterclockwise ms-1"></i>
+                                        إعادة فتح التذكرة
+                                    </button>
+
+                                </form>
+
+                            </div>
+                        }
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts
+{
+    <script>
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
+
+                const actionType =
+                    document.getElementById("actionType");
+
+                const form =
+                    document.getElementById("customerActionForm");
+
+                const giftFields =
+                    document.getElementById("giftFields");
+
+                const giftProduct =
+                    document.getElementById("giftProductName");
+
+                const giftQuantity =
+                    document.getElementById("giftQuantity");
+
+                const followUpContainer =
+                    document.getElementById("followUpContainer");
+
+                const internalNoteContainer =
+                    document.getElementById("internalNoteContainer");
+
+                const actionDescriptionContainer =
+                    document.getElementById("actionDescriptionContainer");
+
+                const actionDescription =
+                    document.getElementById("actionDescription");
+
+                const submitText =
+                    document.getElementById("actionSubmitText");
+
+                const submitIcon =
+                    document.getElementById("actionSubmitIcon");
+
+
+                function updateActionForm() {
+
+                    if (!actionType || !form) {
+                        return;
+                    }
+
+                    const isGift =
+                        actionType.value === "GiftGiven";
+
+                    giftFields?.classList.toggle(
+                        "d-none",
+                        !isGift);
+
+                    followUpContainer?.classList.toggle(
+                        "d-none",
+                        isGift);
+
+                    internalNoteContainer?.classList.toggle(
+                        "d-none",
+                        isGift);
+
+                    actionDescriptionContainer?.classList.toggle(
+                        "d-none",
+                        isGift);
+
+                    if (giftProduct) {
+                        giftProduct.required = isGift;
+                    }
+
+                    if (giftQuantity) {
+                        giftQuantity.required = isGift;
+                    }
+
+                    if (isGift) {
+
+                        form.action =
+                            '@Url.Action("AddGift", "CustomerCare")';
+
+                        if (actionDescription) {
+                            actionDescription.value = "";
+                        }
+
+                        if (submitText) {
+                            submitText.textContent =
+                                "تسجيل الهدية";
+                        }
+
+                        if (submitIcon) {
+                            submitIcon.className =
+                                "bi bi-gift ms-1";
+                        }
+                    }
+                    else {
+
+                        form.action =
+                            '@Url.Action("AddAction", "CustomerCare")';
+
+                        if (submitText) {
+                            submitText.textContent =
+                                "حفظ الإجراء";
+                        }
+
+                        if (submitIcon) {
+                            submitIcon.className =
+                                "bi bi-plus-circle ms-1";
+                        }
+                    }
+                }
+
+
+                actionType?.addEventListener(
+                    "change",
+                    updateActionForm);
+
+                updateActionForm();
+            });
+    </script>
+}

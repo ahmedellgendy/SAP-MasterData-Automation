@@ -13,7 +13,7 @@
           type="image/png"
           href="~/images/fridayops-icon.png" />
 
-    
+
 
     <style>
         body {
@@ -33,33 +33,64 @@
             overflow-x: hidden;
             box-sizing: border-box;
             overscroll-behavior: contain;
+            transition: width .22s ease, padding .22s ease;
+            z-index: 1040;
         }
 
-            .sidebar::-webkit-scrollbar {
-                width: 6px;
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .sidebar-toggle {
+            width: 36px;
+            height: 36px;
+            flex: 0 0 36px;
+            border: 1px solid rgba(255,255,255,.12);
+            background: rgba(255,255,255,.06);
+            color: #d1d5db;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: .15s ease;
+        }
+
+            .sidebar-toggle:hover {
+                background: #374151;
+                color: #fff;
+                border-color: rgba(255,255,255,.20);
             }
 
-            .sidebar::-webkit-scrollbar-track {
-                background: #1f2937;
-            }
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
 
-            .sidebar::-webkit-scrollbar-thumb {
-                background: #4b5563;
-                border-radius: 20px;
-            }
+        .sidebar::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
 
-                .sidebar::-webkit-scrollbar-thumb:hover {
-                    background: #6b7280;
-                }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 20px;
+        }
+
+            .sidebar::-webkit-scrollbar-thumb:hover {
+                background: #6b7280;
+            }
 
         .sidebar-title {
             color: white;
             font-size: 20px;
             font-weight: 800;
-            margin-bottom: 24px;
+            margin-bottom: 0;
             display: flex;
             align-items: center;
             gap: 10px;
+            min-width: 0;
         }
 
         .sidebar-section {
@@ -138,6 +169,68 @@
         .main-content {
             margin-left: 260px;
             padding: 25px;
+            transition: margin-left .22s ease;
+        }
+
+        /* =====================================================
+                   Collapsed Sidebar
+                   ===================================================== */
+
+        body.sidebar-collapsed .sidebar {
+            width: 76px;
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        body.sidebar-collapsed .main-content {
+            margin-left: 76px;
+        }
+
+        body.sidebar-collapsed .sidebar-header {
+            flex-direction: column;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        body.sidebar-collapsed .sidebar-title {
+            justify-content: center;
+            width: 100%;
+            font-size: 0;
+        }
+
+            body.sidebar-collapsed .sidebar-title img {
+                margin: 0;
+            }
+
+        body.sidebar-collapsed .sidebar-section {
+            display: none;
+        }
+
+        body.sidebar-collapsed .sidebar > a,
+        body.sidebar-collapsed .sidebar-menu-toggle {
+            justify-content: center;
+            padding-left: 10px;
+            padding-right: 10px;
+            font-size: 0;
+        }
+
+            body.sidebar-collapsed .sidebar > a i,
+            body.sidebar-collapsed .sidebar-menu-toggle i:first-child {
+                margin-right: 0;
+                width: auto;
+                font-size: 18px;
+            }
+
+            body.sidebar-collapsed .sidebar-menu-toggle .chevron {
+                display: none;
+            }
+
+        body.sidebar-collapsed .sidebar-submenu {
+            display: none !important;
+        }
+
+        body.sidebar-collapsed .sidebar-footer {
+            display: none;
         }
 
         .app-topbar {
@@ -237,13 +330,59 @@
 
         @@media (max-width: 900px) {
             .main-content {
-                margin-left: 260px;
                 padding: 18px;
             }
 
             .app-topbar {
                 align-items: flex-start;
             }
+        }
+
+        @@media (max-width: 650px) {
+            .sidebar {
+                width: 76px;
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+
+            .main-content {
+                margin-left: 76px;
+                padding: 14px;
+            }
+
+            .sidebar-header {
+                flex-direction: column;
+                justify-content: center;
+                gap: 8px;
+            }
+
+            .sidebar-title {
+                justify-content: center;
+                width: 100%;
+                font-size: 0;
+            }
+
+            .sidebar-section,
+            .sidebar-submenu,
+            .sidebar-footer,
+            .sidebar-menu-toggle .chevron {
+                display: none !important;
+            }
+
+            .sidebar > a,
+            .sidebar-menu-toggle {
+                justify-content: center;
+                padding-left: 10px;
+                padding-right: 10px;
+                font-size: 0;
+            }
+
+                .sidebar > a i,
+                .sidebar-menu-toggle i:first-child {
+                    margin-right: 0;
+                    width: auto;
+                    font-size: 18px;
+                }
         }
     </style>
 </head>
@@ -256,6 +395,22 @@
         var layoutIsManager = User.IsInRole("Manager");
         var layoutIsAccountsUser = User.IsInRole("AccountsUser");
         var layoutIsAccountsManager = User.IsInRole("AccountsManager");
+
+        // Customer Care roles
+        var layoutIsComplaintAgent = User.IsInRole("ComplaintAgent");
+        var layoutIsComplaintSupervisor = User.IsInRole("ComplaintSupervisor");
+        var layoutIsComplaintManager = User.IsInRole("ComplaintManager");
+
+        var layoutCanAccessCustomerCare =
+        layoutIsAdmin ||
+        layoutIsComplaintAgent ||
+        layoutIsComplaintSupervisor ||
+        layoutIsComplaintManager;
+
+        var layoutCanViewCustomerCareDashboard =
+        layoutIsAdmin ||
+        layoutIsComplaintSupervisor ||
+        layoutIsComplaintManager;
 
         // Product Executive role القديم
         var layoutIsProductExecutiveManager =
@@ -276,13 +431,27 @@
         <!-- App Title -->
         <!-- ================================================= -->
 
-        <div class="sidebar-title">
+        <div class="sidebar-header">
 
-            <img src="~/images/fridayops-icon.png"
-                 alt="FridayOps"
-                 style="width:34px;height:34px;border-radius:8px;" />
+            <div class="sidebar-title">
 
-            @AppBrand.AppName
+                <img src="~/images/fridayops-icon.png"
+                     alt="FridayOps"
+                     style="width:34px;height:34px;border-radius:8px;" />
+
+                @AppBrand.AppName
+
+            </div>
+
+            <button type="button"
+                    class="sidebar-toggle"
+                    id="sidebarToggle"
+                    aria-label="Toggle sidebar"
+                    aria-pressed="false"
+                    title="Collapse sidebar">
+                <i class="bi bi-layout-sidebar-inset"
+                   id="sidebarToggleIcon"></i>
+            </button>
 
         </div>
 
@@ -362,7 +531,7 @@
                 Targets
             </a>
         }
-        
+
 
         <!-- ================================================= -->
         <!-- Modules -->
@@ -374,13 +543,65 @@
                 layoutIsAdmin ||
                 layoutIsAccountsUser ||
                 layoutIsAccountsManager ||
-                layoutIsProductExecutiveManager
+                layoutIsProductExecutiveManager ||
+                layoutIsComplaintAgent ||
+                layoutIsComplaintSupervisor ||
+                layoutIsComplaintManager
                 ))
         {
             <div class="sidebar-section">
                 Modules
             </div>
         }
+
+
+        <!-- ================================================= -->
+        <!-- Customer Care -->
+        <!-- ================================================= -->
+        @if (!layoutIsExecutiveDashboardOnly &&
+                layoutCanAccessCustomerCare)
+        {
+            <button class="sidebar-menu-toggle"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#customerCareMenu"
+                    aria-expanded="false"
+                    aria-controls="customerCareMenu">
+
+                <i class="bi bi-headset"></i>
+
+                Customer Care
+
+                <i class="bi bi-chevron-down chevron"></i>
+            </button>
+
+            <div class="collapse sidebar-submenu"
+                 id="customerCareMenu">
+
+                @if (layoutCanViewCustomerCareDashboard)
+                {
+                    <a asp-controller="CustomerCare"
+                       asp-action="Dashboard">
+                        <i class="bi bi-speedometer2"></i>
+                        Dashboard
+                    </a>
+                }
+
+                <a asp-controller="CustomerCare"
+                   asp-action="Index">
+                    <i class="bi bi-inboxes"></i>
+                    Ticket Center
+                </a>
+
+                <a asp-controller="CustomerCare"
+                   asp-action="Create">
+                    <i class="bi bi-plus-circle"></i>
+                    New Ticket
+                </a>
+
+            </div>
+        }
+
 
         <!-- ================================================= -->
         <!-- Customers -->
@@ -468,11 +689,19 @@
             </div>
         }
 
+
         <!-- ================================================= -->
         <!-- Products -->
         <!-- ================================================= -->
         @if (!layoutIsExecutiveDashboardOnly &&
-                User.Identity?.IsAuthenticated == true)
+                (
+                layoutIsAdmin ||
+                layoutIsSales ||
+                layoutIsManager ||
+                layoutIsAccountsUser ||
+                layoutIsAccountsManager ||
+                layoutIsProductExecutiveManager
+                ))
         {
             <button class="sidebar-menu-toggle"
                     type="button"
@@ -491,12 +720,20 @@
             <div class="collapse sidebar-submenu"
                  id="productsMenu">
 
-                <a asp-controller="Products"
-                   asp-action="Index"
-                   class="sidebar-link">
-                    <i class="bi bi-box-seam"></i>
-                    Products Master
-                </a>
+                @if (layoutIsAdmin ||
+                            layoutIsSales ||
+                            layoutIsManager ||
+                            layoutIsAccountsUser ||
+                            layoutIsAccountsManager ||
+                            layoutIsProductExecutiveManager)
+                {
+                    <a asp-controller="Products"
+                       asp-action="Index"
+                       class="sidebar-link">
+                        <i class="bi bi-box-seam"></i>
+                        Products Master
+                    </a>
+                }
 
                 @if (layoutIsAdmin || layoutIsAccountsUser)
                 {
@@ -528,6 +765,7 @@
 
             </div>
         }
+
 
         <!-- ================================================= -->
         <!-- Sales Analytics -->
@@ -562,9 +800,9 @@
 
                 <!-- Executive Reports -->
 
-                
 
-                
+
+
 
                 <a asp-controller="SalesAnalyticsExecutiveReports"
                    asp-action="BranchPerformance"
@@ -658,6 +896,7 @@
             </div>
         }
 
+
         <!-- ================================================= -->
         <!-- Administration -->
         <!-- ================================================= -->
@@ -710,6 +949,7 @@
 
             </div>
         }
+
 
         <!-- ================================================= -->
         <!-- Footer -->
@@ -824,23 +1064,176 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
 
+            const body =
+                document.body;
+
+            const sidebarToggle =
+                document.getElementById("sidebarToggle");
+
+            const sidebarToggleIcon =
+                document.getElementById("sidebarToggleIcon");
+
+            const sidebarStorageKey =
+                "fridayops.sidebar.collapsed";
+
+            function setSidebarCollapsed(
+                collapsed,
+                persist = true) {
+
+                body.classList.toggle(
+                    "sidebar-collapsed",
+                    collapsed);
+
+                if (sidebarToggle) {
+                    sidebarToggle.setAttribute(
+                        "aria-pressed",
+                        collapsed ? "true" : "false");
+
+                    sidebarToggle.setAttribute(
+                        "title",
+                        collapsed
+                            ? "Expand sidebar"
+                            : "Collapse sidebar");
+                }
+
+                if (sidebarToggleIcon) {
+                    sidebarToggleIcon.className =
+                        collapsed
+                            ? "bi bi-layout-sidebar-inset-reverse"
+                            : "bi bi-layout-sidebar-inset";
+                }
+
+                if (persist) {
+                    localStorage.setItem(
+                        sidebarStorageKey,
+                        collapsed ? "true" : "false");
+                }
+            }
+
+            const storedSidebarState =
+                localStorage.getItem(
+                    sidebarStorageKey);
+
+            const shouldStartCollapsed =
+                storedSidebarState === "true" ||
+                (
+                    storedSidebarState === null &&
+                    window.innerWidth <= 900
+                );
+
+            setSidebarCollapsed(
+                shouldStartCollapsed,
+                false);
+
+                        let userChangedSidebar = false;
+
+        const autoCollapseTimer =
+            setTimeout(
+                function () {
+
+                    if (!userChangedSidebar &&
+                        !body.classList.contains("sidebar-collapsed")) {
+
+                        setSidebarCollapsed(
+                            true,
+                            false);
+                    }
+                },
+                3000);
+
+                sidebarToggle?.addEventListener(
+        "click",
+        function () {
+
+            userChangedSidebar = true;
+
+            clearTimeout(
+                autoCollapseTimer);
+
+            const collapsed =
+                body.classList.contains(
+                    "sidebar-collapsed");
+
+            setSidebarCollapsed(
+                !collapsed);
+        });
+
+            document
+                .querySelectorAll(".sidebar-menu-toggle")
+                .forEach(button => {
+
+                    button.addEventListener(
+                        "click",
+                        function (event) {
+
+                            if (!body.classList.contains(
+                                "sidebar-collapsed")) {
+                                return;
+                            }
+
+                            event.preventDefault();
+                            event.stopPropagation();
+
+                            setSidebarCollapsed(false);
+
+                            const targetSelector =
+                                button.getAttribute(
+                                    "data-bs-target");
+
+                            if (!targetSelector) {
+                                return;
+                            }
+
+                            const target =
+                                document.querySelector(
+                                    targetSelector);
+
+                            if (!target) {
+                                return;
+                            }
+
+                            window.setTimeout(
+                                function () {
+
+                                    const collapse =
+                                        bootstrap.Collapse
+                                            .getOrCreateInstance(
+                                                target,
+                                                {
+                                                    toggle: false
+                                                });
+
+                                    collapse.show();
+
+                                    button.setAttribute(
+                                        "aria-expanded",
+                                        "true");
+                                },
+                                160);
+                        });
+                });
+
             const currentPath =
-                window.location.pathname.toLowerCase();
+                window.location.pathname
+                    .toLowerCase();
 
             document
                 .querySelectorAll(".sidebar a[href]")
                 .forEach(link => {
 
                     const linkPath =
-                        link.getAttribute("href")?.toLowerCase();
+                        link.getAttribute("href")
+                            ?.toLowerCase();
 
-                    if (!linkPath || linkPath === "#") {
+                    if (!linkPath ||
+                        linkPath === "#") {
                         return;
                     }
 
                     if (
                         currentPath === linkPath ||
-                        currentPath.startsWith(linkPath + "/")
+                        currentPath.startsWith(
+                            linkPath + "/")
                     ) {
                         link.classList.add("active");
 
@@ -849,7 +1242,8 @@
 
                         if (collapseParent) {
 
-                            collapseParent.classList.add("show");
+                            collapseParent.classList.add(
+                                "show");
 
                             const toggleButton =
                                 document.querySelector(
@@ -859,8 +1253,7 @@
                             if (toggleButton) {
                                 toggleButton.setAttribute(
                                     "aria-expanded",
-                                    "true"
-                                );
+                                    "true");
                             }
                         }
                     }

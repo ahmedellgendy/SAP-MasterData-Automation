@@ -155,20 +155,56 @@ public class AdminUsersController : Controller
     private void LoadRoles(CreateUserViewModel model)
     {
         model.Roles = new()
+    {
+        new SelectListItem("Sales", "Sales"),
+        new SelectListItem("Manager", "Manager"),
+
+        new SelectListItem
         {
-            new SelectListItem("Sales", "Sales"),
-            new SelectListItem("Manager", "Manager"),
+            Text = "Accounts User",
+            Value = "AccountsUser"
+        },
 
-            new SelectListItem { Text = "Accounts User", Value = "AccountsUser" },
-            new SelectListItem { Text = "Accounts Manager", Value = "AccountsManager" },
+        new SelectListItem
+        {
+            Text = "Accounts Manager",
+            Value = "AccountsManager"
+        },
 
-            // Product pricing executive role
-            new SelectListItem { Text = "Executive Manager - Pricing", Value = "ExecutiveManager" },
+        // Customer Care
+        new SelectListItem
+        {
+            Text = "Customer Care Agent",
+            Value = "ComplaintAgent"
+        },
 
-            // CEO dashboard only role
-            new SelectListItem { Text = "CEO", Value = "CEO" },
+        new SelectListItem
+        {
+            Text = "Customer Care Supervisor",
+            Value = "ComplaintSupervisor"
+        },
 
-            new SelectListItem("Admin", "Admin")
-        };
+        new SelectListItem
+        {
+            Text = "Customer Care Manager",
+            Value = "ComplaintManager"
+        },
+
+        // Product pricing executive role
+        new SelectListItem
+        {
+            Text = "Executive Manager - Pricing",
+            Value = "ExecutiveManager"
+        },
+
+        // CEO dashboard only role
+        new SelectListItem
+        {
+            Text = "CEO",
+            Value = "CEO"
+        },
+
+        new SelectListItem("Admin", "Admin")
+    };
     }
 }
