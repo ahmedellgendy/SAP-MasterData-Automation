@@ -116,6 +116,8 @@ public class CustomerCareTicket
 
     public int ReopenCount { get; set; }
 
+   
+
     // =========================================================
     // Flags
     // =========================================================
@@ -123,6 +125,18 @@ public class CustomerCareTicket
     public bool IsCritical { get; set; }
 
     public bool IsActive { get; set; } = true;
+
+    // =========================================================
+    // Soft Delete
+    // =========================================================
+
+    public bool IsDeleted { get; set; } = false;
+
+    public DateTime? DeletedAt { get; set; }
+
+    public int? DeletedByUserId { get; set; }
+
+    public string? DeleteReason { get; set; }
 
 
     public CustomerCareCategory? Category { get; set; }

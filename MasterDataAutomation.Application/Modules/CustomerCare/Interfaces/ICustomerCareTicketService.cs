@@ -115,4 +115,18 @@ public interface ICustomerCareTicketService
         int ticketId,
         int attachmentId,
         CancellationToken cancellationToken = default);
+
+    Task UpdateAsync(
+    int ticketId,
+    UpdateCustomerCareTicketDto dto,
+    int changedByUserId,
+    string changedByUserName,
+    CancellationToken cancellationToken = default);
+
+    Task DeleteAsync(
+    int ticketId,
+    string reason,
+    int deletedByUserId,
+    string deletedByUserName,
+    CancellationToken cancellationToken = default);
 }

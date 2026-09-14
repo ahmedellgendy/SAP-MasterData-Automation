@@ -557,7 +557,7 @@ public class CustomerCareController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = CustomerCareRoles.ManagersAndAdmin)]
+    [Authorize(Roles = CustomerCareRoles.All)]
     public async Task<IActionResult> Close(
     int id,
     string reason,
@@ -584,6 +584,50 @@ public class CustomerCareController : Controller
         return RedirectToAction(
             nameof(Details),
             new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = CustomerCareRoles.ManagersAndAdmin)]
+    public async Task<IActionResult> Delete(
+    int id,
+    string reason,
+    CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+            {
+                TempData["Error"] =
+                    "يجب كتابة سبب حذف التذكرة.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { id });
+            }
+
+            await _ticketService.DeleteAsync(
+                id,
+                reason,
+                GetCurrentUserId(),
+                GetCurrentUserName(),
+                cancellationToken);
+
+            TempData["Success"] =
+                "تم حذف التذكرة من التشغيل بنجاح.";
+
+            return RedirectToAction(
+                nameof(Index));
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] =
+                ex.Message;
+
+            return RedirectToAction(
+                nameof(Details),
+                new { id });
+        }
     }
 
 
@@ -876,7 +920,150 @@ public class CustomerCareController : Controller
     }
 
 
+    [HttpGet]
+    [Authorize(Roles = CustomerCareRoles.All)]
+    public async Task<IActionResult> Edit(
+    int id,
+    CancellationToken cancellationToken)
+    {
+        var ticket =
+            await _ticketService.GetByIdAsync(
+                id,
+                cancellationToken);
 
+        if (ticket == null)
+            return NotFound();
+
+        // Agent يقدر يعدل التيكت الخاصة بيه فقط
+        if (User.IsInRole(CustomerCareRoles.Agent))
+        {
+            var details =
+                await _ticketService.GetDetailsAsync(
+                    id,
+                    cancellationToken);
+
+            if (details == null)
+                return NotFound();
+
+            if (details.CreatedByUserId != GetCurrentUserId())
+                return Forbid();
+        }
+
+        ViewBag.Categories =
+            await _ticketService.GetCategoriesAsync(
+                cancellationToken);
+
+        ViewBag.SubCategories =
+            ticket.CategoryId.HasValue
+                ? await _ticketService.GetSubCategoriesAsync(
+                    ticket.CategoryId.Value,
+                    cancellationToken)
+                : new List<CustomerCareLookupDto>();
+
+        var model =
+            new UpdateCustomerCareTicketDto
+            {
+                CustomerName = ticket.CustomerName,
+                CustomerPhone = ticket.CustomerPhone,
+                CustomerAddress = ticket.CustomerAddress,
+
+                Source = ticket.Source,
+                Type = ticket.Type,
+
+                CategoryId = ticket.CategoryId,
+                SubCategoryId = ticket.SubCategoryId,
+
+                Description = ticket.Description,
+                Priority = ticket.Priority,
+
+                NextFollowUpAt = ticket.NextFollowUpAt
+            };
+
+        ViewBag.TicketId = id;
+        ViewBag.TicketNumber = ticket.TicketNumber;
+
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = CustomerCareRoles.All)]
+    public async Task<IActionResult> Edit(
+    int id,
+    UpdateCustomerCareTicketDto model,
+    CancellationToken cancellationToken)
+    {
+        var details =
+            await _ticketService.GetDetailsAsync(
+                id,
+                cancellationToken);
+
+        if (details == null)
+            return NotFound();
+
+        if (User.IsInRole(CustomerCareRoles.Agent) &&
+            details.CreatedByUserId != GetCurrentUserId())
+        {
+            return Forbid();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            ViewBag.Categories =
+                await _ticketService.GetCategoriesAsync(
+                    cancellationToken);
+
+            ViewBag.SubCategories =
+                model.CategoryId.HasValue
+                    ? await _ticketService.GetSubCategoriesAsync(
+                        model.CategoryId.Value,
+                        cancellationToken)
+                    : new List<CustomerCareLookupDto>();
+
+            ViewBag.TicketId = id;
+            ViewBag.TicketNumber = details.TicketNumber;
+
+            return View(model);
+        }
+
+        try
+        {
+            await _ticketService.UpdateAsync(
+                id,
+                model,
+                GetCurrentUserId(),
+                GetCurrentUserName(),
+                cancellationToken);
+
+            TempData["Success"] =
+                "تم تعديل بيانات التذكرة بنجاح.";
+
+            return RedirectToAction(
+                nameof(Details),
+                new { id });
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] =
+                ex.Message;
+
+            ViewBag.Categories =
+                await _ticketService.GetCategoriesAsync(
+                    cancellationToken);
+
+            ViewBag.SubCategories =
+                model.CategoryId.HasValue
+                    ? await _ticketService.GetSubCategoriesAsync(
+                        model.CategoryId.Value,
+                        cancellationToken)
+                    : new List<CustomerCareLookupDto>();
+
+            ViewBag.TicketId = id;
+            ViewBag.TicketNumber = details.TicketNumber;
+
+            return View(model);
+        }
+    }
 
     // =========================================================
     // Helpers

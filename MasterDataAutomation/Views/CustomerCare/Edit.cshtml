@@ -1,0 +1,1028 @@
+﻿@model MasterDataAutomation.Application.Modules.CustomerCare.Dtos.UpdateCustomerCareTicketDto
+
+@using MasterDataAutomation.Application.Modules.CustomerCare.Dtos
+@using MasterDataAutomation.Domain.Modules.CustomerCare.Enums
+
+@{
+    ViewData["Title"] = "تعديل التذكرة";
+
+    var categories =
+        ViewBag.Categories as List<CustomerCareLookupDto>
+        ?? new List<CustomerCareLookupDto>();
+
+    var subCategories =
+        ViewBag.SubCategories as List<CustomerCareLookupDto>
+        ?? new List<CustomerCareLookupDto>();
+
+    var ticketId =
+        ViewBag.TicketId != null
+            ? (int)ViewBag.TicketId
+            : 0;
+
+    var ticketNumber =
+        ViewBag.TicketNumber?.ToString()
+        ?? string.Empty;
+
+    string SourceText(CustomerCareTicketSource source) => source switch
+    {
+        CustomerCareTicketSource.Call => "مكالمة",
+        CustomerCareTicketSource.Facebook => "فيسبوك",
+        CustomerCareTicketSource.Instagram => "إنستجرام",
+        CustomerCareTicketSource.WhatsApp => "واتساب",
+        CustomerCareTicketSource.CustomerServiceSystem => "نظام خدمة العملاء",
+        CustomerCareTicketSource.Other => "أخرى",
+        _ => source.ToString()
+    };
+
+    string TypeText(CustomerCareTicketType type) => type switch
+    {
+        CustomerCareTicketType.Complaint => "شكوى",
+        CustomerCareTicketType.Request => "طلب",
+        CustomerCareTicketType.Inquiry => "استفسار",
+        CustomerCareTicketType.Transfer => "تحويل",
+        _ => type.ToString()
+    };
+
+    string PriorityText(CustomerCareTicketPriority priority) => priority switch
+    {
+        CustomerCareTicketPriority.Critical => "حرجة",
+        CustomerCareTicketPriority.High => "عالية",
+        CustomerCareTicketPriority.Normal => "عادية",
+        CustomerCareTicketPriority.Low => "منخفضة",
+        _ => priority.ToString()
+    };
+
+    string CategoryText(string? value) => value switch
+    {
+        "Sales & Representative" => "المبيعات والمندوب",
+        "Delivery & Supply" => "التوريد والتسليم",
+        "Product Replacement" => "استبدال المنتجات",
+        "Freezer & Maintenance" => "الثلاجات والصيانة",
+        "Product Quality" => "جودة المنتج",
+        "Commercial Requests" => "الطلبات التجارية",
+        "General Inquiry" => "استفسارات عامة",
+        "Other" => "أخرى",
+        null or "" => "—",
+        _ => value
+    };
+
+    string SubCategoryText(string? value) => value switch
+    {
+        "Sales Rep Complaint" => "شكوى من المندوب",
+        "Supervisor Complaint" => "شكوى من المشرف",
+        "Sales Rep No Response" => "المندوب لا يرد",
+        "No Delivery" => "لم يتم التسليم",
+        "Refused Supply" => "رفض التوريد",
+        "Insufficient Quantity" => "كمية غير كافية",
+        "Delivery Delay" => "تأخير في التسليم",
+        "Replacement Refused" => "رفض الاستبدال",
+        "Replacement Delayed" => "تأخير الاستبدال",
+        "Freezer Request" => "طلب ثلاجة",
+        "Freezer Maintenance" => "صيانة ثلاجة",
+        "Cooling Failure" => "عطل تبريد",
+        "Freezer Retrieval" => "استرجاع ثلاجة",
+        "Foreign Object" => "جسم غريب داخل المنتج",
+        "Hair in Product" => "شعر داخل المنتج",
+        "Plastic in Product" => "بلاستيك داخل المنتج",
+        "Metal or Wire in Product" => "معدن أو سلك داخل المنتج",
+        "Taste Issue" => "مشكلة في الطعم",
+        "Melted Product" => "منتج ذائب",
+        "Ice Crystals" => "بلورات ثلج",
+        "Packaging Issue" => "مشكلة في العبوة",
+        "Missing Production Date" => "تاريخ الإنتاج غير موجود",
+        "Missing Product Component" => "مكوّن ناقص في المنتج",
+        "Other Quality Issue" => "مشكلة جودة أخرى",
+        "New Customer Request" => "طلب عميل جديد",
+        "Contract Request" => "طلب تعاقد",
+        "Pricing Inquiry" => "استفسار عن الأسعار",
+        "General Information" => "معلومات عامة",
+        "Call Transfer" => "تحويل مكالمة",
+        "Other" => "أخرى",
+        null or "" => "—",
+        _ => value
+    };
+}
+
+<style>
+
+    .cc-edit-page {
+        direction: rtl;
+        max-width: 1500px;
+        margin: 0 auto;
+    }
+
+    .cc-edit-hero {
+        background: linear-gradient( 135deg, #0f172a 0%, #172554 48%, #1d4ed8 100%);
+        color: #fff;
+        border-radius: 20px;
+        padding: 24px 26px;
+        margin-bottom: 18px;
+        box-shadow: 0 16px 36px rgba(15,23,42,.15);
+        position: relative;
+        overflow: hidden;
+    }
+
+        .cc-edit-hero::after {
+            content: "";
+            position: absolute;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.06);
+            left: -70px;
+            top: -110px;
+        }
+
+    .cc-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: rgba(255,255,255,.86);
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 800;
+        position: relative;
+        z-index: 1;
+    }
+
+        .cc-back:hover {
+            color: #fff;
+        }
+
+    .cc-edit-title {
+        font-size: 25px;
+        font-weight: 900;
+        margin: 10px 0 4px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .cc-edit-subtitle {
+        color: rgba(255,255,255,.74);
+        font-size: 13px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .ticket-number {
+        direction: ltr;
+        display: inline-block;
+        font-weight: 900;
+    }
+
+    .form-section {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 17px;
+        box-shadow: 0 7px 22px rgba(15,23,42,.045);
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .form-section-header {
+        padding: 14px 16px;
+        border-bottom: 1px solid #e5e7eb;
+        background: linear-gradient( 180deg, #fff, #f8fafc);
+        font-weight: 900;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+    }
+
+    .form-section-body {
+        padding: 17px;
+    }
+
+    .field-label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 11px;
+        color: #475569;
+        font-weight: 850;
+    }
+
+    .field-hint {
+        color: #94a3b8;
+        font-size: 10px;
+        margin-top: 5px;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 10px;
+        border-color: #dbe2ea;
+        min-height: 42px;
+        font-size: 12px;
+    }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #93c5fd;
+            box-shadow: 0 0 0 .2rem rgba(37,99,235,.10);
+        }
+
+    textarea.form-control {
+        min-height: auto;
+        resize: vertical;
+    }
+
+    .required-mark {
+        color: #dc2626;
+        margin-right: 2px;
+    }
+
+    .followup-section {
+        border-color: #bfdbfe;
+    }
+
+        .followup-section
+        .form-section-header {
+            background: #eff6ff;
+            color: #1e3a8a;
+            border-bottom-color: #bfdbfe;
+        }
+
+    .submit-panel {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 15px 17px;
+        box-shadow: 0 7px 22px rgba(15,23,42,.045);
+    }
+
+    .submit-note {
+        color: #64748b;
+        font-size: 11px;
+        line-height: 1.7;
+    }
+
+    .submit-btn {
+        border-radius: 11px;
+        font-size: 13px;
+        font-weight: 900;
+        padding: 10px 24px;
+    }
+
+    .text-danger {
+        font-size: 10px;
+        display: block;
+        margin-top: 5px;
+    }
+
+    @@media (max-width: 650px) {
+
+        .cc-edit-hero {
+            padding: 20px;
+        }
+
+        .cc-edit-title {
+            font-size: 21px;
+        }
+
+        .submit-panel {
+            align-items: stretch;
+        }
+
+        .submit-btn {
+            width: 100%;
+        }
+    }
+
+</style>
+
+<div class="cc-edit-page">
+
+    <div class="cc-edit-hero">
+
+        <a asp-action="Details"
+           asp-route-id="@ticketId"
+           class="cc-back">
+
+            <i class="bi bi-arrow-right"></i>
+
+            الرجوع إلى تفاصيل التذكرة
+
+        </a>
+
+        <div class="cc-edit-title">
+
+            <i class="bi bi-pencil-square ms-1"></i>
+
+            تعديل التذكرة
+
+            @if (!string.IsNullOrWhiteSpace(ticketNumber))
+            {
+                <span class="ticket-number">
+                    @ticketNumber
+                </span>
+            }
+
+        </div>
+
+        <div class="cc-edit-subtitle">
+
+            يمكنك تعديل بيانات العميل والحالة
+            وتحديد موعد متابعة جديد.
+
+        </div>
+
+    </div>
+
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger border-0 shadow-sm">
+
+            <i class="bi bi-exclamation-triangle-fill ms-1"></i>
+
+            @TempData["Error"]
+
+        </div>
+    }
+
+
+    <form asp-action="Edit"
+          asp-route-id="@ticketId"
+          method="post">
+
+        @Html.AntiForgeryToken()
+
+        <input type="hidden"
+               name="id"
+               value="@ticketId" />
+
+
+        <div asp-validation-summary="ModelOnly"
+             class="alert alert-danger border-0 shadow-sm">
+        </div>
+
+
+        <div class="row g-4">
+
+
+            <!-- ================================================= -->
+            <!-- بيانات العميل -->
+            <!-- ================================================= -->
+
+            <div class="col-xl-6">
+
+                <div class="form-section">
+
+                    <div class="form-section-header">
+
+                        <i class="bi bi-person-vcard"></i>
+
+                        بيانات العميل
+
+                    </div>
+
+
+                    <div class="form-section-body">
+
+                        <div class="mb-3">
+
+                            <label asp-for="CustomerName"
+                                   class="field-label">
+
+                                اسم العميل
+
+                                <span class="required-mark">*</span>
+
+                            </label>
+
+                            <input asp-for="CustomerName"
+                                   class="form-control"
+                                   placeholder="اسم العميل" />
+
+                            <span asp-validation-for="CustomerName"
+                                  class="text-danger">
+                            </span>
+
+                        </div>
+
+
+                        <div class="mb-3">
+
+                            <label asp-for="CustomerPhone"
+                                   class="field-label">
+
+                                رقم الموبايل
+
+                            </label>
+
+                            <input asp-for="CustomerPhone"
+                                   class="form-control"
+                                   dir="ltr"
+                                   inputmode="tel"
+                                   placeholder="01XXXXXXXXX" />
+
+                        </div>
+
+
+                        <div class="mb-0">
+
+                            <label asp-for="CustomerAddress"
+                                   class="field-label">
+
+                                العنوان
+
+                            </label>
+
+                            <textarea asp-for="CustomerAddress"
+                                      class="form-control"
+                                      rows="3"
+                                      placeholder="عنوان العميل أو المنطقة"></textarea>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- تصنيف التذكرة -->
+            <!-- ================================================= -->
+
+            <div class="col-xl-6">
+
+                <div class="form-section">
+
+                    <div class="form-section-header">
+
+                        <i class="bi bi-tags"></i>
+
+                        تصنيف التذكرة
+
+                    </div>
+
+
+                    <div class="form-section-body">
+
+                        <div class="row g-3">
+
+
+                            <div class="col-md-6">
+
+                                <label asp-for="Source"
+                                       class="field-label">
+
+                                    مصدر التواصل
+
+                                </label>
+
+                                <select asp-for="Source"
+                                        class="form-select">
+
+                                    @foreach (
+                                                                        var source
+                                                                        in Enum.GetValues<CustomerCareTicketSource>())
+                                    {
+                                        <option value="@((int)source)">
+
+                                            @SourceText(source)
+
+                                        </option>
+                                    }
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="col-md-6">
+
+                                <label asp-for="Type"
+                                       class="field-label">
+
+                                    نوع الحالة
+
+                                </label>
+
+                                <select asp-for="Type"
+                                        class="form-select">
+
+                                    @foreach (
+                                                                        var type
+                                                                        in Enum.GetValues<CustomerCareTicketType>())
+                                    {
+                                        <option value="@((int)type)">
+
+                                            @TypeText(type)
+
+                                        </option>
+                                    }
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="col-md-6">
+
+                                <label asp-for="CategoryId"
+                                       class="field-label">
+
+                                    التصنيف الرئيسي
+
+                                </label>
+
+                                <select asp-for="CategoryId"
+                                        id="categorySelect"
+                                        class="form-select">
+
+                                    <option value="">
+                                        اختر التصنيف الرئيسي
+                                    </option>
+
+                                    @foreach (var item in categories)
+                                    {
+                                        <option value="@item.Id">
+
+                                            @CategoryText(item.Name)
+
+                                        </option>
+                                    }
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="col-md-6">
+
+                                <label asp-for="SubCategoryId"
+                                       class="field-label">
+
+                                    التصنيف الفرعي
+
+                                </label>
+
+                                <select asp-for="SubCategoryId"
+                                        id="subCategorySelect"
+                                        class="form-select">
+
+                                    <option value="">
+                                        اختر التصنيف الفرعي
+                                    </option>
+
+                                    @foreach (var item in subCategories)
+                                    {
+                                        <option value="@item.Id">
+
+                                            @SubCategoryText(item.Name)
+
+                                        </option>
+                                    }
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="col-md-6">
+
+                                <label asp-for="Priority"
+                                       class="field-label">
+
+                                    الأولوية
+
+                                </label>
+
+                                <select asp-for="Priority"
+                                        class="form-select">
+
+                                    @foreach (
+                                                                        var priority
+                                                                        in Enum.GetValues<CustomerCareTicketPriority>())
+                                    {
+                                        <option value="@((int)priority)">
+
+                                            @PriorityText(priority)
+
+                                        </option>
+                                    }
+
+                                </select>
+
+                            </div>
+
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- وصف التذكرة -->
+            <!-- ================================================= -->
+
+            <div class="col-12">
+
+                <div class="form-section">
+
+                    <div class="form-section-header">
+
+                        <i class="bi bi-card-text"></i>
+
+                        تفاصيل الحالة
+
+                    </div>
+
+                    <div class="form-section-body">
+
+                        <label asp-for="Description"
+                               class="field-label">
+
+                            وصف الحالة
+
+                            <span class="required-mark">*</span>
+
+                        </label>
+
+                        <textarea asp-for="Description"
+                                  class="form-control"
+                                  rows="6"
+                                  placeholder="اكتب تفاصيل الحالة..."></textarea>
+
+                        <span asp-validation-for="Description"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- Follow-up -->
+            <!-- ================================================= -->
+
+            <div class="col-12">
+
+                <div class="form-section followup-section">
+
+                    <div class="form-section-header">
+
+                        <i class="bi bi-telephone-forward"></i>
+
+                        الاتصال مرة أخرى / المتابعة
+
+                    </div>
+
+
+                    <div class="form-section-body">
+
+                        <div class="row g-3">
+
+                            <div class="col-lg-5 col-md-7">
+
+                                <label asp-for="NextFollowUpAt"
+                                       class="field-label">
+
+                                    موعد الاتصال القادم
+
+                                </label>
+
+                                <input asp-for="NextFollowUpAt"
+                                       type="datetime-local"
+                                       class="form-control"
+                                       value="@(Model.NextFollowUpAt.HasValue
+                                                                                   ? Model.NextFollowUpAt.Value.ToLocalTime().ToString("yyyy-MM-ddTHH:mm")
+                                                                                   : "")" />
+
+                                <div class="field-hint">
+
+                                    لو العميل طلب الاتصال مرة أخرى،
+                                    حدد تاريخ ووقت المتابعة هنا.
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="col-lg-7 d-flex align-items-center">
+
+                                <div class="alert alert-info border-0 mb-0 w-100 small">
+
+                                    <i class="bi bi-info-circle-fill ms-1"></i>
+
+                                    بعد الحفظ سيظهر موعد المتابعة
+                                    في تفاصيل التذكرة وقائمة
+                                    الحالات التي تحتاج متابعة.
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- Save -->
+            <!-- ================================================= -->
+
+            <div class="col-12">
+
+                <div class="submit-panel">
+
+                    <div class="submit-note">
+
+                        <i class="bi bi-clock-history ms-1"></i>
+
+                        سيتم تسجيل عملية التعديل
+                        في سجل إجراءات التذكرة.
+
+                    </div>
+
+
+                    <div class="d-flex gap-2 flex-wrap">
+
+                        <a asp-action="Details"
+                           asp-route-id="@ticketId"
+                           class="btn btn-outline-secondary submit-btn">
+
+                            <i class="bi bi-x-circle ms-1"></i>
+
+                            إلغاء
+
+                        </a>
+
+
+                        <button type="submit"
+                                class="btn btn-primary submit-btn">
+
+                            <i class="bi bi-check2-circle ms-1"></i>
+
+                            حفظ التعديلات
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </form>
+
+</div>
+
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+
+        const categorySelect =
+            document.getElementById(
+                "categorySelect");
+
+        const subCategorySelect =
+            document.getElementById(
+                "subCategorySelect");
+
+
+        const subCategoryArabicNames = {
+
+            "Sales Rep Complaint":
+                "شكوى من المندوب",
+
+            "Supervisor Complaint":
+                "شكوى من المشرف",
+
+            "Sales Rep No Response":
+                "المندوب لا يرد",
+
+            "No Delivery":
+                "لم يتم التسليم",
+
+            "Refused Supply":
+                "رفض التوريد",
+
+            "Insufficient Quantity":
+                "كمية غير كافية",
+
+            "Delivery Delay":
+                "تأخير في التسليم",
+
+            "Replacement Refused":
+                "رفض الاستبدال",
+
+            "Replacement Delayed":
+                "تأخير الاستبدال",
+
+            "Freezer Request":
+                "طلب ثلاجة",
+
+            "Freezer Maintenance":
+                "صيانة ثلاجة",
+
+            "Cooling Failure":
+                "عطل تبريد",
+
+            "Freezer Retrieval":
+                "استرجاع ثلاجة",
+
+            "Foreign Object":
+                "جسم غريب داخل المنتج",
+
+            "Hair in Product":
+                "شعر داخل المنتج",
+
+            "Plastic in Product":
+                "بلاستيك داخل المنتج",
+
+            "Metal or Wire in Product":
+                "معدن أو سلك داخل المنتج",
+
+            "Taste Issue":
+                "مشكلة في الطعم",
+
+            "Melted Product":
+                "منتج ذائب",
+
+            "Ice Crystals":
+                "بلورات ثلج",
+
+            "Packaging Issue":
+                "مشكلة في العبوة",
+
+            "Missing Production Date":
+                "تاريخ الإنتاج غير موجود",
+
+            "Missing Product Component":
+                "مكوّن ناقص في المنتج",
+
+            "Other Quality Issue":
+                "مشكلة جودة أخرى",
+
+            "New Customer Request":
+                "طلب عميل جديد",
+
+            "Contract Request":
+                "طلب تعاقد",
+
+            "Pricing Inquiry":
+                "استفسار عن الأسعار",
+
+            "General Information":
+                "معلومات عامة",
+
+            "Call Transfer":
+                "تحويل مكالمة",
+
+            "Other":
+                "أخرى"
+        };
+
+
+        function translateSubCategory(
+            name) {
+
+            return subCategoryArabicNames[name]
+                || name;
+        }
+
+
+        async function loadSubCategories(
+            categoryId,
+            selectedId = null) {
+
+            if (!categoryId) {
+
+                subCategorySelect.innerHTML =
+                    '<option value="">اختر التصنيف الفرعي</option>';
+
+                return;
+            }
+
+
+            subCategorySelect.disabled =
+                true;
+
+            subCategorySelect.innerHTML =
+                '<option value="">جاري التحميل...</option>';
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        `/CustomerCare/SubCategories?categoryId=${categoryId}`);
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        "Unable to load subcategories.");
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                subCategorySelect.innerHTML =
+                    '<option value="">اختر التصنيف الفرعي</option>';
+
+
+                data.forEach(
+                    item => {
+
+                        const option =
+                            document.createElement(
+                                "option");
+
+                        option.value =
+                            item.id;
+
+                        option.textContent =
+                            translateSubCategory(
+                                item.name);
+
+
+                        if (
+                            selectedId &&
+                            String(item.id)
+                            ===
+                            String(selectedId))
+                        {
+                            option.selected =
+                                true;
+                        }
+
+
+                        subCategorySelect.appendChild(
+                            option);
+                    });
+            }
+            catch {
+
+                subCategorySelect.innerHTML =
+                    '<option value="">تعذر تحميل التصنيفات الفرعية</option>';
+            }
+            finally {
+
+                subCategorySelect.disabled =
+                    false;
+            }
+        }
+
+
+        categorySelect?.addEventListener(
+            "change",
+            async function () {
+
+                await loadSubCategories(
+                    this.value,
+                    null);
+            });
+
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            async function () {
+
+                const selectedCategoryId =
+                    categorySelect?.value;
+
+                const selectedSubCategoryId =
+                    '@Model.SubCategoryId';
+
+
+                if (selectedCategoryId) {
+
+                    await loadSubCategories(
+                        selectedCategoryId,
+                        selectedSubCategoryId);
+                }
+
+            });
+
+    </script>
+}

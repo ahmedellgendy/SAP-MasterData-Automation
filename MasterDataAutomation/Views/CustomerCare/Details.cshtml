@@ -26,9 +26,24 @@
         User.IsInRole("ComplaintManager") ||
         User.IsInRole("Admin");
 
+    var isAgent =
+    User.IsInRole("ComplaintAgent");
+
+    var isOwnerAgent =
+        isAgent &&
+        Model.CreatedByUserId ==
+            int.Parse(
+                User.FindFirst(
+                    System.Security.Claims.ClaimTypes.NameIdentifier
+                )?.Value ?? "0");
+
     var canClose =
         User.IsInRole("ComplaintManager") ||
         User.IsInRole("Admin");
+
+    var canAgentCloseInquiry =
+        isOwnerAgent &&
+        Model.Type == CustomerCareTicketType.Inquiry;
 
     string PriorityClass(CustomerCareTicketPriority priority)
     {
@@ -763,6 +778,13 @@
                     تم الإنشاء في
                     @Model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
                 </div>
+
+                <a asp-action="Edit"
+                   asp-route-id="@Model.Id"
+                   class="btn btn-light btn-sm mt-3">
+                    <i class="bi bi-pencil-square ms-1"></i>
+                    تعديل بيانات التذكرة
+                </a>
 
             </div>
 
@@ -1782,7 +1804,11 @@
                         }
 
                         <!-- إغلاق -->
-                        @if (Model.Status == CustomerCareTicketStatus.Resolved && canClose)
+                        @if (
+                                                (Model.Status == CustomerCareTicketStatus.Resolved && canClose)
+                                                ||
+                                                (canAgentCloseInquiry && !isClosed)
+                                                )
                         {
                             <div class="action-box">
 
@@ -1846,6 +1872,53 @@
                             </div>
                         }
 
+
+                        @if (canClose)
+                        {
+                            <div class="action-box">
+
+                                <div class="action-title text-danger">
+                                    <i class="bi bi-trash"></i>
+                                    حذف التذكرة المتكررة
+                                </div>
+
+                                <div class="alert alert-danger border-0 small">
+                                    <i class="bi bi-exclamation-triangle-fill ms-1"></i>
+                                    استخدم هذا الإجراء فقط إذا كانت التذكرة مكررة أو تم إنشاؤها بالخطأ.
+                                </div>
+
+                                <form asp-action="Delete"
+                                      method="post"
+                                      onsubmit="return confirm('هل أنت متأكد من حذف هذه التذكرة من التشغيل؟');">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@Model.Id" />
+
+                                    <label class="form-label small fw-bold">
+                                        سبب الحذف
+                                    </label>
+
+                                    <textarea name="reason"
+                                          class="form-control mb-2"
+                                          rows="2"
+                                          required
+                                          placeholder="مثال: تذكرة مكررة - Duplicate Ticket"></textarea>
+
+                                    <button type="submit"
+                                            class="btn btn-outline-danger w-100">
+
+                                        <i class="bi bi-trash ms-1"></i>
+                                        حذف التذكرة
+
+                                    </button>
+
+                                </form>
+
+                            </div>
+                        }
                     </div>
 
                 </div>

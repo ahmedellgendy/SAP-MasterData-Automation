@@ -497,11 +497,12 @@ public class CustomerCareTicketService : ICustomerCareTicketService
         var now = DateTime.UtcNow;
 
         var query = _context.CustomerCareTickets
-            .AsNoTracking()
-            .Include(x => x.Category)
-            .Include(x => x.SubCategory)
-            .Include(x => x.AssignedDepartment)
-            .AsQueryable();
+              .AsNoTracking()
+              .Include(x => x.Category)
+              .Include(x => x.SubCategory)
+              .Include(x => x.AssignedDepartment)
+              .Where(x => !x.IsDeleted)
+              .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
@@ -634,8 +635,7 @@ public class CustomerCareTicketService : ICustomerCareTicketService
         var tickets =
             await _context.CustomerCareTickets
                 .AsNoTracking()
-                .Where(x =>
-                    x.CustomerPhone == normalizedPhone)
+                .Where(x =>x.CustomerPhone == normalizedPhone &&!x.IsDeleted)
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync(cancellationToken);
 
@@ -706,7 +706,7 @@ public class CustomerCareTicketService : ICustomerCareTicketService
             .AsNoTracking()
             .Include(x => x.Category)
             .Include(x => x.SubCategory)
-            .Where(x => x.CustomerPhone == normalizedPhone)
+            .Where(x =>x.CustomerPhone == normalizedPhone &&!x.IsDeleted)
             .OrderByDescending(x => x.CreatedAt)
             .Select(x =>
                 new CustomerCareTicketListItemDto
@@ -1098,7 +1098,7 @@ public class CustomerCareTicketService : ICustomerCareTicketService
         var ticket =
             await _context.CustomerCareTickets
                 .AsNoTracking()
-                .Where(x => x.Id == id)
+                .Where(x =>x.Id == id &&!x.IsDeleted)
                 .Select(x => new CustomerCareTicketDetailsDto
                 {
                     Id = x.Id,
@@ -1348,10 +1348,17 @@ public class CustomerCareTicketService : ICustomerCareTicketService
             ?? throw new KeyNotFoundException(
                 "Ticket was not found.");
 
-        if (ticket.Status != CustomerCareTicketStatus.Resolved)
+        var canCloseDirectlyAsInquiry =
+    ticket.Type == CustomerCareTicketType.Inquiry;
+
+        var canCloseResolvedTicket =
+            ticket.Status == CustomerCareTicketStatus.Resolved;
+
+        if (!canCloseDirectlyAsInquiry &&
+            !canCloseResolvedTicket)
         {
             throw new InvalidOperationException(
-                "Only resolved tickets can be closed.");
+                "Only resolved tickets or inquiry tickets can be closed.");
         }
 
         var now = DateTime.UtcNow;
@@ -1408,6 +1415,64 @@ public class CustomerCareTicketService : ICustomerCareTicketService
             cancellationToken);
     }
 
+    public async Task DeleteAsync(
+    int ticketId,
+    string reason,
+    int deletedByUserId,
+    string deletedByUserName,
+    CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            throw new InvalidOperationException(
+                "يجب كتابة سبب حذف التذكرة.");
+        }
+
+        var ticket =
+            await _context.CustomerCareTickets
+                .FirstOrDefaultAsync(
+                    x =>
+                        x.Id == ticketId &&
+                        !x.IsDeleted,
+                    cancellationToken)
+            ?? throw new KeyNotFoundException(
+                "التذكرة غير موجودة.");
+
+        var now = DateTime.UtcNow;
+
+        ticket.IsDeleted = true;
+        ticket.IsActive = false;
+
+        ticket.DeletedAt = now;
+        ticket.DeletedByUserId = deletedByUserId;
+        ticket.DeleteReason = reason.Trim();
+
+        ticket.UpdatedAt = now;
+        ticket.LastActivityAt = now;
+
+        ticket.Actions.Add(
+            new CustomerCareTicketAction
+            {
+                ActionType = "Deleted",
+
+                Description =
+                    $"تم حذف التذكرة من التشغيل. السبب: {reason.Trim()}",
+
+                IsInternalNote = true,
+
+                CreatedByUserId =
+                    deletedByUserId,
+
+                CreatedByUserName =
+                    deletedByUserName,
+
+                CreatedAt = now
+            });
+
+        await _context.SaveChangesAsync(
+            cancellationToken);
+    }
+
 
     public async Task<CustomerCareDashboardDto> GetDashboardAsync(
     DateTime? fromDate = null,
@@ -1418,6 +1483,7 @@ public class CustomerCareTicketService : ICustomerCareTicketService
 
         var query = _context.CustomerCareTickets
             .AsNoTracking()
+            .Where(x => !x.IsDeleted)
             .AsQueryable();
 
         if (fromDate.HasValue)
@@ -2199,6 +2265,120 @@ public class CustomerCareTicketService : ICustomerCareTicketService
         return filePath;
     }
 
+
+    public async Task UpdateAsync(
+    int ticketId,
+    UpdateCustomerCareTicketDto dto,
+    int changedByUserId,
+    string changedByUserName,
+    CancellationToken cancellationToken = default)
+    {
+        var ticket =
+            await _context.CustomerCareTickets
+                .FirstOrDefaultAsync(
+                    x => x.Id == ticketId,
+                    cancellationToken)
+            ?? throw new KeyNotFoundException(
+                "التذكرة غير موجودة.");
+
+        if (string.IsNullOrWhiteSpace(dto.CustomerName))
+            throw new InvalidOperationException(
+                "اسم العميل مطلوب.");
+
+        if (string.IsNullOrWhiteSpace(dto.Description))
+            throw new InvalidOperationException(
+                "وصف التذكرة مطلوب.");
+
+        if (dto.CategoryId.HasValue)
+        {
+            var categoryExists =
+                await _context.CustomerCareCategories
+                    .AsNoTracking()
+                    .AnyAsync(
+                        x =>
+                            x.Id == dto.CategoryId.Value &&
+                            x.IsActive,
+                        cancellationToken);
+
+            if (!categoryExists)
+                throw new InvalidOperationException(
+                    "التصنيف الرئيسي غير موجود أو غير فعال.");
+        }
+
+        if (dto.SubCategoryId.HasValue)
+        {
+            if (!dto.CategoryId.HasValue)
+            {
+                throw new InvalidOperationException(
+                    "يجب اختيار التصنيف الرئيسي أولًا.");
+            }
+
+            var subCategoryExists =
+                await _context.CustomerCareSubCategories
+                    .AsNoTracking()
+                    .AnyAsync(
+                        x =>
+                            x.Id == dto.SubCategoryId.Value &&
+                            x.CategoryId == dto.CategoryId.Value &&
+                            x.IsActive,
+                        cancellationToken);
+
+            if (!subCategoryExists)
+            {
+                throw new InvalidOperationException(
+                    "التصنيف الفرعي غير صحيح.");
+            }
+        }
+
+        var now = DateTime.UtcNow;
+
+        ticket.CustomerName = dto.CustomerName.Trim();
+        ticket.CustomerPhone = NormalizePhone(dto.CustomerPhone);
+        ticket.CustomerAddress = Clean(dto.CustomerAddress);
+
+        ticket.Source = dto.Source;
+        ticket.Type = dto.Type;
+
+        ticket.CategoryId = dto.CategoryId;
+        ticket.SubCategoryId = dto.SubCategoryId;
+
+        ticket.Description = dto.Description.Trim();
+        ticket.Priority = dto.Priority;
+
+        ticket.IsCritical =
+            dto.Priority == CustomerCareTicketPriority.Critical;
+
+        ticket.NextFollowUpAt = dto.NextFollowUpAt;
+
+        ticket.UpdatedAt = now;
+        ticket.LastActivityAt = now;
+
+        ticket.Actions.Add(
+            new CustomerCareTicketAction
+            {
+                ActionType = "TicketUpdated",
+
+                Description =
+                    dto.NextFollowUpAt.HasValue
+                        ? $"تم تعديل بيانات التذكرة وتحديد متابعة جديدة في {dto.NextFollowUpAt.Value:dd/MM/yyyy HH:mm}."
+                        : "تم تعديل بيانات التذكرة.",
+
+                CreatedByUserId =
+                    changedByUserId,
+
+                CreatedByUserName =
+                    changedByUserName,
+
+                CreatedAt =
+                    now
+            });
+
+        await _context.SaveChangesAsync(
+            cancellationToken);
+    }
+
+
+
     // =========================================================
     // Query
     // =========================================================
@@ -2206,10 +2386,11 @@ public class CustomerCareTicketService : ICustomerCareTicketService
     private IQueryable<CustomerCareTicket> BuildTicketQuery()
     {
         return _context.CustomerCareTickets
-            .AsNoTracking()
-            .Include(x => x.Category)
-            .Include(x => x.SubCategory)
-            .Include(x => x.AssignedDepartment);
+        .AsNoTracking()
+        .Where(x => !x.IsDeleted)
+        .Include(x => x.Category)
+        .Include(x => x.SubCategory)
+        .Include(x => x.AssignedDepartment);
     }
 
     // =========================================================
