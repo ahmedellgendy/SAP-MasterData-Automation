@@ -173,8 +173,8 @@
         }
 
         /* =====================================================
-                   Collapsed Sidebar
-                   ===================================================== */
+                           Collapsed Sidebar
+                           ===================================================== */
 
         body.sidebar-collapsed .sidebar {
             width: 76px;
@@ -423,6 +423,109 @@
         User.IsInRole("Executive Manager") ||
         User.IsInRole("CEO")
         );
+    }
+
+    @if (layoutCanAccessCustomerCare)
+    {
+        <div class="modal fade"
+             id="fridayBuddyModal"
+             tabindex="-1"
+             aria-labelledby="fridayBuddyModalLabel"
+             aria-hidden="true">
+
+            <div class="modal-dialog modal-dialog-centered">
+
+                <div class="modal-content border-0 shadow-lg"
+                     style="border-radius:24px; overflow:hidden;">
+
+                    <div class="modal-body p-0">
+
+                        <div id="fridayBuddyCard"
+                             style="
+                                background:linear-gradient(135deg,#eff6ff,#f8fafc);
+                                padding:30px;
+                                text-align:center;
+                                direction:rtl;
+                             ">
+
+                            <div style="
+                                display:inline-flex;
+                                align-items:center;
+                                justify-content:center;
+                                width:74px;
+                                height:74px;
+                                border-radius:22px;
+                                background:#fff;
+                                box-shadow:0 10px 30px rgba(15,23,42,.10);
+                                font-size:38px;
+                                margin-bottom:15px;
+                            ">
+                                🍦🎧
+                            </div>
+
+                            <div id="fridayBuddyMode"
+                                 style="
+                                    font-size:13px;
+                                    font-weight:900;
+                                    color:#2563eb;
+                                    margin-bottom:8px;
+                                 ">
+                                Happy Mode
+                            </div>
+
+                            <h3 id="fridayBuddyTitle"
+                                style="
+                                    font-size:22px;
+                                    font-weight:950;
+                                    color:#0f172a;
+                                    margin-bottom:10px;
+                                ">
+                                صباح الخير
+                            </h3>
+
+                            <div id="fridayBuddyMessage"
+                                 style="
+                                    font-size:14px;
+                                    line-height:1.9;
+                                    color:#475569;
+                                    margin-bottom:18px;
+                                 ">
+                                جاهزين ليوم هادي؟ خلينا نشوف 😄
+                            </div>
+
+                            <div id="fridayBuddyMission"
+                                 style="
+                                    background:#fff;
+                                    border:1px solid #dbeafe;
+                                    border-radius:14px;
+                                    padding:12px 14px;
+                                    font-size:12px;
+                                    color:#334155;
+                                    margin-bottom:18px;
+                                 ">
+                                🎯 Mission of the day:
+                                خلّص أول Follow-up قبل القهوة.
+                            </div>
+
+                            <button type="button"
+                                    class="btn btn-primary px-4 py-2 fw-bold"
+                                    style="border-radius:12px;"
+                                    data-bs-dismiss="modal">
+
+                                <i class="bi bi-rocket-takeoff ms-1"></i>
+                                يلا نبدأ
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
     }
 
     <div class="sidebar">
@@ -1073,90 +1176,66 @@
             const sidebarToggleIcon =
                 document.getElementById("sidebarToggleIcon");
 
-            const sidebarStorageKey =
-                "fridayops.sidebar.collapsed";
+                    const sidebarStorageKey =
+            "fridayops.sidebar.collapsed";
 
-            function setSidebarCollapsed(
-                collapsed,
-                persist = true) {
+        function setSidebarCollapsed(collapsed) {
 
-                body.classList.toggle(
-                    "sidebar-collapsed",
-                    collapsed);
+            body.classList.toggle(
+                "sidebar-collapsed",
+                collapsed);
 
-                if (sidebarToggle) {
-                    sidebarToggle.setAttribute(
-                        "aria-pressed",
-                        collapsed ? "true" : "false");
+            if (sidebarToggle) {
 
-                    sidebarToggle.setAttribute(
-                        "title",
-                        collapsed
-                            ? "Expand sidebar"
-                            : "Collapse sidebar");
-                }
+                sidebarToggle.setAttribute(
+                    "aria-pressed",
+                    collapsed ? "true" : "false");
 
-                if (sidebarToggleIcon) {
-                    sidebarToggleIcon.className =
-                        collapsed
-                            ? "bi bi-layout-sidebar-inset-reverse"
-                            : "bi bi-layout-sidebar-inset";
-                }
-
-                if (persist) {
-                    localStorage.setItem(
-                        sidebarStorageKey,
-                        collapsed ? "true" : "false");
-                }
+                sidebarToggle.setAttribute(
+                    "title",
+                    collapsed
+                        ? "Expand sidebar"
+                        : "Collapse sidebar");
             }
 
-            const storedSidebarState =
-                localStorage.getItem(
-                    sidebarStorageKey);
+            if (sidebarToggleIcon) {
 
-            const shouldStartCollapsed =
-                storedSidebarState === "true" ||
-                (
-                    storedSidebarState === null &&
-                    window.innerWidth <= 900
-                );
+                sidebarToggleIcon.className =
+                    collapsed
+                        ? "bi bi-layout-sidebar-inset-reverse"
+                        : "bi bi-layout-sidebar-inset";
+            }
 
-            setSidebarCollapsed(
-                shouldStartCollapsed,
-                false);
+            localStorage.setItem(
+                sidebarStorageKey,
+                collapsed ? "true" : "false");
+        }
 
-                        let userChangedSidebar = false;
 
-        const autoCollapseTimer =
-            setTimeout(
-                function () {
+        // آخر حالة اختارها المستخدم
+        const storedSidebarState =
+            localStorage.getItem(
+                sidebarStorageKey);
 
-                    if (!userChangedSidebar &&
-                        !body.classList.contains("sidebar-collapsed")) {
+        const shouldStartCollapsed =
+            storedSidebarState === "true";
 
-                        setSidebarCollapsed(
-                            true,
-                            false);
-                    }
-                },
-                3000);
+        setSidebarCollapsed(
+            shouldStartCollapsed);
 
-                sidebarToggle?.addEventListener(
-        "click",
-        function () {
 
-            userChangedSidebar = true;
+        // فتح / قفل يدوي فقط
+        sidebarToggle?.addEventListener(
+            "click",
+            function () {
 
-            clearTimeout(
-                autoCollapseTimer);
+                const isCollapsed =
+                    body.classList.contains(
+                        "sidebar-collapsed");
 
-            const collapsed =
-                body.classList.contains(
-                    "sidebar-collapsed");
-
-            setSidebarCollapsed(
-                !collapsed);
-        });
+                setSidebarCollapsed(
+                    !isCollapsed);
+            });
 
             document
                 .querySelectorAll(".sidebar-menu-toggle")
@@ -1258,6 +1337,163 @@
                         }
                     }
                 });
+
+
+                        const fridayBuddyModalElement =
+            document.getElementById("fridayBuddyModal");
+
+        if (fridayBuddyModalElement) {
+
+            const currentUser =
+                '@(User.Identity?.Name ?? "user")';
+
+            const today =
+                new Date()
+                    .toISOString()
+                    .split("T")[0];
+
+            const buddyStorageKey =
+                `fridayops.dailyfun.${currentUser}.${today}`;
+
+            const alreadyShown =
+                localStorage.getItem(
+                    buddyStorageKey);
+
+            if (!alreadyShown) {
+
+                const hour =
+                    new Date().getHours();
+
+                const day =
+                    new Date().getDay();
+
+                let mode =
+                    "Happy Mode";
+
+                let title =
+                    "صباح الخير ☀️";
+
+                let message =
+                    "جاهزين ليوم هادي؟ خلينا نشوف 😄";
+
+                let mission =
+                    "🎯 Mission of the day: خلّص أول Follow-up قبل القهوة.";
+
+                if (day === 5) {
+
+                    mode =
+                        "Friday Mode 😎";
+
+                    title =
+                        "Friday on Friday 🍦";
+
+                    message =
+                        "النهارده Friday... يعني المزاج أعلى من الـ SLA 😄";
+
+                    mission =
+                        "🎉 Mission: خلّص يومك من غير Ticket دراما.";
+                }
+                else if (hour >= 16) {
+
+                    mode =
+                        "End of Shift Mode 🌙";
+
+                    title =
+                        "قربنا نخلص 😴";
+
+                    message =
+                        "آخر Ticket... إن شاء الله 😂";
+
+                    mission =
+                        "🏁 Mission: اقفل آخر Follow-up قبل ما تقول سلام.";
+                }
+                else if (hour >= 13) {
+
+                    mode =
+                        "Tired Mode ☕";
+
+                    title =
+                        "Coffee Survival Mode";
+
+                    message =
+                        "لسه اليوم مخلصش... بس الإحساس End of Shift ☕";
+
+                    mission =
+                        "☕ Mission: خلّص Ticket واحدة قبل القهوة الجاية.";
+                }
+                else {
+
+                    const random =
+                        Math.random();
+
+                    if (random > 0.75) {
+
+                        mode =
+                            "Angry Customer Mode 🔥";
+
+                        title =
+                            "خليك هادي 😅";
+
+                        message =
+                            "العميل قال: أنا بكلمكم من أسبوع... والتيكت لسه متفتحة من 10 دقايق 😂";
+
+                        mission =
+                            "🔥 Mission: حافظ على هدوءك لأول 3 Calls.";
+                    }
+                }
+
+                const modeElement =
+                    document.getElementById(
+                        "fridayBuddyMode");
+
+                const titleElement =
+                    document.getElementById(
+                        "fridayBuddyTitle");
+
+                const messageElement =
+                    document.getElementById(
+                        "fridayBuddyMessage");
+
+                const missionElement =
+                    document.getElementById(
+                        "fridayBuddyMission");
+
+                if (modeElement) {
+                    modeElement.textContent =
+                        mode;
+                }
+
+                if (titleElement) {
+                    titleElement.textContent =
+                        title;
+                }
+
+                if (messageElement) {
+                    messageElement.textContent =
+                        message;
+                }
+
+                if (missionElement) {
+                    missionElement.textContent =
+                        mission;
+                }
+
+                const buddyModal =
+                    new bootstrap.Modal(
+                        fridayBuddyModalElement);
+
+                window.setTimeout(
+                    function () {
+
+                        buddyModal.show();
+
+                        localStorage.setItem(
+                            buddyStorageKey,
+                            "true");
+                    },
+                    600);
+            }
+        }
         });
     </script>
 
