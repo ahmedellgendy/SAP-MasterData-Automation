@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MasterDataAutomation.Web.Controllers;
 
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,Manager")]
 public class SystemSettingsController : Controller
 {
     private readonly ISettingsService _settingsService;
