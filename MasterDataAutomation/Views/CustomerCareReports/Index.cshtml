@@ -1,0 +1,579 @@
+﻿@model MasterDataAutomation.Application.Modules.CustomerCare.Dtos.Reports.CustomerCareReportDto
+
+@{
+    ViewData["Title"] = "تقارير خدمة العملاء";
+
+    var s = Model.Summary;
+    var f = Model.Filter;
+    var hasData = s.TotalTickets > 0;
+
+    var fromValue = f.FromDate?.ToString("yyyy-MM-dd");
+    var toValue = f.ToDate?.ToString("yyyy-MM-dd");
+
+    var groups = new[]
+    {
+        new { Title = "تصنيفات الشكاوى", Items = Model.ByCategory },
+        new { Title = "الأقسام المسؤولة", Items = Model.ByDepartment },
+        new { Title = "حالات الشكاوى", Items = Model.ByStatus },
+        new { Title = "أولويات الشكاوى", Items = Model.ByPriority },
+        new { Title = "مصادر الشكاوى", Items = Model.BySource }
+    };
+}
+
+<style>
+    .cc-reports {
+        direction: rtl;
+        color: #172b46;
+        padding: 24px;
+        font-family: inherit;
+    }
+
+    .cc-reports * {
+        box-sizing: border-box;
+    }
+
+    .cc-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 22px;
+    }
+
+    .cc-eyebrow {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+
+    .cc-header h1 {
+        margin: 0 0 7px;
+        font-size: 25px;
+        font-weight: 800;
+    }
+
+    .cc-subtitle {
+        color: #64748b;
+        font-size: 13px;
+        margin: 0;
+    }
+
+    .cc-export {
+        background: #15805d;
+        color: #fff;
+        text-decoration: none;
+        padding: 12px 19px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+    }
+
+    .cc-export:hover {
+        background: #0e6246;
+        color: #fff;
+    }
+
+    .cc-panel {
+        background: #fff;
+        border: 1px solid #e6ebf1;
+        border-radius: 14px;
+        box-shadow: 0 3px 14px rgba(20,43,73,.035);
+    }
+
+    .cc-filter-panel {
+        padding: 19px;
+        margin-bottom: 20px;
+    }
+
+    .cc-filter-title {
+        font-size: 14px;
+        font-weight: 800;
+        margin-bottom: 14px;
+    }
+
+    .cc-filter-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr auto;
+        align-items: end;
+        gap: 14px;
+    }
+
+    .cc-field label {
+        display: block;
+        margin-bottom: 7px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #475569;
+    }
+
+    .cc-field input {
+        width: 100%;
+        border: 1px solid #dbe2eb;
+        border-radius: 9px;
+        padding: 10px 12px;
+        min-height: 42px;
+        font-size: 13px;
+        background: #fff;
+    }
+
+    .cc-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .cc-primary {
+        color: #fff;
+        background: #1769c2;
+        border: none;
+        border-radius: 9px;
+        padding: 11px 20px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .cc-reset {
+        background: #f1f5f9;
+        border-radius: 9px;
+        color: #475569;
+        padding: 11px 17px;
+        text-decoration: none;
+        white-space: nowrap;
+        font-size: 13px;
+    }
+
+    .cc-section-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 22px 0 13px;
+        gap: 12px;
+    }
+
+    .cc-section-heading h2 {
+        font-size: 17px;
+        font-weight: 800;
+        margin: 0;
+    }
+
+    .cc-section-heading span {
+        color: #8490a3;
+        font-size: 12px;
+    }
+
+    .cc-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0,1fr));
+        gap: 14px;
+    }
+
+    .cc-kpi {
+        padding: 18px;
+        min-height: 114px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .cc-kpi-label {
+        font-size: 12px;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .cc-kpi-value {
+        font-size: 28px;
+        font-weight: 800;
+        line-height: 1.15;
+        direction: ltr;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .cc-kpi-note {
+        font-size: 11px;
+        color: #94a3b8;
+    }
+
+    .cc-blue { color: #1769c2; }
+    .cc-green { color: #16805d; }
+    .cc-orange { color: #c77b0a; }
+    .cc-red { color: #cf3344; }
+    .cc-dark { color: #172b46; }
+
+    .cc-performance-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+
+    .cc-performance {
+        padding: 20px;
+    }
+
+    .cc-performance h3 {
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 12px;
+    }
+
+    .cc-performance-value {
+        font-size: 27px;
+        font-weight: 800;
+        color: #1769c2;
+        margin-bottom: 12px;
+    }
+
+    .cc-progress {
+        background: #edf2f7;
+        height: 9px;
+        border-radius: 20px;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
+
+    .cc-progress-fill {
+        height: 100%;
+        background: #1769c2;
+        border-radius: 20px;
+    }
+
+    .cc-performance-note {
+        color: #64748b;
+        font-size: 12px;
+    }
+
+    .cc-analysis-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0,1fr));
+        gap: 14px;
+    }
+
+    .cc-analysis-panel {
+        padding: 18px;
+        min-width: 0;
+    }
+
+    .cc-analysis-panel h3 {
+        font-size: 14px;
+        font-weight: 800;
+        margin: 0 0 17px;
+    }
+
+    .cc-breakdown-row {
+        padding: 9px 0;
+        border-bottom: 1px solid #f0f3f7;
+    }
+
+    .cc-breakdown-row:last-child {
+        border-bottom: none;
+    }
+
+    .cc-breakdown-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 7px;
+        font-size: 12px;
+    }
+
+    .cc-breakdown-top strong {
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .cc-breakdown-track {
+        height: 6px;
+        background: #edf2f7;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .cc-breakdown-fill {
+        height: 100%;
+        background: #397dc5;
+        border-radius: 10px;
+    }
+
+    .cc-empty {
+        padding: 32px 15px;
+        text-align: center;
+        color: #64748b;
+        font-size: 13px;
+    }
+
+    .cc-empty strong {
+        display: block;
+        color: #172b46;
+        margin-bottom: 8px;
+        font-size: 15px;
+    }
+
+    .cc-footer {
+        text-align: center;
+        padding: 28px 0 5px;
+        font-size: 11px;
+        color: #94a3b8;
+        direction: ltr;
+    }
+
+    @@media (max-width: 1050px) {
+        .cc-kpi-grid {
+            grid-template-columns: repeat(2, minmax(0,1fr));
+        }
+    }
+
+    @@media (max-width: 700px) {
+        .cc-reports { padding: 12px; }
+
+        .cc-filter-grid,
+        .cc-performance-grid,
+        .cc-analysis-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .cc-header {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .cc-export {
+            justify-content: center;
+        }
+
+        .cc-actions {
+            display: grid;
+            grid-template-columns: 1fr auto;
+        }
+
+        .cc-kpi { padding: 14px; min-height: 105px; }
+
+        .cc-kpi-value { font-size: 23px; }
+
+        .cc-header h1 { font-size: 21px; }
+    }
+</style>
+
+<div class="cc-reports" dir="rtl">
+
+    <!-- Header -->
+    <div class="cc-header">
+        <div>
+            <div class="cc-eyebrow">
+                FridayOps / Customer Care
+            </div>
+
+            <h1>تقارير خدمة العملاء</h1>
+
+            <p class="cc-subtitle">
+                التقرير التنفيذي لأداء الشكاوى على مستوى
+                شركة فرايداي آيس كريم
+            </p>
+        </div>
+
+        <a asp-controller="CustomerCareReports"
+           asp-action="ExportExcel"
+           asp-route-FromDate="@fromValue"
+           asp-route-ToDate="@toValue"
+           asp-route-CategoryId="@f.CategoryId"
+           asp-route-SubCategoryId="@f.SubCategoryId"
+           asp-route-DepartmentId="@f.DepartmentId"
+           asp-route-SalesRepId="@f.SalesRepId"
+           asp-route-CreatedByUserId="@f.CreatedByUserId"
+           asp-route-OverdueOnly="@f.OverdueOnly"
+           asp-route-CriticalOnly="@f.CriticalOnly"
+           class="cc-export">
+            <span>↓</span>
+            تصدير التقرير Excel
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="cc-panel cc-filter-panel">
+        <div class="cc-filter-title">فترة التقرير</div>
+
+        <form method="get"
+              asp-controller="CustomerCareReports"
+              asp-action="Index">
+
+            <div class="cc-filter-grid">
+                <div class="cc-field">
+                    <label for="cc-from">من تاريخ</label>
+                    <input id="cc-from"
+                           type="date"
+                           name="FromDate"
+                           value="@fromValue" />
+                </div>
+
+                <div class="cc-field">
+                    <label for="cc-to">إلى تاريخ</label>
+                    <input id="cc-to"
+                           type="date"
+                           name="ToDate"
+                           value="@toValue" />
+                </div>
+
+                <div class="cc-actions">
+                    <button type="submit" class="cc-primary">
+                        عرض التقرير
+                    </button>
+
+                    <a asp-controller="CustomerCareReports"
+                       asp-action="Index"
+                       class="cc-reset">
+                        مسح
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    @if (!hasData)
+    {
+        <div class="cc-panel cc-empty">
+            <strong>لا توجد شكاوى للعرض</strong>
+            لا توجد شكاوى مطابقة للفترة المحددة.
+            يمكنك تغيير التاريخ أو مراجعة البيانات المسجلة.
+        </div>
+    }
+
+    <!-- Main KPIs -->
+    <div class="cc-section-heading">
+        <h2>نظرة عامة على الأداء</h2>
+        <span>إحصائيات الشركة</span>
+    </div>
+
+    <div class="cc-kpi-grid">
+        @foreach (var kpi in new[]
+        {
+            new { Label = "إجمالي الشكاوى", Value = s.TotalTickets.ToString("N0"), Note = "خلال الفترة", Color = "cc-blue" },
+            new { Label = "تم الحل أو الإغلاق", Value = s.CompletedTickets.ToString("N0"), Note = "شكاوى مكتملة", Color = "cc-green" },
+            new { Label = "شكاوى مفتوحة", Value = s.OpenTickets.ToString("N0"), Note = "تحتاج إلى متابعة", Color = "cc-orange" },
+            new { Label = "شكاوى متأخرة", Value = s.OverdueTickets.ToString("N0"), Note = "تجاوزت موعد الحل", Color = "cc-red" },
+            new { Label = "نسبة الإنجاز", Value = $"{s.ResolutionRate:N1}%", Note = "من إجمالي الشكاوى", Color = "cc-green" },
+            new { Label = "متوسط وقت الحل", Value = $"{s.AverageResolutionHours:N1}", Note = "ساعة", Color = "cc-blue" },
+            new { Label = "شكاوى حرجة", Value = s.CriticalTickets.ToString("N0"), Note = "تحتاج إلى اهتمام", Color = "cc-red" },
+            new { Label = "شكاوى أعيد فتحها", Value = s.ReopenedTickets.ToString("N0"), Note = "شكاوى متكررة المتابعة", Color = "cc-dark" }
+        })
+        {
+            <div class="cc-panel cc-kpi">
+                <div class="cc-kpi-label">@kpi.Label</div>
+                <div class="cc-kpi-value @kpi.Color">
+                    @kpi.Value
+                </div>
+                <div class="cc-kpi-note">@kpi.Note</div>
+            </div>
+        }
+    </div>
+
+    <!-- SLA Performance -->
+    <div class="cc-section-heading">
+        <h2>مؤشرات الالتزام ومستوى الخدمة</h2>
+        <span>SLA Performance</span>
+    </div>
+
+    <div class="cc-performance-grid">
+
+        <div class="cc-panel cc-performance">
+            <h3>الالتزام بوقت الاستجابة الأولى</h3>
+
+            <div class="cc-performance-value">
+                @s.FirstResponseComplianceRate.ToString("N1")%
+            </div>
+
+            <div class="cc-progress">
+                <div class="cc-progress-fill"
+                     style="width:@Math.Clamp(s.FirstResponseComplianceRate, 0m, 100m).ToString(System.Globalization.CultureInfo.InvariantCulture)%">
+                </div>
+            </div>
+
+            <div class="cc-performance-note">
+                حالات تجاوز وقت الاستجابة:
+                <strong>@s.FirstResponseBreachedTickets</strong>
+            </div>
+        </div>
+
+        <div class="cc-panel cc-performance">
+            <h3>الالتزام بوقت حل الشكاوى</h3>
+
+            <div class="cc-performance-value">
+                @s.ResolutionComplianceRate.ToString("N1")%
+            </div>
+
+            <div class="cc-progress">
+                <div class="cc-progress-fill"
+                     style="width:@Math.Clamp(s.ResolutionComplianceRate, 0m, 100m).ToString(System.Globalization.CultureInfo.InvariantCulture)%">
+                </div>
+            </div>
+
+            <div class="cc-performance-note">
+                حالات تجاوز وقت الحل:
+                <strong>@s.ResolutionBreachedTickets</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analysis -->
+    <div class="cc-section-heading">
+        <h2>تحليل الشكاوى</h2>
+        <span>التوزيع حسب التصنيف والقسم والحالة والأولوية والمصدر</span>
+    </div>
+
+    <div class="cc-analysis-grid">
+        @foreach (var reportGroup in groups)
+        {
+            var totalInGroup = reportGroup.Items.Sum(x => x.TotalTickets);
+
+            <div class="cc-panel cc-analysis-panel">
+                <h3>@reportGroup.Title</h3>
+
+                @if (!reportGroup.Items.Any())
+                {
+                    <div class="cc-empty">
+                        لا توجد بيانات متاحة
+                    </div>
+                }
+                else
+                {
+                    @foreach (var item in reportGroup.Items
+                        .OrderByDescending(x => x.TotalTickets))
+                    {
+                        var percent = totalInGroup > 0
+                            ? Math.Round(item.TotalTickets * 100m / totalInGroup, 1)
+                            : 0m;
+
+                        var width = percent.ToString(
+                            System.Globalization.CultureInfo.InvariantCulture);
+
+                        <div class="cc-breakdown-row">
+                            <div class="cc-breakdown-top">
+                                <span>@item.Name</span>
+                                <strong>
+                                    @item.TotalTickets
+                                    <span style="color:#94a3b8;font-weight:400">
+                                        (@percent.ToString("N1")%)
+                                    </span>
+                                </strong>
+                            </div>
+
+                            <div class="cc-breakdown-track">
+                                <div class="cc-breakdown-fill"
+                                     style="width:@(width)%">
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        }
+    </div>
+
+    <div class="cc-footer">
+        FridayOps | Developed by Ahmed Elgendy
+    </div>
+</div>

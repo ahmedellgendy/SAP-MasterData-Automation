@@ -16,374 +16,374 @@
 
 
     <style>
-        body {
-            background-color: #f4f6f9;
-        }
-
-        .sidebar {
-            width: 260px;
-            height: 100vh;
-            min-height: 100vh;
-            background: #1f2937;
-            position: fixed;
-            left: 0;
-            top: 0;
-            padding: 18px;
-            overflow-y: auto;
-            overflow-x: hidden;
-            box-sizing: border-box;
-            overscroll-behavior: contain;
-            transition: width .22s ease, padding .22s ease;
-            z-index: 1040;
-        }
-
-        .sidebar-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            margin-bottom: 24px;
-        }
-
-        .sidebar-toggle {
-            width: 36px;
-            height: 36px;
-            flex: 0 0 36px;
-            border: 1px solid rgba(255,255,255,.12);
-            background: rgba(255,255,255,.06);
-            color: #d1d5db;
-            border-radius: 10px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: .15s ease;
-        }
-
-            .sidebar-toggle:hover {
-                background: #374151;
-                color: #fff;
-                border-color: rgba(255,255,255,.20);
+            body {
+                background-color: #f4f6f9;
             }
 
-        .sidebar::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .sidebar::-webkit-scrollbar-track {
-            background: #1f2937;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb {
-            background: #4b5563;
-            border-radius: 20px;
-        }
-
-            .sidebar::-webkit-scrollbar-thumb:hover {
-                background: #6b7280;
+            .sidebar {
+                width: 260px;
+                height: 100vh;
+                min-height: 100vh;
+                background: #1f2937;
+                position: fixed;
+                left: 0;
+                top: 0;
+                padding: 18px;
+                overflow-y: auto;
+                overflow-x: hidden;
+                box-sizing: border-box;
+                overscroll-behavior: contain;
+                transition: width .22s ease, padding .22s ease;
+                z-index: 1040;
             }
 
-        .sidebar-title {
-            color: white;
-            font-size: 20px;
-            font-weight: 800;
-            margin-bottom: 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            min-width: 0;
-        }
+            .sidebar-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                margin-bottom: 24px;
+            }
 
-        .sidebar-section {
-            color: #9ca3af !important;
-            font-size: 11px;
-            letter-spacing: 1.2px;
-            margin-top: 18px;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            font-weight: 800;
-        }
+            .sidebar-toggle {
+                width: 36px;
+                height: 36px;
+                flex: 0 0 36px;
+                border: 1px solid rgba(255,255,255,.12);
+                background: rgba(255,255,255,.06);
+                color: #d1d5db;
+                border-radius: 10px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                transition: .15s ease;
+            }
 
-        .sidebar a,
-        .sidebar-menu-toggle {
-            display: flex;
-            align-items: center;
-            color: #d1d5db;
-            text-decoration: none;
-            padding: 10px 12px;
-            border-radius: 10px;
-            margin-bottom: 5px;
-            font-size: 14px;
-            transition: 0.15s ease;
-            border: 0;
-            background: transparent;
-            width: 100%;
-            text-align: left;
-        }
+                .sidebar-toggle:hover {
+                    background: #374151;
+                    color: #fff;
+                    border-color: rgba(255,255,255,.20);
+                }
 
-            .sidebar a:hover,
-            .sidebar-menu-toggle:hover {
-                background: #374151;
+            .sidebar::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            .sidebar::-webkit-scrollbar-track {
+                background: #1f2937;
+            }
+
+            .sidebar::-webkit-scrollbar-thumb {
+                background: #4b5563;
+                border-radius: 20px;
+            }
+
+                .sidebar::-webkit-scrollbar-thumb:hover {
+                    background: #6b7280;
+                }
+
+            .sidebar-title {
                 color: white;
+                font-size: 20px;
+                font-weight: 800;
+                margin-bottom: 0;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                min-width: 0;
             }
 
-            .sidebar a i,
-            .sidebar-menu-toggle i:first-child {
-                margin-right: 10px;
-                font-size: 16px;
-                width: 20px;
-                text-align: center;
+            .sidebar-section {
+                color: #9ca3af !important;
+                font-size: 11px;
+                letter-spacing: 1.2px;
+                margin-top: 18px;
+                margin-bottom: 8px;
+                text-transform: uppercase;
+                font-weight: 800;
             }
 
-            .sidebar a.active {
-                background: #2563eb;
-                color: #fff;
+            .sidebar a,
+            .sidebar-menu-toggle {
+                display: flex;
+                align-items: center;
+                color: #d1d5db;
+                text-decoration: none;
+                padding: 10px 12px;
+                border-radius: 10px;
+                margin-bottom: 5px;
+                font-size: 14px;
+                transition: 0.15s ease;
+                border: 0;
+                background: transparent;
+                width: 100%;
+                text-align: left;
             }
 
-                .sidebar a.active i {
+                .sidebar a:hover,
+                .sidebar-menu-toggle:hover {
+                    background: #374151;
+                    color: white;
+                }
+
+                .sidebar a i,
+                .sidebar-menu-toggle i:first-child {
+                    margin-right: 10px;
+                    font-size: 16px;
+                    width: 20px;
+                    text-align: center;
+                }
+
+                .sidebar a.active {
+                    background: #2563eb;
                     color: #fff;
                 }
 
-        .sidebar-submenu a {
-            font-size: 13px;
-            padding: 9px 12px 9px 42px;
-            margin-bottom: 3px;
-        }
+                    .sidebar a.active i {
+                        color: #fff;
+                    }
 
-        .sidebar-menu-toggle .chevron {
-            margin-left: auto;
-            font-size: 13px;
-            transition: transform 0.2s ease;
-        }
-
-        .sidebar-menu-toggle[aria-expanded="true"] .chevron {
-            transform: rotate(180deg);
-        }
-
-        .sidebar-footer {
-            margin-top: 24px;
-            padding-top: 14px;
-            padding-bottom: 16px;
-            border-top: 1px solid rgba(255,255,255,0.12);
-        }
-
-        .main-content {
-            margin-left: 260px;
-            padding: 25px;
-            transition: margin-left .22s ease;
-        }
-
-        /* =====================================================
-                           Collapsed Sidebar
-                           ===================================================== */
-
-        body.sidebar-collapsed .sidebar {
-            width: 76px;
-            padding-left: 10px;
-            padding-right: 10px;
-        }
-
-        body.sidebar-collapsed .main-content {
-            margin-left: 76px;
-        }
-
-        body.sidebar-collapsed .sidebar-header {
-            flex-direction: column;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        body.sidebar-collapsed .sidebar-title {
-            justify-content: center;
-            width: 100%;
-            font-size: 0;
-        }
-
-            body.sidebar-collapsed .sidebar-title img {
-                margin: 0;
+            .sidebar-submenu a {
+                font-size: 13px;
+                padding: 9px 12px 9px 42px;
+                margin-bottom: 3px;
             }
 
-        body.sidebar-collapsed .sidebar-section {
-            display: none;
-        }
-
-        body.sidebar-collapsed .sidebar > a,
-        body.sidebar-collapsed .sidebar-menu-toggle {
-            justify-content: center;
-            padding-left: 10px;
-            padding-right: 10px;
-            font-size: 0;
-        }
-
-            body.sidebar-collapsed .sidebar > a i,
-            body.sidebar-collapsed .sidebar-menu-toggle i:first-child {
-                margin-right: 0;
-                width: auto;
-                font-size: 18px;
+            .sidebar-menu-toggle .chevron {
+                margin-left: auto;
+                font-size: 13px;
+                transition: transform 0.2s ease;
             }
 
-            body.sidebar-collapsed .sidebar-menu-toggle .chevron {
-                display: none;
+            .sidebar-menu-toggle[aria-expanded="true"] .chevron {
+                transform: rotate(180deg);
             }
 
-        body.sidebar-collapsed .sidebar-submenu {
-            display: none !important;
-        }
-
-        body.sidebar-collapsed .sidebar-footer {
-            display: none;
-        }
-
-        .app-topbar {
-            background: #fff;
-            border-radius: 14px;
-            padding: 14px 22px;
-            margin-bottom: 22px;
-            box-shadow: 0 8px 22px rgba(15, 23, 42, .05);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-
-        .greeting-title {
-            font-size: 18px;
-            font-weight: 900;
-            color: #16232c;
-            margin-bottom: 2px;
-        }
-
-        .greeting-subtitle {
-            color: #64748b;
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .topbar-actions {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .user-chip {
-            color: #475569;
-            background: #f8fafc;
-            border: 1px solid #e5e9ef;
-            border-radius: 999px;
-            padding: 7px 12px;
-            font-size: 13px;
-            font-weight: 700;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .logout-btn {
-            border: 1px solid #ef4444;
-            color: #ef4444;
-            background: #fff;
-            border-radius: 8px;
-            padding: 7px 12px;
-            font-size: 13px;
-            font-weight: 800;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: .15s ease;
-        }
-
-            .logout-btn:hover {
-                background: #ef4444;
-                color: #fff;
+            .sidebar-footer {
+                margin-top: 24px;
+                padding-top: 14px;
+                padding-bottom: 16px;
+                border-top: 1px solid rgba(255,255,255,0.12);
             }
 
-        .content-card {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .action-card {
-            transition: .25s;
-            cursor: pointer;
-        }
-
-            .action-card:hover {
-                transform: translateY(-6px);
-                box-shadow: 0 15px 30px rgba(0,0,0,.12) !important;
-            }
-
-            .action-card .card-body {
-                min-height: 180px;
-            }
-
-            .action-card i {
-                transition: .25s;
-            }
-
-            .action-card:hover i {
-                transform: scale(1.2);
-            }
-
-        @@media (max-width: 900px) {
             .main-content {
-                padding: 18px;
+                margin-left: 260px;
+                padding: 25px;
+                transition: margin-left .22s ease;
             }
 
-            .app-topbar {
-                align-items: flex-start;
-            }
-        }
+            /* =====================================================
+                                                   Collapsed Sidebar
+                                                   ===================================================== */
 
-        @@media (max-width: 650px) {
-            .sidebar {
+            body.sidebar-collapsed .sidebar {
                 width: 76px;
                 padding-left: 10px;
                 padding-right: 10px;
             }
 
-            .main-content {
+            body.sidebar-collapsed .main-content {
                 margin-left: 76px;
-                padding: 14px;
             }
 
-            .sidebar-header {
+            body.sidebar-collapsed .sidebar-header {
                 flex-direction: column;
                 justify-content: center;
                 gap: 8px;
             }
 
-            .sidebar-title {
+            body.sidebar-collapsed .sidebar-title {
                 justify-content: center;
                 width: 100%;
                 font-size: 0;
             }
 
-            .sidebar-section,
-            .sidebar-submenu,
-            .sidebar-footer,
-            .sidebar-menu-toggle .chevron {
-                display: none !important;
+                body.sidebar-collapsed .sidebar-title img {
+                    margin: 0;
+                }
+
+            body.sidebar-collapsed .sidebar-section {
+                display: none;
             }
 
-            .sidebar > a,
-            .sidebar-menu-toggle {
+            body.sidebar-collapsed .sidebar > a,
+            body.sidebar-collapsed .sidebar-menu-toggle {
                 justify-content: center;
                 padding-left: 10px;
                 padding-right: 10px;
                 font-size: 0;
             }
 
-                .sidebar > a i,
-                .sidebar-menu-toggle i:first-child {
+                body.sidebar-collapsed .sidebar > a i,
+                body.sidebar-collapsed .sidebar-menu-toggle i:first-child {
                     margin-right: 0;
                     width: auto;
                     font-size: 18px;
                 }
-        }
+
+                body.sidebar-collapsed .sidebar-menu-toggle .chevron {
+                    display: none;
+                }
+
+            body.sidebar-collapsed .sidebar-submenu {
+                display: none !important;
+            }
+
+            body.sidebar-collapsed .sidebar-footer {
+                display: none;
+            }
+
+            .app-topbar {
+                background: #fff;
+                border-radius: 14px;
+                padding: 14px 22px;
+                margin-bottom: 22px;
+                box-shadow: 0 8px 22px rgba(15, 23, 42, .05);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 16px;
+                flex-wrap: wrap;
+            }
+
+            .greeting-title {
+                font-size: 18px;
+                font-weight: 900;
+                color: #16232c;
+                margin-bottom: 2px;
+            }
+
+            .greeting-subtitle {
+                color: #64748b;
+                font-size: 13px;
+                font-weight: 600;
+            }
+
+            .topbar-actions {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+
+            .user-chip {
+                color: #475569;
+                background: #f8fafc;
+                border: 1px solid #e5e9ef;
+                border-radius: 999px;
+                padding: 7px 12px;
+                font-size: 13px;
+                font-weight: 700;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .logout-btn {
+                border: 1px solid #ef4444;
+                color: #ef4444;
+                background: #fff;
+                border-radius: 8px;
+                padding: 7px 12px;
+                font-size: 13px;
+                font-weight: 800;
+                text-decoration: none;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                transition: .15s ease;
+            }
+
+                .logout-btn:hover {
+                    background: #ef4444;
+                    color: #fff;
+                }
+
+            .content-card {
+                background: white;
+                border-radius: 12px;
+                padding: 25px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            }
+
+            .action-card {
+                transition: .25s;
+                cursor: pointer;
+            }
+
+                .action-card:hover {
+                    transform: translateY(-6px);
+                    box-shadow: 0 15px 30px rgba(0,0,0,.12) !important;
+                }
+
+                .action-card .card-body {
+                    min-height: 180px;
+                }
+
+                .action-card i {
+                    transition: .25s;
+                }
+
+                .action-card:hover i {
+                    transform: scale(1.2);
+                }
+
+            @@media (max-width: 900px) {
+                .main-content {
+                    padding: 18px;
+                }
+
+                .app-topbar {
+                    align-items: flex-start;
+                }
+            }
+
+            @@media (max-width: 650px) {
+                .sidebar {
+                    width: 76px;
+                    padding-left: 10px;
+                    padding-right: 10px;
+                }
+
+                .main-content {
+                    margin-left: 76px;
+                    padding: 14px;
+                }
+
+                .sidebar-header {
+                    flex-direction: column;
+                    justify-content: center;
+                    gap: 8px;
+                }
+
+                .sidebar-title {
+                    justify-content: center;
+                    width: 100%;
+                    font-size: 0;
+                }
+
+                .sidebar-section,
+                .sidebar-submenu,
+                .sidebar-footer,
+                .sidebar-menu-toggle .chevron {
+                    display: none !important;
+                }
+
+                .sidebar > a,
+                .sidebar-menu-toggle {
+                    justify-content: center;
+                    padding-left: 10px;
+                    padding-right: 10px;
+                    font-size: 0;
+                }
+
+                    .sidebar > a i,
+                    .sidebar-menu-toggle i:first-child {
+                        margin-right: 0;
+                        width: auto;
+                        font-size: 18px;
+                    }
+            }
     </style>
 </head>
 
@@ -412,6 +412,10 @@
         layoutIsComplaintSupervisor ||
         layoutIsComplaintManager;
 
+        var layoutCanViewCustomerCareReports =
+            layoutIsAdmin ||
+            layoutIsComplaintManager;
+
         // Product Executive role القديم
         var layoutIsProductExecutiveManager =
         User.IsInRole("ExecutiveManager");
@@ -435,96 +439,265 @@
 
             <div class="modal-dialog modal-dialog-centered">
 
-                <div class="modal-content border-0 shadow-lg"
-                     style="border-radius:24px; overflow:hidden;">
+                <div class="modal-content border-0"
+                     style="
+                    border-radius:28px;
+                    overflow:hidden;
+                    box-shadow:0 30px 80px rgba(15,23,42,.28);
+                    ">
 
                     <div class="modal-body p-0">
 
                         <div id="fridayBuddyCard"
                              style="
-                                background:linear-gradient(135deg,#eff6ff,#f8fafc);
-                                padding:30px;
-                                text-align:center;
-                                direction:rtl;
-                             ">
+                            position:relative;
+                            overflow:hidden;
+                            background:
+                            radial-gradient(
+                            circle at 50% -10%,
+                            rgba(59,130,246,.16),
+                            transparent 38%
+                            ),
+                            linear-gradient(
+                            180deg,
+                            #f8fbff 0%,
+                            #eff6ff 100%
+                            );
+                            padding:24px 28px 28px;
+                            text-align:center;
+                            direction:rtl;
+                            ">
 
                             <div style="
+                                position:absolute;
+                                width:150px;
+                                height:150px;
+                                border-radius:50%;
+                                background:rgba(59,130,246,.06);
+                                top:-75px;
+                                right:-55px;
+                                pointer-events:none;
+                                ">
+                            </div>
+
+                            <div style="
+                                position:absolute;
+                                width:100px;
+                                height:100px;
+                                border-radius:50%;
+                                background:rgba(99,102,241,.05);
+                                bottom:-45px;
+                                left:-35px;
+                                pointer-events:none;
+                                ">
+                            </div>
+
+                            <div style="
+                                position:relative;
+                                z-index:1;
                                 display:inline-flex;
                                 align-items:center;
+                                gap:7px;
+                                background:rgba(255,255,255,.82);
+                                border:1px solid rgba(148,163,184,.18);
+                                border-radius:999px;
+                                padding:6px 12px;
+                                margin-bottom:14px;
+                                box-shadow:0 5px 16px rgba(15,23,42,.05);
+                                ">
+
+                                <img src="~/images/fridayops-icon.png"
+                                     alt="FridayOps"
+                                     style="
+                                width:22px;
+                                height:22px;
+                                object-fit:contain;
+                                " />
+
+                                <span style="
+                                    font-size:11px;
+                                    font-weight:900;
+                                    color:#334155;
+                                    direction:ltr;
+                                    ">
+                                    Friday Buddy
+                                </span>
+                            </div>
+
+                            <div style="
+                                position:relative;
+                                z-index:1;
+                                display:flex;
                                 justify-content:center;
-                                width:74px;
-                                height:74px;
-                                border-radius:22px;
-                                background:#fff;
-                                box-shadow:0 10px 30px rgba(15,23,42,.10);
-                                font-size:38px;
-                                margin-bottom:15px;
-                            ">
-                                🍦🎧
+                                margin-bottom:13px;
+                                ">
+
+                                <div style="
+                                    position:relative;
+                                    width:235px;
+                                    max-width:100%;
+                                    border-radius:25px;
+                                    padding:7px;
+                                    background:rgba(255,255,255,.95);
+                                    border:1px solid rgba(255,255,255,.9);
+                                    box-shadow:
+                                    0 18px 40px rgba(15,23,42,.14);
+                                    ">
+
+                                    <img id="fridayBuddyImage"
+                                         src="~/images/friday-buddy/happy.png"
+                                         alt="Friday Buddy"
+                                         style="
+                                    display:block;
+                                    width:100%;
+                                    height:auto;
+                                    max-height:245px;
+                                    object-fit:contain;
+                                    border-radius:19px;
+                                    " />
+                                </div>
                             </div>
 
                             <div id="fridayBuddyMode"
                                  style="
-                                    font-size:13px;
-                                    font-weight:900;
-                                    color:#2563eb;
-                                    margin-bottom:8px;
-                                 ">
+                                position:relative;
+                                z-index:1;
+                                display:inline-flex;
+                                align-items:center;
+                                justify-content:center;
+                                min-height:28px;
+                                background:#dbeafe;
+                                color:#1d4ed8;
+                                border-radius:999px;
+                                padding:5px 13px;
+                                font-size:11px;
+                                font-weight:950;
+                                margin-bottom:9px;
+                                direction:ltr;
+                                ">
                                 Happy Mode
                             </div>
 
                             <h3 id="fridayBuddyTitle"
                                 style="
-                                    font-size:22px;
-                                    font-weight:950;
-                                    color:#0f172a;
-                                    margin-bottom:10px;
+                                position:relative;
+                                z-index:1;
+                                font-size:21px;
+                                font-weight:950;
+                                color:#0f172a;
+                                margin:0 0 7px;
+                                line-height:1.5;
                                 ">
-                                صباح الخير
+                                صباح الخير ☀️
                             </h3>
 
                             <div id="fridayBuddyMessage"
                                  style="
-                                    font-size:14px;
-                                    line-height:1.9;
-                                    color:#475569;
-                                    margin-bottom:18px;
-                                 ">
+                                position:relative;
+                                z-index:1;
+                                max-width:410px;
+                                margin:0 auto 15px;
+                                font-size:13px;
+                                line-height:1.9;
+                                color:#64748b;
+                                font-weight:600;
+                                ">
                                 جاهزين ليوم هادي؟ خلينا نشوف 😄
                             </div>
 
-                            <div id="fridayBuddyMission"
-                                 style="
-                                    background:#fff;
-                                    border:1px solid #dbeafe;
-                                    border-radius:14px;
-                                    padding:12px 14px;
-                                    font-size:12px;
-                                    color:#334155;
-                                    margin-bottom:18px;
-                                 ">
-                                🎯 Mission of the day:
-                                خلّص أول Follow-up قبل القهوة.
+                            <div style="
+                                position:relative;
+                                z-index:1;
+                                max-width:440px;
+                                margin:0 auto 18px;
+                                ">
+
+                                <div style="
+                                    display:flex;
+                                    align-items:center;
+                                    gap:11px;
+                                    text-align:right;
+                                    background:rgba(255,255,255,.9);
+                                    border:1px solid #bfdbfe;
+                                    border-radius:16px;
+                                    padding:11px 13px;
+                                    box-shadow:0 6px 18px rgba(37,99,235,.05);
+                                    ">
+
+                                    <div style="
+                                        width:38px;
+                                        height:38px;
+                                        flex:0 0 38px;
+                                        display:flex;
+                                        align-items:center;
+                                        justify-content:center;
+                                        border-radius:12px;
+                                        background:#eff6ff;
+                                        color:#2563eb;
+                                        font-size:18px;
+                                        ">
+                                        🎯
+                                    </div>
+
+                                    <div>
+                                        <div style="
+                                            font-size:9px;
+                                            font-weight:950;
+                                            color:#2563eb;
+                                            margin-bottom:2px;
+                                            ">
+                                            مهمة اليوم
+                                        </div>
+
+                                        <div id="fridayBuddyMission"
+                                             style="
+                                            font-size:11px;
+                                            line-height:1.7;
+                                            color:#334155;
+                                            font-weight:700;
+                                            ">
+                                            خلّص أول Follow-up قبل القهوة.
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <button type="button"
-                                    class="btn btn-primary px-4 py-2 fw-bold"
-                                    style="border-radius:12px;"
-                                    data-bs-dismiss="modal">
+                                    class="btn btn-primary"
+                                    data-bs-dismiss="modal"
+                                    style="
+                                position:relative;
+                                z-index:1;
+                                min-width:160px;
+                                border-radius:13px;
+                                padding:10px 22px;
+                                font-size:13px;
+                                font-weight:950;
+                                box-shadow:
+                                0 10px 22px rgba(37,99,235,.22);
+                                ">
 
                                 <i class="bi bi-rocket-takeoff ms-1"></i>
                                 يلا نبدأ
-
                             </button>
 
+                            <div style="
+                                position:relative;
+                                z-index:1;
+                                margin-top:13px;
+                                font-size:8px;
+                                font-weight:850;
+                                letter-spacing:1.2px;
+                                color:#94a3b8;
+                                direction:ltr;
+                                ">
+                                HAPPIER AGENTS · HAPPIER CUSTOMERS
+                            </div>
+
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
-
         </div>
     }
 
@@ -702,6 +875,18 @@
                     New Ticket
                 </a>
 
+                
+                @if (layoutCanViewCustomerCareReports)
+                {
+                    <a asp-controller="CustomerCareReports"
+                       asp-action="Index"
+                       class="sidebar-link">
+                        <i class="bi bi-file-earmark-bar-graph"></i>
+                        <span>تقارير خدمة العملاء</span>
+                    </a>
+                }
+
+
             </div>
         }
 
@@ -874,7 +1059,7 @@
         <!-- Sales Analytics -->
         <!-- ================================================= -->
         @if (!layoutIsExecutiveDashboardOnly &&
-                (layoutIsAdmin || layoutIsManager))
+                false)
         {
             <button class="sidebar-menu-toggle"
                     type="button"
@@ -1003,7 +1188,7 @@
         <!-- ================================================= -->
         <!-- Administration -->
         <!-- ================================================= -->
-        @if (layoutIsAdmin)
+        @if (layoutIsAdmin || layoutIsManager)
         {
             <div class="sidebar-section">
                 Administration
@@ -1026,29 +1211,35 @@
             <div class="collapse sidebar-submenu"
                  id="adminMenu">
 
-                <a asp-controller="AdminUsers"
-                   asp-action="Index">
-                    <i class="bi bi-people"></i>
-                    Users Management
-                </a>
+                @if (layoutIsAdmin)
+                {
+                    <a asp-controller="AdminUsers"
+                       asp-action="Index">
+                        <i class="bi bi-people"></i>
+                        Users Management
+                    </a>
 
-                <a asp-controller="CustomerImport"
-                   asp-action="Upload">
-                    <i class="bi bi-file-earmark-excel"></i>
-                    Upload SAP Sheet
-                </a>
+                    <a asp-controller="CustomerImport"
+                       asp-action="Upload">
+                        <i class="bi bi-file-earmark-excel"></i>
+                        Upload SAP Sheet
+                    </a>
 
-                <a asp-controller="ActivityLogs"
-                   asp-action="Index">
-                    <i class="bi bi-activity"></i>
-                    Activity Logs
-                </a>
+                    <a asp-controller="ActivityLogs"
+                       asp-action="Index">
+                        <i class="bi bi-activity"></i>
+                        Activity Logs
+                    </a>
+                }
 
-                <a asp-controller="SystemSettings"
-                   asp-action="Index">
-                    <i class="bi bi-gear"></i>
-                    Settings
-                </a>
+                @if (layoutIsAdmin || layoutIsManager)
+                {
+                    <a asp-controller="SystemSettings"
+                       asp-action="Index">
+                        <i class="bi bi-gear"></i>
+                        Settings
+                    </a>
+                }
 
             </div>
         }
@@ -1165,336 +1356,360 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
+            document.addEventListener("DOMContentLoaded", function () {
 
-            const body =
-                document.body;
+                const body =
+                    document.body;
 
-            const sidebarToggle =
-                document.getElementById("sidebarToggle");
+                const sidebarToggle =
+                    document.getElementById("sidebarToggle");
 
-            const sidebarToggleIcon =
-                document.getElementById("sidebarToggleIcon");
+                const sidebarToggleIcon =
+                    document.getElementById("sidebarToggleIcon");
 
-                    const sidebarStorageKey =
-            "fridayops.sidebar.collapsed";
+                        const sidebarStorageKey =
+                "fridayops.sidebar.collapsed";
 
-        function setSidebarCollapsed(collapsed) {
+            function setSidebarCollapsed(collapsed) {
 
-            body.classList.toggle(
-                "sidebar-collapsed",
-                collapsed);
+                body.classList.toggle(
+                    "sidebar-collapsed",
+                    collapsed);
 
-            if (sidebarToggle) {
+                if (sidebarToggle) {
 
-                sidebarToggle.setAttribute(
-                    "aria-pressed",
+                    sidebarToggle.setAttribute(
+                        "aria-pressed",
+                        collapsed ? "true" : "false");
+
+                    sidebarToggle.setAttribute(
+                        "title",
+                        collapsed
+                            ? "Expand sidebar"
+                            : "Collapse sidebar");
+                }
+
+                if (sidebarToggleIcon) {
+
+                    sidebarToggleIcon.className =
+                        collapsed
+                            ? "bi bi-layout-sidebar-inset-reverse"
+                            : "bi bi-layout-sidebar-inset";
+                }
+
+                localStorage.setItem(
+                    sidebarStorageKey,
                     collapsed ? "true" : "false");
-
-                sidebarToggle.setAttribute(
-                    "title",
-                    collapsed
-                        ? "Expand sidebar"
-                        : "Collapse sidebar");
             }
 
-            if (sidebarToggleIcon) {
 
-                sidebarToggleIcon.className =
-                    collapsed
-                        ? "bi bi-layout-sidebar-inset-reverse"
-                        : "bi bi-layout-sidebar-inset";
-            }
+            // آخر حالة اختارها المستخدم
+            const storedSidebarState =
+                localStorage.getItem(
+                    sidebarStorageKey);
 
-            localStorage.setItem(
-                sidebarStorageKey,
-                collapsed ? "true" : "false");
-        }
+            const shouldStartCollapsed =
+                storedSidebarState === "true";
 
-
-        // آخر حالة اختارها المستخدم
-        const storedSidebarState =
-            localStorage.getItem(
-                sidebarStorageKey);
-
-        const shouldStartCollapsed =
-            storedSidebarState === "true";
-
-        setSidebarCollapsed(
-            shouldStartCollapsed);
+            setSidebarCollapsed(
+                shouldStartCollapsed);
 
 
-        // فتح / قفل يدوي فقط
-        sidebarToggle?.addEventListener(
-            "click",
-            function () {
+            // فتح / قفل يدوي فقط
+            sidebarToggle?.addEventListener(
+                "click",
+                function () {
 
-                const isCollapsed =
-                    body.classList.contains(
-                        "sidebar-collapsed");
+                    const isCollapsed =
+                        body.classList.contains(
+                            "sidebar-collapsed");
 
-                setSidebarCollapsed(
-                    !isCollapsed);
-            });
+                    setSidebarCollapsed(
+                        !isCollapsed);
+                });
 
-            document
-                .querySelectorAll(".sidebar-menu-toggle")
-                .forEach(button => {
+                document
+                    .querySelectorAll(".sidebar-menu-toggle")
+                    .forEach(button => {
 
-                    button.addEventListener(
-                        "click",
-                        function (event) {
+                        button.addEventListener(
+                            "click",
+                            function (event) {
 
-                            if (!body.classList.contains(
-                                "sidebar-collapsed")) {
-                                return;
-                            }
+                                if (!body.classList.contains(
+                                    "sidebar-collapsed")) {
+                                    return;
+                                }
 
-                            event.preventDefault();
-                            event.stopPropagation();
+                                event.preventDefault();
+                                event.stopPropagation();
 
-                            setSidebarCollapsed(false);
+                                setSidebarCollapsed(false);
 
-                            const targetSelector =
-                                button.getAttribute(
-                                    "data-bs-target");
+                                const targetSelector =
+                                    button.getAttribute(
+                                        "data-bs-target");
 
-                            if (!targetSelector) {
-                                return;
-                            }
+                                if (!targetSelector) {
+                                    return;
+                                }
 
-                            const target =
-                                document.querySelector(
-                                    targetSelector);
+                                const target =
+                                    document.querySelector(
+                                        targetSelector);
 
-                            if (!target) {
-                                return;
-                            }
+                                if (!target) {
+                                    return;
+                                }
 
-                            window.setTimeout(
-                                function () {
+                                window.setTimeout(
+                                    function () {
 
-                                    const collapse =
-                                        bootstrap.Collapse
-                                            .getOrCreateInstance(
-                                                target,
-                                                {
-                                                    toggle: false
-                                                });
+                                        const collapse =
+                                            bootstrap.Collapse
+                                                .getOrCreateInstance(
+                                                    target,
+                                                    {
+                                                        toggle: false
+                                                    });
 
-                                    collapse.show();
+                                        collapse.show();
 
-                                    button.setAttribute(
+                                        button.setAttribute(
+                                            "aria-expanded",
+                                            "true");
+                                    },
+                                    160);
+                            });
+                    });
+
+                const currentPath =
+                    window.location.pathname
+                        .toLowerCase();
+
+                document
+                    .querySelectorAll(".sidebar a[href]")
+                    .forEach(link => {
+
+                        const linkPath =
+                            link.getAttribute("href")
+                                ?.toLowerCase();
+
+                        if (!linkPath ||
+                            linkPath === "#") {
+                            return;
+                        }
+
+                        if (
+                            currentPath === linkPath ||
+                            currentPath.startsWith(
+                                linkPath + "/")
+                        ) {
+                            link.classList.add("active");
+
+                            const collapseParent =
+                                link.closest(".collapse");
+
+                            if (collapseParent) {
+
+                                collapseParent.classList.add(
+                                    "show");
+
+                                const toggleButton =
+                                    document.querySelector(
+                                        `[data-bs-target="#${collapseParent.id}"]`
+                                    );
+
+                                if (toggleButton) {
+                                    toggleButton.setAttribute(
                                         "aria-expanded",
                                         "true");
-                                },
-                                160);
-                        });
-                });
-
-            const currentPath =
-                window.location.pathname
-                    .toLowerCase();
-
-            document
-                .querySelectorAll(".sidebar a[href]")
-                .forEach(link => {
-
-                    const linkPath =
-                        link.getAttribute("href")
-                            ?.toLowerCase();
-
-                    if (!linkPath ||
-                        linkPath === "#") {
-                        return;
-                    }
-
-                    if (
-                        currentPath === linkPath ||
-                        currentPath.startsWith(
-                            linkPath + "/")
-                    ) {
-                        link.classList.add("active");
-
-                        const collapseParent =
-                            link.closest(".collapse");
-
-                        if (collapseParent) {
-
-                            collapseParent.classList.add(
-                                "show");
-
-                            const toggleButton =
-                                document.querySelector(
-                                    `[data-bs-target="#${collapseParent.id}"]`
-                                );
-
-                            if (toggleButton) {
-                                toggleButton.setAttribute(
-                                    "aria-expanded",
-                                    "true");
+                                }
                             }
                         }
-                    }
-                });
+                    });
 
 
-                        const fridayBuddyModalElement =
-            document.getElementById("fridayBuddyModal");
+                            const fridayBuddyModalElement =
+                document.getElementById("fridayBuddyModal");
 
-        if (fridayBuddyModalElement) {
+            if (fridayBuddyModalElement) {
 
-            const currentUser =
-                '@(User.Identity?.Name ?? "user")';
+                const currentUser =
+                    '@(User.Identity?.Name ?? "user")';
 
-            const today =
-                new Date()
-                    .toISOString()
-                    .split("T")[0];
+                const today =
+                    new Date()
+                        .toISOString()
+                        .split("T")[0];
 
-            const buddyStorageKey =
-                `fridayops.dailyfun.${currentUser}.${today}`;
+                const buddyStorageKey =
+                    `fridayops.dailyfun.${currentUser}.${today}`;
 
-            const alreadyShown =
-                localStorage.getItem(
-                    buddyStorageKey);
+                const alreadyShown =
+                    localStorage.getItem(
+                        buddyStorageKey);
 
-            if (!alreadyShown) {
+                if (!alreadyShown) {
 
-                const hour =
-                    new Date().getHours();
+                    const hour =
+                        new Date().getHours();
 
-                const day =
-                    new Date().getDay();
+                    const day =
+                        new Date().getDay();
 
-                let mode =
-                    "Happy Mode";
+                    let mode =
+                        "Happy Mode";
 
-                let title =
-                    "صباح الخير ☀️";
+                    let title =
+                        "صباح الخير ☀️";
 
-                let message =
-                    "جاهزين ليوم هادي؟ خلينا نشوف 😄";
+                    let message =
+                        "جاهزين ليوم هادي؟ خلينا نشوف 😄";
 
-                let mission =
-                    "🎯 Mission of the day: خلّص أول Follow-up قبل القهوة.";
+                    let mission =
+                        "خلّص أول Follow-up قبل القهوة.";
 
-                if (day === 5) {
+                    let image =
+                        "/images/friday-buddy/happy.png";
 
-                    mode =
-                        "Friday Mode 😎";
-
-                    title =
-                        "Friday on Friday 🍦";
-
-                    message =
-                        "النهارده Friday... يعني المزاج أعلى من الـ SLA 😄";
-
-                    mission =
-                        "🎉 Mission: خلّص يومك من غير Ticket دراما.";
-                }
-                else if (hour >= 16) {
-
-                    mode =
-                        "End of Shift Mode 🌙";
-
-                    title =
-                        "قربنا نخلص 😴";
-
-                    message =
-                        "آخر Ticket... إن شاء الله 😂";
-
-                    mission =
-                        "🏁 Mission: اقفل آخر Follow-up قبل ما تقول سلام.";
-                }
-                else if (hour >= 13) {
-
-                    mode =
-                        "Tired Mode ☕";
-
-                    title =
-                        "Coffee Survival Mode";
-
-                    message =
-                        "لسه اليوم مخلصش... بس الإحساس End of Shift ☕";
-
-                    mission =
-                        "☕ Mission: خلّص Ticket واحدة قبل القهوة الجاية.";
-                }
-                else {
-
-                    const random =
-                        Math.random();
-
-                    if (random > 0.75) {
+                    if (day === 5) {
 
                         mode =
-                            "Angry Customer Mode 🔥";
+                            "Friday Mode 😎";
 
                         title =
-                            "خليك هادي 😅";
+                            "Friday on Friday 🍦";
 
                         message =
-                            "العميل قال: أنا بكلمكم من أسبوع... والتيكت لسه متفتحة من 10 دقايق 😂";
+                            "النهارده Friday... يعني المزاج أعلى من الـ SLA 😄";
 
                         mission =
-                            "🔥 Mission: حافظ على هدوءك لأول 3 Calls.";
+                            "خلّص يومك من غير Ticket دراما.";
+
+                        image =
+                            "/images/friday-buddy/friday.png";
                     }
+                    else if (hour >= 16) {
+
+                        mode =
+                            "End of Shift Mode 🌙";
+
+                        title =
+                            "قربنا نخلص 😴";
+
+                        message =
+                            "آخر Ticket... إن شاء الله 😂";
+
+                        mission =
+                            "اقفل آخر Follow-up قبل ما تقول سلام.";
+
+                        image =
+                            "/images/friday-buddy/end-shift.png";
+                    }
+                    else if (hour >= 13) {
+
+                        mode =
+                            "Tired Mode ☕";
+
+                        title =
+                            "Coffee Survival Mode";
+
+                        message =
+                            "لسه اليوم مخلصش... بس الإحساس End of Shift ☕";
+
+                        mission =
+                            "خلّص Ticket واحدة قبل القهوة الجاية.";
+
+                        image =
+                            "/images/friday-buddy/tired.png";
+                    }
+                    else {
+
+                        const random =
+                            Math.random();
+
+                        if (random > 0.75) {
+
+                            mode =
+                                "Angry Customer Mode 🔥";
+
+                            title =
+                                "خليك هادي 😅";
+
+                            message =
+                                "العميل قال: أنا بكلمكم من أسبوع... والتيكت لسه متفتحة من 10 دقايق 😂";
+
+                            mission =
+                                "حافظ على هدوءك لأول 3 Calls.";
+
+                            image =
+                                "/images/friday-buddy/angry.png";
+                        }
+                    }
+
+                    const modeElement =
+                        document.getElementById(
+                            "fridayBuddyMode");
+
+                    const titleElement =
+                        document.getElementById(
+                            "fridayBuddyTitle");
+
+                    const messageElement =
+                        document.getElementById(
+                            "fridayBuddyMessage");
+
+                    const missionElement =
+                        document.getElementById(
+                            "fridayBuddyMission");
+
+                    const imageElement =
+                        document.getElementById(
+                            "fridayBuddyImage");
+
+                    if (imageElement) {
+                        imageElement.src =
+                            image;
+                    }
+
+                    if (modeElement) {
+                        modeElement.textContent =
+                            mode;
+                    }
+
+                    if (titleElement) {
+                        titleElement.textContent =
+                            title;
+                    }
+
+                    if (messageElement) {
+                        messageElement.textContent =
+                            message;
+                    }
+
+                    if (missionElement) {
+                        missionElement.textContent =
+                            mission;
+                    }
+
+                    const buddyModal =
+                        new bootstrap.Modal(
+                            fridayBuddyModalElement);
+
+                    window.setTimeout(
+                        function () {
+
+                            buddyModal.show();
+
+                            localStorage.setItem(
+                                buddyStorageKey,
+                                "true");
+                        },
+                        600);
                 }
-
-                const modeElement =
-                    document.getElementById(
-                        "fridayBuddyMode");
-
-                const titleElement =
-                    document.getElementById(
-                        "fridayBuddyTitle");
-
-                const messageElement =
-                    document.getElementById(
-                        "fridayBuddyMessage");
-
-                const missionElement =
-                    document.getElementById(
-                        "fridayBuddyMission");
-
-                if (modeElement) {
-                    modeElement.textContent =
-                        mode;
-                }
-
-                if (titleElement) {
-                    titleElement.textContent =
-                        title;
-                }
-
-                if (messageElement) {
-                    messageElement.textContent =
-                        message;
-                }
-
-                if (missionElement) {
-                    missionElement.textContent =
-                        mission;
-                }
-
-                const buddyModal =
-                    new bootstrap.Modal(
-                        fridayBuddyModalElement);
-
-                window.setTimeout(
-                    function () {
-
-                        buddyModal.show();
-
-                        localStorage.setItem(
-                            buddyStorageKey,
-                            "true");
-                    },
-                    600);
             }
-        }
-        });
+            });
     </script>
 
     @await RenderSectionAsync(

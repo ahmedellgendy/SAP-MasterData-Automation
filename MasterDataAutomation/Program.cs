@@ -255,6 +255,10 @@ namespace MasterDataAutomation
                 ICustomerCareTicketService,
                 CustomerCareTicketService>();
 
+            builder.Services.AddScoped<
+                ICustomerCareReportService,
+                CustomerCareReportService>();
+
             // =====================================================
             // HTTP Context
             // =====================================================

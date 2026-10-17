@@ -922,6 +922,39 @@
             text-align: center;
             font-size: 12px;
         }
+        
+.footer-copyright {
+    color: #98a2b3;
+    font-size: 11px;
+    line-height: 1.7;
+}
+
+.footer-separator {
+    margin: 0 5px;
+    color: #cbd5e1;
+}
+
+.footer-developer {
+    margin-top: 9px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+    color: #94a3b8;
+    font-size: 11px;
+    letter-spacing: 0.1px;
+}
+
+.footer-developer strong {
+    color: #164fa3;
+    font-weight: 800;
+}
+
+.footer-developer strong:hover {
+    color: #0d3470;
+}
+
 
         /* =====================================================
                    Responsive
@@ -1279,17 +1312,22 @@
                         <!-- Footer -->
                         <!-- ================================================= -->
 
-                        <div class="footer-credit">
+                        
+<div class="footer-credit">
 
-                            @AppBrand.CompanyName
-                            ©
-                            @DateTime.Now.Year
+    <div class="footer-copyright">
+        @AppBrand.CompanyName © @DateTime.Now.Year
+        <span class="footer-separator">·</span>
+        FridayOps Internal Business Platform
+    </div>
 
-                            ·
+    <div class="footer-developer">
+        <span>Designed & Developed by</span>
+        <strong>Ahmed Elgendy</strong>
+    </div>
 
-                            FridayOps Internal Business Platform
+</div>
 
-                        </div>
 
                     </div>
 
